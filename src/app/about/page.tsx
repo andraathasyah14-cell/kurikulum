@@ -1,5 +1,8 @@
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const heroImage = PlaceHolderImages.find(p => p.id === 'hero');
 
@@ -9,28 +12,34 @@ export default function AboutPage() {
       <div className="container px-4 py-12 md:px-6 md:py-24">
         <div className="mx-auto max-w-3xl text-center">
           <p className="font-headline text-lg font-semibold text-primary">
-            Werjia Consensus
+            Union of Economic Cooperation and Development
           </p>
           <h1 className="mt-2 font-headline text-4xl font-extrabold md:text-5xl">
-            Visi dan Prinsip Inti
+            Visi, Misi, dan Peran Strategis
           </h1>
         </div>
       </div>
       <article className="container mx-auto max-w-4xl space-y-12 px-4 pb-24 md:px-6">
         <section>
-          <h2 className="mb-4 font-headline text-3xl font-bold">Visi Dasar</h2>
+          <h2 className="mb-4 font-headline text-3xl font-bold">Pendahuluan Strategis</h2>
           <div className="space-y-4 text-lg text-muted-foreground">
             <p>
-              Werjia Consensus merupakan kerangka kebijakan ekonomi modern yang
-              dianut oleh negara-negara anggota Uni Mirdiy Modern. Pendekatan
-              ini menekankan pertumbuhan ekonomi yang inklusif, adaptif, dan
-              berkelanjutan, dengan tetap menghormati mekanisme pasar,
-              kepastian hukum, serta kebebasan individu.
+             Union of Economic Cooperation and Development (UECD) dibentuk sebagai respons strategis terhadap fragmentasi ekonomi regional, meningkatnya ketidakpastian global, serta kebutuhan negara-negara kawasan untuk membangun daya saing kolektif tanpa mengorbankan kedaulatan nasional.
             </p>
             <p>
-              Negara berperan sebagai fasilitator dan pengawas—bukan pengganti
-              pasar—untuk memastikan bahwa pasar berfungsi secara efisien, adil,
-              dan stabil dalam jangka panjang.
+             UECD dirancang sebagai organisasi kerja sama ekonomi multinasional non-militer yang berfokus pada integrasi ekonomi bertahap, harmonisasi kebijakan, dan pembangunan berimbang. Berbeda dari model integrasi ekstrem yang bersifat supranasional penuh, UECD mengadopsi prinsip <strong>shared rules, not shared sovereignty</strong>, sehingga memberikan ruang fleksibilitas bagi negara anggota dengan tingkat pembangunan dan struktur ekonomi yang beragam.
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="mb-4 font-headline text-3xl font-bold">Visi dan Orientasi Jangka Panjang</h2>
+          <div className="space-y-4 text-lg text-muted-foreground">
+            <p>
+             Visi UECD adalah mewujudkan kawasan ekonomi yang terintegrasi, adil, inovatif, dan berkelanjutan melalui kerja sama multidimensi yang memperkuat ketahanan ekonomi, membuka peluang pertumbuhan baru, serta memastikan kesejahteraan jangka panjang bagi seluruh negara anggota.
+            </p>
+             <p>
+             Orientasi jangka panjang UECD tidak semata-mata mengejar pertumbuhan ekonomi kuantitatif, melainkan transformasi struktural kawasan menuju sistem ekonomi yang resilien, inklusif, dan adaptif terhadap perubahan global.
             </p>
           </div>
         </section>
@@ -47,101 +56,57 @@ export default function AboutPage() {
           )}
         </div>
 
+        <section className="rounded-lg bg-card p-8 text-center shadow-sm">
+           <h2 className="mb-4 font-headline text-3xl font-bold">Konsensus Werjia: Fondasi Kebijakan UECD</h2>
+           <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+            Untuk mencapai visinya, UECD beroperasi berdasarkan <strong>Werjia Consensus</strong>, sebuah kerangka kebijakan ekonomi modern yang pragmatis. Konsensus ini menjadi pedoman utama dalam setiap inisiatif dan regulasi yang dikeluarkan UECD.
+           </p>
+           <Button asChild className="mt-6">
+             <Link href="/treaty">
+                Jelajahi 10 Prinsip Inti Konsensus Werjia <ArrowRight className="ml-2 h-4 w-4" />
+             </Link>
+           </Button>
+        </section>
+
         <section>
           <h2 className="mb-4 font-headline text-3xl font-bold">
-            10 Prinsip Inti
+            6 Peran Strategis UECD
           </h2>
-          <div className="space-y-6 text-lg text-muted-foreground">
-            <div>
-              <h3 className="font-semibold text-foreground">
-                1. Disiplin Fiskal yang Fleksibel
-              </h3>
-              <p>
-                Pemerintah menjaga defisit dan utang dalam batas berkelanjutan,
-                namun tetap memiliki ruang ekspansi fiskal saat krisis ekonomi
-                atau guncangan sistemik.
+          <div className="grid gap-6 text-lg md:grid-cols-2">
+            <div className="rounded-md border bg-card p-6">
+              <h3 className="font-semibold text-foreground">1. Policy Coordinator</h3>
+              <p className="text-muted-foreground">
+                Menyelaraskan kebijakan fiskal, moneter, industri, dan regulasi antarnegara anggota untuk mengurangi friksi kebijakan.
               </p>
             </div>
-            <div>
-              <h3 className="font-semibold text-foreground">
-                2. Investasi Produktif dan Strategis
-              </h3>
-              <p>
-                Belanja publik difokuskan pada infrastruktur, pendidikan,
-                kesehatan, inovasi teknologi, dan sektor industri strategis.
+             <div className="rounded-md border bg-card p-6">
+              <h3 className="font-semibold text-foreground">2. Market Integrator</h3>
+              <p className="text-muted-foreground">
+                Memfasilitasi pengurangan hambatan tarif dan non-tarif, standardisasi teknis, serta sertifikasi tunggal kawasan.
               </p>
             </div>
-            <div>
-              <h3 className="font-semibold text-foreground">
-                3. Liberalitas Pasar yang Terkontrol
-              </h3>
-              <p>
-                Pasar menjadi mekanisme utama alokasi sumber daya, dengan
-                intervensi negara terbatas pada sektor vital dan kegagalan
-                pasar.
+             <div className="rounded-md border bg-card p-6">
+              <h3 className="font-semibold text-foreground">3. Economic Stability Anchor</h3>
+              <p className="text-muted-foreground">
+                Menyediakan sistem pemantauan makroekonomi dan mekanisme stabilisasi krisis.
               </p>
             </div>
-            <div>
-              <h3 className="font-semibold text-foreground">
-                4. Hak Milik dan Kepastian Hukum
-              </h3>
-              <p>
-                Hak milik dan kontrak dilindungi secara kuat, disertai
-                kebijakan persaingan usaha dan anti-monopoli.
+             <div className="rounded-md border bg-card p-6">
+              <h3 className="font-semibold text-foreground">4. Development Equalizer</h3>
+              <p className="text-muted-foreground">
+                Mengurangi ketimpangan antarnegara melalui Dana Kohesi dan bantuan teknis.
               </p>
             </div>
-            <div>
-              <h3 className="font-semibold text-foreground">
-                5. Keterbukaan Perdagangan Selektif
-              </h3>
-              <p>
-                Perdagangan internasional dilakukan secara bertahap, dengan
-                proteksi sementara bagi industri baru dan sektor strategis.
+             <div className="rounded-md border bg-card p-6">
+              <h3 className="font-semibold text-foreground">5. Innovation and Technology Catalyst</h3>
+              <p className="text-muted-foreground">
+                Mempercepat riset bersama dan transformasi digital di seluruh kawasan.
               </p>
             </div>
-            <div>
-              <h3 className="font-semibold text-foreground">
-                6. Privatisasi dengan Kendali Negara Strategis
-              </h3>
-              <p>
-                Privatisasi bersifat parsial dan selektif, dengan kontrol
-                negara atas sektor dan aset kritis.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground">
-                7. Deregulasi yang Adaptif
-              </h3>
-              <p>
-                Regulasi bisnis disederhanakan tanpa menghilangkan kapasitas
-                negara untuk bertindak cepat menghadapi risiko sistemik.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground">
-                8. Perlindungan Sosial yang Inklusif
-              </h3>
-              <p>
-                Negara menjamin akses pendidikan, kesehatan, jaminan
-                pengangguran, dan perlindungan kelompok rentan.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground">
-                9. Tata Kelola dan Transparansi
-              </h3>
-              <p>
-                Akuntabilitas publik, penegakan hukum, dan pemberantasan
-                korupsi menjadi fondasi kebijakan.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground">
-                10. Partisipasi Publik dan Inovasi Kebijakan
-              </h3>
-              <p>
-                Kebijakan dirancang secara partisipatif dan diuji melalui
-                pendekatan berbasis data dan evaluasi berkelanjutan.
+            <div className="rounded-md border bg-card p-6">
+              <h3 className="font-semibold text-foreground">6. Collective Economic Diplomat</h3>
+              <p className="text-muted-foreground">
+                Memperjuangkan kepentingan ekonomi kawasan di tingkat global secara kolektif.
               </p>
             </div>
           </div>

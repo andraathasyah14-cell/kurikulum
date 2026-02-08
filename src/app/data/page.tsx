@@ -34,17 +34,17 @@ export default function DataPage() {
     <div className="container px-4 py-12 md:px-6 md:py-24">
       <div className="mb-12 text-center">
         <h1 className="font-headline text-4xl font-extrabold md:text-5xl">
-          Data & Laporan
+          Data & Laporan UECD
         </h1>
         <p className="mx-auto mt-2 max-w-2xl text-lg text-muted-foreground">
-          Statistik kunci dan laporan berkala mengenai negara anggota dan
-          implementasi Werjia Consensus.
+          Statistik kunci dan laporan berkala mengenai negara anggota UECD dan
+          implementasi Konsensus Werjia.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Statistik Populasi Negara Anggota</CardTitle>
+          <CardTitle>Statistik Populasi Negara Anggota UECD</CardTitle>
           <CardDescription>
             Populasi dalam jutaan jiwa (per data terakhir).
           </CardDescription>

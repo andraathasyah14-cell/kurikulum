@@ -3,14 +3,14 @@ import Link from 'next/link';
 import { Logo } from '@/components/logo';
 
 const footerNav = {
-  'Tentang Konsensus': [
-    { label: 'Visi Dasar', href: '/about' },
-    { label: 'Prinsip Inti', href: '/about' },
-    { label: 'Pendekatan', href: '/treaty' },
+  'Tentang UECD': [
+    { label: 'Visi & Misi', href: '/about' },
+    { label: 'Peran Strategis', href: '/about' },
+    { label: 'Prinsip Inti', href: '/treaty' },
     { label: 'Implementasi', href: '/treaty' },
   ],
   'Kerangka Kerja': [
-    { label: 'Dokumen Konsensus', href: '/treaty' },
+    { label: 'Konsensus Werjia', href: '/treaty' },
     { label: 'Tata Kelola', href: '/governance' },
     { label: 'Transparansi', href: '/contact' },
   ],
@@ -30,11 +30,11 @@ export function Footer() {
             <Link href="/" className="mb-4 inline-flex items-center gap-2">
               <Logo />
               <span className="font-headline text-lg font-bold">
-                Werjia Consensus
+                UECD
               </span>
             </Link>
             <p className="max-w-sm text-sm text-muted-foreground">
-              “Pertumbuhan dengan Keadilan, Pragmatisme dengan Kebebasan”
+             Union of Economic Cooperation and Development.
             </p>
           </div>
           {Object.entries(footerNav).map(([title, links]) => (
@@ -57,7 +57,7 @@ export function Footer() {
         </div>
         <div className="mt-12 border-t pt-8">
           <p className="text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Uni Mirdiy Modern. Hak cipta
+            &copy; {new Date().getFullYear()} Union of Economic Cooperation and Development. Hak cipta
             dilindungi undang-undang.
           </p>
         </div>

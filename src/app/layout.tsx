@@ -5,8 +5,9 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 
 export const metadata: Metadata = {
-  title: 'Werjia Consensus',
-  description: 'Kerangka Kebijakan Ekonomi Modern Uni Mirdiy Modern',
+  title: 'Union of Economic Cooperation and Development (UECD)',
+  description:
+    'Kerangka kerja sama ekonomi regional untuk memperkuat ketahanan, daya saing, dan pembangunan berkelanjutan.',
 };
 
 export default function RootLayout({
@@ -18,7 +19,11 @@ export default function RootLayout({
     <html lang="id" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"

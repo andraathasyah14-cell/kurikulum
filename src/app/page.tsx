@@ -24,46 +24,46 @@ const socialImage = PlaceHolderImages.find(p => p.id === 'sector-social');
 
 const stats = [
   {
-    value: '10',
-    label: 'Prinsip Inti',
+    value: '11',
+    label: 'Misi Utama',
     icon: Landmark,
   },
   {
-    value: '3',
-    label: 'Kekuatan Utama',
+    value: '6',
+    label: 'Peran Strategis',
     icon: Scale,
   },
   {
-    value: '7',
-    label: 'Strategi Implementasi',
+    value: '20 th',
+    label: 'Roadmap Integrasi',
     icon: Globe,
   },
   {
     value: '1',
-    label: 'Visi Dasar',
+    label: 'Konsensus Inti',
     icon: ShieldCheck,
   },
 ];
 
 const sectors = [
   {
-    title: 'Investasi Produktif & Strategis',
+    title: 'Integrasi Pasar & Investasi',
     description:
-      'Fokus pada infrastruktur, pendidikan, kesehatan, dan inovasi untuk masa depan.',
+      'Memfasilitasi arus modal, standardisasi teknis, dan pengurangan hambatan untuk pertumbuhan bersama.',
     image: investmentImage,
     href: '/about',
   },
   {
-    title: 'Liberalitas Pasar & Keterbukaan',
+    title: 'Inovasi dan Konektivitas',
     description:
-      'Mengalokasikan sumber daya secara efisien dengan kontrol strategis dan keterbukaan selektif.',
+      'Mendorong kebijakan industri berbasis inovasi, transformasi digital, dan pembangunan infrastruktur.',
     image: tradeImage,
     href: '/about',
   },
   {
-    title: 'Perlindungan Sosial & Tata Kelola',
+    title: 'Pembangunan Inklusif & Tata Kelola',
     description:
-      'Menjamin keadilan sosial, akses universal, dan pemerintahan yang transparan.',
+      'Menjamin pemerataan pembangunan, stabilitas ekonomi, dan supremasi hukum yang transparan.',
     image: socialImage,
     href: '/about',
   },
@@ -86,18 +86,15 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 mx-auto max-w-4xl p-4">
           <h1 className="font-headline text-4xl font-extrabold leading-tight drop-shadow-md md:text-6xl">
-            WERJIA CONSENSUS: “Pertumbuhan dengan Keadilan, Pragmatisme dengan
-            Kebebasan”
+            Union of Economic Cooperation and Development (UECD)
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg drop-shadow md:text-xl">
-            Kerangka kebijakan ekonomi modern yang dianut oleh negara-negara
-            anggota Uni Mirdiy Modern, menekankan pertumbuhan yang inklusif,
-            adaptif, dan berkelanjutan.
+            Mewujudkan kawasan ekonomi yang terintegrasi, adil, inovatif, dan berkelanjutan melalui kerja sama yang memperkuat ketahanan dan membuka peluang pertumbuhan baru.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Button size="lg" asChild>
               <Link href="/about">
-                Jelajahi Prinsip
+                Pelajari UECD
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -107,7 +104,7 @@ export default function Home() {
               className="border-primary-foreground bg-transparent text-primary-foreground hover:bg-primary-foreground hover:text-accent"
               asChild
             >
-              <Link href="/treaty">Baca Konsensus</Link>
+              <Link href="/treaty">Baca Konsensus Werjia</Link>
             </Button>
           </div>
         </div>
@@ -133,11 +130,10 @@ export default function Home() {
         <div className="container px-4 md:px-6">
           <div className="mb-12 text-center">
             <h2 className="font-headline text-3xl font-bold md:text-4xl">
-              Pilar Kebijakan
+              Pilar Operasional UECD
             </h2>
             <p className="mx-auto mt-2 max-w-2xl text-muted-foreground">
-              Pendekatan Werjia Consensus dibangun di atas pilar-pilar strategis
-              untuk mencapai pertumbuhan yang adil dan berkelanjutan.
+              UECD dibangun di atas pilar-pilar strategis untuk mencapai transformasi struktural kawasan yang resilien, inklusif, dan adaptif.
             </p>
           </div>
 
@@ -183,19 +179,19 @@ export default function Home() {
           <div className="space-y-4">
             <NewsItem
               date="26 Oktober 2024"
-              title="Forum Werjia Consensus Pertama Digelar di Republik Leiysia"
+              title="UECD Summit: Pemimpin Negara Anggota Bahas Roadmap Integrasi Tahap II"
             />
             <NewsItem
               date="22 Oktober 2024"
-              title="Panduan Implementasi Privatisasi Strategis Diterbitkan"
+              title="Badan Teknis UECD Rilis Standar Baru untuk Perdagangan Digital"
             />
             <NewsItem
               date="18 Oktober 2024"
-              title="Dana Investasi Infrastruktur Baru Diluncurkan untuk Energi Bersih"
+              title="UECD Luncurkan Dana Kohesi untuk Proyek Infrastruktur Lintas Batas"
             />
           </div>
-          <Button variant="outline" className="mt-6">
-            Lihat Semua Berita <ArrowRight className="ml-2 h-4 w-4" />
+          <Button asChild variant="outline" className="mt-6">
+            <Link href="/news">Lihat Semua Berita <ArrowRight className="ml-2 h-4 w-4" /></Link>
           </Button>
         </div>
         <div className="container px-4 md:px-6">
@@ -204,20 +200,20 @@ export default function Home() {
           </h2>
           <div className="space-y-4">
             <ReportItem
-              title="Laporan Tahunan Disiplin Fiskal 2024"
-              description="Analisis komprehensif kesehatan fiskal Uni Mirdiy Modern."
+              title="Laporan Stabilitas Ekonomi Kawasan UECD 2024"
+              description="Analisis komprehensif kesehatan makroekonomi kawasan."
             />
             <ReportItem
-              title="Indeks Keadilan Sosial Kawasan 2024"
-              description="Melacak kemajuan dalam distribusi pendapatan dan akses."
+              title="Indeks Daya Saing Digital UECD 2024"
+              description="Melacak kemajuan transformasi digital di negara anggota."
             />
             <ReportItem
-              title="Peta Jalan Deregulasi Adaptif"
-              description="Penilaian kebijakan tentang penyederhanaan regulasi bisnis."
+              title="Peta Jalan Pembangunan Berkelanjutan UECD"
+              description="Evaluasi implementasi target keberlanjutan lingkungan."
             />
           </div>
-          <Button variant="outline" className="mt-6">
-            Buka Data & Laporan <ArrowRight className="ml-2 h-4 w-4" />
+          <Button asChild variant="outline" className="mt-6">
+            <Link href="/data">Buka Data & Laporan <ArrowRight className="ml-2 h-4 w-4" /></Link>
           </Button>
         </div>
       </section>

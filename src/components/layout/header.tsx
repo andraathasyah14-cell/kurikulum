@@ -18,8 +18,8 @@ import { cn } from '@/lib/utils';
 
 const navLinks = [
   { href: '/', label: 'Beranda' },
-  { href: '/about', label: 'Tentang' },
-  { href: '/treaty', label: 'Konsensus' },
+  { href: '/about', label: 'Tentang UECD' },
+  { href: '/treaty', label: 'Konsensus Werjia' },
   { href: '/governance', label: 'Tata Kelola' },
   { href: '/integration', label: 'Implementasi' },
   { href: '/data', label: 'Data & Laporan' },
@@ -73,7 +73,7 @@ export function Header() {
         <Link href="/" className="mr-6 flex items-center gap-2">
           <Logo />
           <span className="hidden font-headline font-bold sm:inline-block">
-            WERJIA
+            UECD
           </span>
         </Link>
 
@@ -100,7 +100,7 @@ export function Header() {
             <SheetContent side="left">
               <Link href="/" className="mb-6 flex items-center gap-2">
                 <Logo />
-                <span className="font-headline font-bold">WERJIA</span>
+                <span className="font-headline font-bold">UECD</span>
               </Link>
               <NavItems className="flex-col items-start gap-4" />
             </SheetContent>

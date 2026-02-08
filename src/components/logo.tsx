@@ -8,7 +8,7 @@ export function Logo({ className }: { className?: string }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <title>Werjia Consensus Logo</title>
+      <title>UECD Logo</title>
       <rect width="40" height="40" rx="8" fill="url(#paint0_linear_logo)" />
       <path
         d="M13 27L18 15L23 27"
