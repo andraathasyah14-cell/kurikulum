@@ -7,10 +7,10 @@ export default function TreatyPage() {
       <div className="mb-8 flex flex-col justify-between md:flex-row md:items-center">
         <div>
           <h1 className="font-headline text-4xl font-extrabold md:text-5xl">
-            Traktat Pendirian UECD
+            Kerangka Dasar Pembentukan UECD
           </h1>
           <p className="mt-2 text-lg text-muted-foreground">
-            Teks hukum lengkap dari Traktat Pendirian UECD.
+            Prinsip, Tujuan, Arsitektur Kelembagaan, dan Mekanisme Tata Kelola
           </p>
         </div>
         <Button className="mt-4 md:mt-0">
@@ -21,87 +21,144 @@ export default function TreatyPage() {
 
       <article className="mx-auto max-w-4xl space-y-8">
         <h2 className="border-b pb-2 font-headline text-2xl font-bold">
-          Bab I: Kerangka Konsensus dan Tata Kelola
+          Prakata
+        </h2>
+        <div className="space-y-4 text-muted-foreground">
+          <p>
+            Union of Economic Cooperation and Development (UECD) dibentuk
+            sebagai kerangka kerja sama ekonomi regional yang bersifat
+            sukarela, berbasis aturan, dan berorientasi jangka panjang. UECD
+            bertujuan untuk memperkuat ketahanan ekonomi bersama, meningkatkan
+            daya saing kolektif, serta mendorong pembangunan berkelanjutan di
+            antara negara-negara anggotanya.
+          </p>
+          <p>
+            Kerangka ini dirancang untuk memungkinkan integrasi ekonomi secara
+            bertahap dengan tetap menjaga kedaulatan kebijakan ekonomi
+            nasional, memastikan pembangunan yang berimbang, serta membangun
+            mekanisme koordinasi melalui institusi bersama, harmonisasi
+            standar, dan penyelarasan kebijakan strategis.
+          </p>
+          <p>
+            Dokumen Kerangka Dasar ini berfungsi sebagai dokumen rujukan utama
+            bagi pengembangan kebijakan sektoral, perjanjian lanjutan, serta
+            kemungkinan pembentukan instrumen hukum yang lebih mengikat di
+            masa depan.
+          </p>
+        </div>
+
+        <h2 className="border-b pt-8 pb-2 font-headline text-2xl font-bold">
+          I. Prinsip Dasar UECD
         </h2>
         <section>
           <h3 className="mb-2 font-headline text-xl font-semibold">
-            Pasal 1: Landasan Hukum
+            1. Integrasi Ekonomi Bertahap
           </h3>
           <p className="leading-relaxed text-muted-foreground">
-            Traktat UECD ditetapkan sebagai UECD Consensus Version 1.0 yang
-            menjadi fondasi hukum dan operasional organisasi. Seluruh kebijakan,
-            struktur, dan mekanisme pengambilan keputusan mengacu pada konsensus
-            ini. Perubahan hanya dapat dilakukan melalui amandemen traktat atau
-            adopsi protokol tambahan dengan persetujuan kolektif.
+            UECD menerapkan pendekatan integrasi ekonomi secara bertahap
+            melalui pengurangan hambatan perdagangan, harmonisasi standar
+            teknis, dan pengembangan ruang ekonomi bersama guna meningkatkan
+            efisiensi, kepastian pasar, dan keterpaduan ekonomi kawasan.
           </p>
         </section>
         <section>
           <h3 className="mb-2 font-headline text-xl font-semibold">
-            Pasal 2: Mekanisme Pengambilan Keputusan
+            2. Perlindungan Kedaulatan Ekonomi Nasional
           </h3>
           <p className="leading-relaxed text-muted-foreground">
-            Sistem pengambilan keputusan UECD menggunakan mekanisme voting dua
-            komponen, yaitu suara negara dan suara berbobot ekonomi, dengan
-            ambang batas berbeda untuk keputusan biasa, strategis, dan amandemen
-            traktat. Mekanisme ini dirancang untuk mencegah dominasi negara
-            besar sekaligus menjaga efektivitas pengambilan keputusan. Hak veto
-            diberikan secara terbatas dan tunduk pada evaluasi yudisial.
+            Kerja sama dalam UECD dilaksanakan tanpa mengalihkan kewenangan
+            utama negara anggota atas kebijakan fiskal, moneter, dan ekonomi
+            domestik.
+          </p>
+        </section>
+        <section>
+          <h3 className="mb-2 font-headline text-xl font-semibold">
+            3. Kesetaraan Antar Negara Anggota
+          </h3>
+          <p className="leading-relaxed text-muted-foreground">
+            UECD berlandaskan prinsip non-dominasi dan kesetaraan kelembagaan.
+          </p>
+        </section>
+        <section>
+          <h3 className="mb-2 font-headline text-xl font-semibold">
+            4. Pembangunan yang Berimbang dan Inklusif
+          </h3>
+          <p className="leading-relaxed text-muted-foreground">
+            UECD mengembangkan mekanisme untuk mendukung negara dan wilayah
+            dengan kapasitas ekonomi lebih rendah.
           </p>
         </section>
 
         <h2 className="border-b pt-8 pb-2 font-headline text-2xl font-bold">
-          Bab II: Kedaulatan dan Kewenangan
+          II. Tujuan Strategis UECD
         </h2>
-        <section>
-          <h3 className="mb-2 font-headline text-xl font-semibold">
-            Pasal 3: Batas Kewenangan
-          </h3>
-          <p className="leading-relaxed text-muted-foreground">
-            UECD secara tegas dibatasi sebagai organisasi ekonomi non-militer
-            dan tidak memiliki kewenangan politik atau keamanan. Organisasi ini
-            tidak menghapus kedaulatan nasional, tidak memaksakan integrasi
-            instan, dan menghormati sektor-sektor strategis nasional.
-          </p>
-        </section>
-        <section>
-          <h3 className="mb-2 font-headline text-xl font-semibold">
-            Pasal 4: Prinsip Integrasi
-          </h3>
-          <p className="leading-relaxed text-muted-foreground">
-            Integrasi ekonomi UECD bersifat bertahap, berbasis persetujuan, dan
-            dapat disesuaikan dengan kesiapan masing-masing negara anggota.
-            Prinsip ini memastikan legitimasi politik domestik tetap terjaga
-            sekaligus memberikan kepastian arah integrasi kawasan.
-          </p>
-        </section>
+        <p className="leading-relaxed text-muted-foreground">
+          Menciptakan stabilitas pasar regional, meningkatkan perdagangan dan
+          investasi, menyatukan standar, mengembangkan infrastruktur,
+          membangun mekanisme pembiayaan, dan memperkuat daya saing global.
+        </p>
 
         <h2 className="border-b pt-8 pb-2 font-headline text-2xl font-bold">
-          Bab III: Kewajiban
+          III. Mekanisme Integrasi
         </h2>
-        <section>
-          <h3 className="mb-2 font-headline text-xl font-semibold">
-            Pasal 5: Kewajiban Negara Anggota
-          </h3>
-          <p className="leading-relaxed text-muted-foreground">
-            Negara anggota berkewajiban meratifikasi traktat, mengadopsi
-            regulasi UECD ke dalam hukum nasional secara bertahap, berpartisipasi
-            aktif dalam badan organisasi, serta menjaga transparansi dan
-            kepatuhan.
-          </p>
-        </section>
-        <section>
-          <h3 className="mb-2 font-headline text-xl font-semibold">
-            Pasal 6: Kewajiban UECD
-          </h3>
-          <p className="leading-relaxed text-muted-foreground">
-            UECD sebagai institusi berkewajiban menjaga netralitas,
-            transparansi, akuntabilitas, dan perlindungan terhadap kepentingan
-            negara kecil dan berkembang. UECD juga wajib menyediakan mekanisme
-            penyelesaian sengketa yang adil, membuka konsultasi publik untuk
-            regulasi strategis, serta mengelola dana kawasan secara profesional
-            dan dapat diaudit.
-          </p>
-        </section>
+        <p className="leading-relaxed text-muted-foreground">
+          Model integrasi tiga tahap: Harmonisasi Awal, Kawasan Perdagangan
+          Terpadu, dan Ruang Ekonomi Bersama.
+        </p>
+
+        <h2 className="border-b pt-8 pb-2 font-headline text-2xl font-bold">
+          IV. Arsitektur Kelembagaan UECD
+        </h2>
+        <p className="leading-relaxed text-muted-foreground">
+          Dewan Tingkat Tinggi, Dewan Menteri, Sekretariat Jenderal, Badan
+          Teknis UECD, dan Badan Peradilan UECD.
+        </p>
+
+        <h2 className="border-b pt-8 pb-2 font-headline text-2xl font-bold">
+          V. Kerangka Hukum dan Regulasi
+        </h2>
+        <p className="leading-relaxed text-muted-foreground">
+          Instrumen dasar, regulasi turunan, dan mekanisme penyelesaian
+          sengketa.
+        </p>
+
+        <h2 className="border-b pt-8 pb-2 font-headline text-2xl font-bold">
+          VI. Standarisasi dan Sertifikasi
+        </h2>
+        <p className="leading-relaxed text-muted-foreground">
+          Proses harmonisasi dan sertifikasi tunggal UECD.
+        </p>
+
+        <h2 className="border-b pt-8 pb-2 font-headline text-2xl font-bold">
+          VII. Perdagangan, Tarif, dan Integrasi Pasar
+        </h2>
+        <p className="leading-relaxed text-muted-foreground">
+          Sistem tarif, akses pasar, persaingan usaha, dan mobilitas
+          investasi.
+        </p>
+
+        <h2 className="border-b pt-8 pb-2 font-headline text-2xl font-bold">
+          VIII. Pembiayaan, Utang, dan Pembangunan
+        </h2>
+        <p className="leading-relaxed text-muted-foreground">
+          Bank Sentral UECD, Dana Pembangunan dan Kohesi, serta koordinasi
+          fiskal.
+        </p>
+
+        <h2 className="border-b pt-8 pb-2 font-headline text-2xl font-bold">
+          IX. Tata Kelola, Keanggotaan, dan Evaluasi
+        </h2>
+        <p className="leading-relaxed text-muted-foreground">
+          Presidensi bergilir, kategori keanggotaan, dan mekanisme peninjauan.
+        </p>
+
+        <h2 className="border-b pt-8 pb-2 font-headline text-2xl font-bold">
+          Penutup
+        </h2>
+        <p className="leading-relaxed text-muted-foreground">
+          Kerangka Dasar UECD dirancang sebagai arsitektur kelembagaan yang
+          dinamis dan adaptif.
+        </p>
       </article>
     </div>
   );

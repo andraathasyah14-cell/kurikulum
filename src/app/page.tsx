@@ -90,9 +90,9 @@ export default function Home() {
             Berkelanjutan
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg drop-shadow md:text-xl">
-            UECD dibentuk sebagai respons strategis terhadap fragmentasi ekonomi
-            regional dan ketidakpastian global, bertujuan membangun daya saing
-            kolektif tanpa mengorbankan kedaulatan nasional.
+            UECD bertujuan untuk memperkuat ketahanan ekonomi bersama,
+            meningkatkan daya saing kolektif, serta mendorong pembangunan
+            berkelanjutan di antara negara-negara anggotanya.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Button size="lg" asChild>

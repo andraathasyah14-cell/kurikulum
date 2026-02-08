@@ -12,34 +12,36 @@ export default function AboutPage() {
             Tentang Kami
           </p>
           <h1 className="mt-2 font-headline text-4xl font-extrabold md:text-5xl">
-            Membangun Daya Saing Kolektif
+            Kerangka Kerja Sama Ekonomi Regional
           </h1>
         </div>
       </div>
       <article className="container mx-auto max-w-4xl space-y-12 px-4 pb-24 md:px-6">
         <section>
           <h2 className="mb-4 font-headline text-3xl font-bold">
-            Pendahuluan Strategis
+            Prakata
           </h2>
           <div className="space-y-4 text-lg text-muted-foreground">
             <p>
               Union of Economic Cooperation and Development (UECD) dibentuk
-              sebagai respons strategis terhadap fragmentasi ekonomi regional,
-              meningkatnya ketidakpastian global, serta kebutuhan negara-negara
-              kawasan untuk membangun daya saing kolektif tanpa mengorbankan
-              kedaulatan nasional. Dalam konteks global yang ditandai oleh
-              volatilitas pasar, disrupsi rantai pasok, proteksionisme
-              terselubung, dan percepatan transformasi teknologi, pendekatan
-              ekonomi unilateral semakin tidak memadai.
+              sebagai kerangka kerja sama ekonomi regional yang bersifat
+              sukarela, berbasis aturan, dan berorientasi jangka panjang. UECD
+              bertujuan untuk memperkuat ketahanan ekonomi bersama,
+              meningkatkan daya saing kolektif, serta mendorong pembangunan
+              berkelanjutan di antara negara-negara anggotanya.
             </p>
             <p>
-              UECD dirancang sebagai organisasi kerja sama ekonomi multinasional
-              non-militer yang berfokus pada integrasi ekonomi bertahap,
-              harmonisasi kebijakan, dan pembangunan berimbang. Berbeda dari
-              model integrasi ekstrem yang bersifat supranasional penuh, UECD
-              mengadopsi prinsip <em>shared rules, not shared sovereignty</em>,
-              sehingga memberikan ruang fleksibilitas bagi negara anggota dengan
-              tingkat pembangunan dan struktur ekonomi yang beragam.
+              Kerangka ini dirancang untuk memungkinkan integrasi ekonomi
+              secara bertahap dengan tetap menjaga kedaulatan kebijakan
+              ekonomi nasional, memastikan pembangunan yang berimbang, serta
+              membangun mekanisme koordinasi melalui institusi bersama,
+              harmonisasi standar, dan penyelarasan kebijakan strategis.
+            </p>
+            <p>
+              Dokumen Kerangka Dasar ini berfungsi sebagai dokumen rujukan
+              utama bagi pengembangan kebijakan sektoral, perjanjian lanjutan,
+              serta kemungkinan pembentukan instrumen hukum yang lebih
+              mengikat di masa depan.
             </p>
           </div>
         </section>
@@ -58,24 +60,49 @@ export default function AboutPage() {
 
         <section>
           <h2 className="mb-4 font-headline text-3xl font-bold">
-            Visi dan Orientasi Jangka Panjang
+            Prinsip Dasar UECD
           </h2>
-          <div className="space-y-4 text-lg text-muted-foreground">
-            <p>
-              Visi UECD adalah mewujudkan kawasan ekonomi yang terintegrasi, adil,
-              inovatif, dan berkelanjutan melalui kerja sama multidimensi yang
-              memperkuat ketahanan ekonomi, membuka peluang pertumbuhan baru,
-              serta memastikan kesejahteraan jangka panjang bagi seluruh negara
-              anggota.
-            </p>
-            <p>
-              Orientasi jangka panjang UECD tidak semata-mata mengejar
-              pertumbuhan ekonomi kuantitatif, melainkan transformasi struktural
-              kawasan menuju sistem ekonomi yang resilien, inklusif, dan adaptif
-              terhadap perubahan global. Integrasi ekonomi diposisikan sebagai
-              instrumen, bukan tujuan akhir, untuk meningkatkan kualitas
-              pembangunan dan daya saing kolektif.
-            </p>
+          <div className="space-y-6 text-lg text-muted-foreground">
+            <div>
+              <h3 className="font-semibold text-foreground">
+                1. Integrasi Ekonomi Bertahap
+              </h3>
+              <p>
+                UECD menerapkan pendekatan integrasi ekonomi secara bertahap
+                melalui pengurangan hambatan perdagangan, harmonisasi standar
+                teknis, dan pengembangan ruang ekonomi bersama guna
+                meningkatkan efisiensi, kepastian pasar, dan keterpaduan
+                ekonomi kawasan.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">
+                2. Perlindungan Kedaulatan Ekonomi Nasional
+              </h3>
+              <p>
+                Kerja sama dalam UECD dilaksanakan tanpa mengalihkan
+                kewenangan utama negara anggota atas kebijakan fiskal, moneter,
+                dan ekonomi domestik.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">
+                3. Kesetaraan Antar Negara Anggota
+              </h3>
+              <p>
+                UECD berlandaskan prinsip non-dominasi dan kesetaraan
+                kelembagaan.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">
+                4. Pembangunan yang Berimbang dan Inklusif
+              </h3>
+              <p>
+                UECD mengembangkan mekanisme untuk mendukung negara dan
+                wilayah dengan kapasitas ekonomi lebih rendah.
+              </p>
+            </div>
           </div>
         </section>
       </article>
