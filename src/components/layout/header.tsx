@@ -15,17 +15,16 @@ import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
-import { Translate } from '../translate';
 
 const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/about', label: 'About UECD' },
-  { href: '/treaty', label: 'Treaty & Legal' },
-  { href: '/governance', label: 'Governance' },
-  { href: '/integration', label: 'Economic Integration' },
-  { href: '/sectors', label: 'Sectors' },
-  { href: '/data', label: 'Data & Reports' },
-  { href: '/news', label: 'News' },
+  { href: '/', label: 'Beranda' },
+  { href: '/about', label: 'Tentang UECD' },
+  { href: '/treaty', label: 'Traktat & Hukum' },
+  { href: '/governance', label: 'Tata Kelola' },
+  { href: '/integration', label: 'Integrasi Ekonomi' },
+  { href: '/sectors', label: 'Sektor' },
+  { href: '/data', label: 'Data & Laporan' },
+  { href: '/news', label: 'Berita' },
 ];
 
 function NavLink({ href, label }: { href: string; label: string }) {
@@ -38,7 +37,7 @@ function NavLink({ href, label }: { href: string; label: string }) {
         pathname === href ? 'text-primary' : 'text-muted-foreground'
       )}
     >
-      <Translate>{label}</Translate>
+      {label}
     </Link>
   );
 }
@@ -54,15 +53,13 @@ const NavItems = ({ className }: { className?: string }) => (
           variant="ghost"
           className="px-0 text-sm font-medium text-muted-foreground hover:text-primary focus-visible:ring-0"
         >
-          <Translate>More</Translate>
+          Lainnya
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         {navLinks.slice(3).map(link => (
           <DropdownMenuItem key={link.href} asChild>
-            <Link href={link.href}>
-              <Translate>{link.label}</Translate>
-            </Link>
+            <Link href={link.href}>{link.label}</Link>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -90,7 +87,7 @@ export function Header() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search..."
+              placeholder="Cari..."
               className="pl-8 sm:w-[200px] lg:w-[300px]"
             />
           </div>
@@ -98,7 +95,7 @@ export function Header() {
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="h-6 w-6" />
-                <span className="sr-only">Toggle navigation menu</span>
+                <span className="sr-only">Buka menu navigasi</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left">

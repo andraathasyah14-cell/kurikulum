@@ -15,7 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Translate } from '@/components/translate';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const heroImage = PlaceHolderImages.find(p => p.id === 'hero');
@@ -26,47 +25,47 @@ const techImage = PlaceHolderImages.find(p => p.id === 'sector-tech');
 const stats = [
   {
     value: '25',
-    label: 'Member States',
+    label: 'Negara Anggota',
     icon: Landmark,
   },
   {
     value: '$45T',
-    label: 'Collective GDP',
+    label: 'PDB Kolektif',
     icon: BarChart3,
   },
   {
     value: '$18T',
-    label: 'Annual Trade Volume',
+    label: 'Volume Perdagangan Tahunan',
     icon: Ship,
   },
   {
     value: '2045',
-    label: 'Integration Roadmap',
+    label: 'Peta Jalan Integrasi',
     icon: Workflow,
   },
 ];
 
 const sectors = [
   {
-    title: 'Energy & Climate',
+    title: 'Perdagangan dan Konektivitas',
     description:
-      'Pioneering a sustainable energy transition and robust climate action for a resilient future.',
-    image: energyImage,
-    href: '/sectors/energy',
-  },
-  {
-    title: 'Trade & Market Access',
-    description:
-      'Fostering a seamless single market with standardized regulations and open trade policies.',
+      'Memfasilitasi pengurangan hambatan tarif dan non-tarif untuk menciptakan pasar tunggal yang dinamis.',
     image: tradeImage,
     href: '/sectors/trade',
   },
   {
-    title: 'Technology & Digital',
+    title: 'Inovasi dan Teknologi',
     description:
-      'Driving the digital transformation to enhance competitiveness and innovation across the Union.',
+      'Mempercepat riset bersama dan transformasi digital untuk meningkatkan daya saing kawasan.',
     image: techImage,
     href: '/sectors/technology',
+  },
+  {
+    title: 'Ketahanan Pangan & Energi',
+    description:
+      'Menjamin ketersediaan pangan dan energi yang berkelanjutan bagi seluruh negara anggota.',
+    image: energyImage,
+    href: '/sectors/energy',
   },
 ];
 
@@ -87,22 +86,18 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 mx-auto max-w-4xl p-4">
           <h1 className="font-headline text-4xl font-extrabold leading-tight drop-shadow-md md:text-6xl">
-            <Translate>
-              Building an Integrated, Open, and Sustainable Economic Space
-            </Translate>
+            Mewujudkan Kawasan Ekonomi yang Terintegrasi, Adil, Inovatif, dan
+            Berkelanjutan
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg drop-shadow md:text-xl">
-            <Translate>
-              The Union of Economic Cooperation and Development (UECD) is
-              committed to fostering regional economic integration, promoting
-              sustainable development, and ensuring financial stability for all
-              its member states.
-            </Translate>
+            UECD dibentuk sebagai respons strategis terhadap fragmentasi ekonomi
+            regional dan ketidakpastian global, bertujuan membangun daya saing
+            kolektif tanpa mengorbankan kedaulatan nasional.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Button size="lg" asChild>
               <Link href="/about">
-                <Translate>Discover Our Mission</Translate>
+                Jelajahi Misi Kami
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -112,9 +107,7 @@ export default function Home() {
               className="border-primary-foreground bg-transparent text-primary-foreground hover:bg-primary-foreground hover:text-accent"
               asChild
             >
-              <Link href="/treaty">
-                <Translate>Read the Treaty</Translate>
-              </Link>
+              <Link href="/treaty">Baca Traktat</Link>
             </Button>
           </div>
         </div>
@@ -128,9 +121,7 @@ export default function Home() {
                 <stat.icon className="h-10 w-10 text-primary" />
                 <div>
                   <p className="text-3xl font-bold">{stat.value}</p>
-                  <p className="text-sm text-muted-foreground">
-                    <Translate>{stat.label}</Translate>
-                  </p>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
                 </div>
               </div>
             ))}
@@ -142,13 +133,11 @@ export default function Home() {
         <div className="container px-4 md:px-6">
           <div className="mb-12 text-center">
             <h2 className="font-headline text-3xl font-bold md:text-4xl">
-              <Translate>Core Policy Sectors</Translate>
+              Sektor Kebijakan Inti
             </h2>
             <p className="mx-auto mt-2 max-w-2xl text-muted-foreground">
-              <Translate>
-                UECD&apos;s work is organized around key sectors essential for
-                economic growth and regional integration.
-              </Translate>
+              Pekerjaan UECD diatur dalam sektor-sektor kunci yang penting untuk
+              pertumbuhan ekonomi dan integrasi regional.
             </p>
           </div>
 
@@ -168,18 +157,15 @@ export default function Home() {
                   )}
                 </div>
                 <CardHeader>
-                  <CardTitle className="font-headline">
-                    <Translate>{sector.title}</Translate>
-                  </CardTitle>
+                  <CardTitle className="font-headline">{sector.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="mb-4 text-muted-foreground">
-                    <Translate>{sector.description}</Translate>
+                    {sector.description}
                   </p>
                   <Button variant="link" className="p-0" asChild>
                     <Link href={sector.href}>
-                      <Translate>Learn More</Translate>{' '}
-                      <ArrowRight className="ml-1 h-4 w-4" />
+                      Selengkapnya <ArrowRight className="ml-1 h-4 w-4" />
                     </Link>
                   </Button>
                 </CardContent>
@@ -192,48 +178,46 @@ export default function Home() {
       <section className="grid gap-12 bg-card py-12 md:py-24 lg:grid-cols-2">
         <div className="container px-4 md:px-6">
           <h2 className="mb-4 font-headline text-3xl font-bold">
-            <Translate>Latest News & Updates</Translate>
+            Berita & Informasi Terbaru
           </h2>
           <div className="space-y-4">
             <NewsItem
-              date="October 26, 2023"
-              title="UECD Summit Concludes with Landmark Agreement on Digital Trade"
+              date="26 Oktober 2023"
+              title="KTT UECD Diakhiri dengan Perjanjian Penting tentang Perdagangan Digital"
             />
             <NewsItem
-              date="October 22, 2023"
-              title="New Cohesion Fund Projects Announced for Infrastructure Development"
+              date="22 Oktober 2023"
+              title="Proyek Dana Kohesi Baru Diumumkan untuk Pembangunan Infrastruktur"
             />
             <NewsItem
-              date="October 18, 2023"
-              title="Public Consultation Opens for the 2035 Climate Neutrality Roadmap"
+              date="18 Oktober 2023"
+              title="Konsultasi Publik Dibuka untuk Peta Jalan Netralitas Iklim 2035"
             />
           </div>
           <Button variant="outline" className="mt-6">
-            <Translate>View All News</Translate>{' '}
-            <ArrowRight className="ml-2 h-4 w-4" />
+            Lihat Semua Berita <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
         <div className="container px-4 md:px-6">
           <h2 className="mb-4 font-headline text-3xl font-bold">
-            <Translate>Featured Reports</Translate>
+            Laporan Unggulan
           </h2>
           <div className="space-y-4">
             <ReportItem
-              title="Annual Economic Outlook 2023"
-              description="Comprehensive analysis of the UECD economic area."
+              title="Prospek Ekonomi Tahunan 2023"
+              description="Analisis komprehensif wilayah ekonomi UECD."
             />
             <ReportItem
-              title="Regional Integration Index 2023"
-              description="Tracking progress towards a fully integrated market."
+              title="Indeks Integrasi Regional 2023"
+              description="Melacak kemajuan menuju pasar yang terintegrasi penuh."
             />
             <ReportItem
-              title="The Future of Work in the UECD"
-              description="Policy assessment on labor market transformations."
+              title="Masa Depan Ketenagakerjaan di UECD"
+              description="Penilaian kebijakan tentang transformasi pasar kerja."
             />
           </div>
           <Button variant="outline" className="mt-6">
-            <Translate>Go to Data & Reports</Translate>{' '}
-            <ArrowRight className="ml-2 h-4 w-4" />
+            Buka Data & Laporan <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
       </section>
@@ -244,11 +228,9 @@ export default function Home() {
 function NewsItem({ date, title }: { date: string; title: string }) {
   return (
     <div className="border-b pb-4">
-      <p className="text-sm text-muted-foreground">
-        <Translate>{date}</Translate>
-      </p>
+      <p className="text-sm text-muted-foreground">{date}</p>
       <h3 className="cursor-pointer font-semibold transition-colors hover:text-primary">
-        <Translate>{title}</Translate>
+        {title}
       </h3>
     </div>
   );
@@ -264,11 +246,9 @@ function ReportItem({
   return (
     <div className="border-b pb-4">
       <h3 className="cursor-pointer font-semibold transition-colors hover:text-primary">
-        <Translate>{title}</Translate>
+        {title}
       </h3>
-      <p className="text-sm text-muted-foreground">
-        <Translate>{description}</Translate>
-      </p>
+      <p className="text-sm text-muted-foreground">{description}</p>
     </div>
   );
 }

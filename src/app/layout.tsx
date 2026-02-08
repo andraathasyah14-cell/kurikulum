@@ -1,14 +1,13 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { LanguageProvider } from '@/context/language-provider';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 
 export const metadata: Metadata = {
-  title: 'UECD Official Portal',
+  title: 'Portal Resmi UECD',
   description:
-    'Union of Economic Cooperation and Development (UECD) - Building an Integrated, Open, and Sustainable Economic Space',
+    'Union of Economic Cooperation and Development (UECD) - Membangun Ruang Ekonomi yang Terintegrasi, Terbuka, dan Berkelanjutan',
 };
 
 export default function RootLayout({
@@ -17,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="id" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
@@ -31,14 +30,12 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased bg-background text-foreground">
-        <LanguageProvider>
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-grow">{children}</main>
-            <Footer />
-          </div>
-          <Toaster />
-        </LanguageProvider>
+        <div className="flex min-h-screen flex-col">
+          <Header />
+          <main className="flex-grow">{children}</main>
+          <Footer />
+        </div>
+        <Toaster />
       </body>
     </html>
   );

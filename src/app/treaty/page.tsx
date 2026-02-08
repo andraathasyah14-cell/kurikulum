@@ -1,4 +1,3 @@
-import { Translate } from '@/components/translate';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 
@@ -8,54 +7,101 @@ export default function TreatyPage() {
       <div className="mb-8 flex flex-col justify-between md:flex-row md:items-center">
         <div>
           <h1 className="font-headline text-4xl font-extrabold md:text-5xl">
-            <Translate>Founding Treaty</Translate>
+            Traktat Pendirian UECD
           </h1>
           <p className="mt-2 text-lg text-muted-foreground">
-            <Translate>
-              The complete legal text of the UECD Founding Treaty.
-            </Translate>
+            Teks hukum lengkap dari Traktat Pendirian UECD.
           </p>
         </div>
         <Button className="mt-4 md:mt-0">
           <Download className="mr-2 h-4 w-4" />
-          <Translate>Download PDF</Translate>
+          Unduh PDF
         </Button>
       </div>
 
       <article className="mx-auto max-w-4xl space-y-8">
         <h2 className="border-b pb-2 font-headline text-2xl font-bold">
-          <Translate>Chapter I: Principles and Objectives</Translate>
+          Bab I: Kerangka Konsensus dan Tata Kelola
         </h2>
         <section>
           <h3 className="mb-2 font-headline text-xl font-semibold">
-            <Translate>Article 1: Establishment of the Union</Translate>
+            Pasal 1: Landasan Hukum
           </h3>
           <p className="leading-relaxed text-muted-foreground">
-            <Translate>
-              By this Treaty, the HIGH CONTRACTING PARTIES establish among
-              themselves a UNION OF ECONOMIC COOPERATION AND DEVELOPMENT,
-              hereinafter referred to as &apos;the Union&apos;.
-            </Translate>
+            Traktat UECD ditetapkan sebagai UECD Consensus Version 1.0 yang
+            menjadi fondasi hukum dan operasional organisasi. Seluruh kebijakan,
+            struktur, dan mekanisme pengambilan keputusan mengacu pada konsensus
+            ini. Perubahan hanya dapat dilakukan melalui amandemen traktat atau
+            adopsi protokol tambahan dengan persetujuan kolektif.
           </p>
         </section>
         <section>
           <h3 className="mb-2 font-headline text-xl font-semibold">
-            <Translate>Article 2: Objectives</Translate>
+            Pasal 2: Mekanisme Pengambilan Keputusan
           </h3>
           <p className="leading-relaxed text-muted-foreground">
-            <Translate>
-              The Union&apos;s objective is to contribute to economic progress
-              and world trade expansion on a multilateral, non-discriminatory
-              basis by promoting policies designed to achieve the highest
-              sustainable economic growth and employment and a rising standard of
-              living in Member countries, while maintaining financial stability,
-              and thus to contribute to the development of the world economy.
-            </Translate>
+            Sistem pengambilan keputusan UECD menggunakan mekanisme voting dua
+            komponen, yaitu suara negara dan suara berbobot ekonomi, dengan
+            ambang batas berbeda untuk keputusan biasa, strategis, dan amandemen
+            traktat. Mekanisme ini dirancang untuk mencegah dominasi negara
+            besar sekaligus menjaga efektivitas pengambilan keputusan. Hak veto
+            diberikan secara terbatas dan tunduk pada evaluasi yudisial.
           </p>
         </section>
-        <p className="mt-12 text-center font-style: italic text-muted-foreground">
-          (<Translate>Full document text will be displayed here.</Translate>)
-        </p>
+
+        <h2 className="border-b pt-8 pb-2 font-headline text-2xl font-bold">
+          Bab II: Kedaulatan dan Kewenangan
+        </h2>
+        <section>
+          <h3 className="mb-2 font-headline text-xl font-semibold">
+            Pasal 3: Batas Kewenangan
+          </h3>
+          <p className="leading-relaxed text-muted-foreground">
+            UECD secara tegas dibatasi sebagai organisasi ekonomi non-militer
+            dan tidak memiliki kewenangan politik atau keamanan. Organisasi ini
+            tidak menghapus kedaulatan nasional, tidak memaksakan integrasi
+            instan, dan menghormati sektor-sektor strategis nasional.
+          </p>
+        </section>
+        <section>
+          <h3 className="mb-2 font-headline text-xl font-semibold">
+            Pasal 4: Prinsip Integrasi
+          </h3>
+          <p className="leading-relaxed text-muted-foreground">
+            Integrasi ekonomi UECD bersifat bertahap, berbasis persetujuan, dan
+            dapat disesuaikan dengan kesiapan masing-masing negara anggota.
+            Prinsip ini memastikan legitimasi politik domestik tetap terjaga
+            sekaligus memberikan kepastian arah integrasi kawasan.
+          </p>
+        </section>
+
+        <h2 className="border-b pt-8 pb-2 font-headline text-2xl font-bold">
+          Bab III: Kewajiban
+        </h2>
+        <section>
+          <h3 className="mb-2 font-headline text-xl font-semibold">
+            Pasal 5: Kewajiban Negara Anggota
+          </h3>
+          <p className="leading-relaxed text-muted-foreground">
+            Negara anggota berkewajiban meratifikasi traktat, mengadopsi
+            regulasi UECD ke dalam hukum nasional secara bertahap, berpartisipasi
+            aktif dalam badan organisasi, serta menjaga transparansi dan
+            kepatuhan.
+          </p>
+        </section>
+        <section>
+          <h3 className="mb-2 font-headline text-xl font-semibold">
+            Pasal 6: Kewajiban UECD
+          </h3>
+          <p className="leading-relaxed text-muted-foreground">
+            UECD sebagai institusi berkewajiban menjaga netralitas,
+            transparansi, akuntabilitas, dan perlindungan terhadap kepentingan
+            negara kecil dan berkembang. UECD juga wajib menyediakan mekanisme
+            penyelesaian sengketa yang adil, membuka konsultasi publik untuk
+            regulasi strategis, serta mengelola dana kawasan secara profesional
+            dan dapat diaudit.
+          </p>
+        </section>
       </article>
     </div>
   );
