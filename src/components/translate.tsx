@@ -17,10 +17,6 @@ export function Translate({ children }: { children: string }) {
   if (!children) {
     return null;
   }
-  
-  if (language.toLowerCase() === 'english') {
-    return <>{children}</>;
-  }
 
   const translatedText = getTranslation(children);
 

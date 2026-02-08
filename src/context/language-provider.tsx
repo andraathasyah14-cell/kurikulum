@@ -1,7 +1,7 @@
 'use client';
 
-import type { Dispatch, ReactNode, SetStateAction } from 'react';
-import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import type { ReactNode } from 'react';
+import { createContext, useContext, useCallback, useRef, useState } from 'react';
 import { translateWebsiteContent } from '@/ai/flows/translate-website-content';
 import { useToast } from '@/hooks/use-toast';
 
@@ -10,7 +10,6 @@ type TranslationCache = Map<string, Map<string, string>>;
 
 type LanguageContextType = {
   language: string;
-  setLanguage: Dispatch<SetStateAction<string>>;
   getTranslation: (text: string) => string | undefined;
   requestTranslation: (text: string) => void;
 };
@@ -18,7 +17,7 @@ type LanguageContextType = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState('Indonesian');
+  const language = 'Indonesian';
   const [translationCache, setTranslationCache] = useState<TranslationCache>(new Map());
   const translationQueue = useRef<Set<string>>(new Set());
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -26,7 +25,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   const processQueue = useCallback(async () => {
-    if (translationQueue.current.size === 0 || isProcessing.current || language.toLowerCase() === 'english') {
+    if (translationQueue.current.size === 0 || isProcessing.current) {
       return;
     }
 
@@ -75,7 +74,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [language, toast]);
 
   const requestTranslation = useCallback((text: string) => {
-    if (!text || language.toLowerCase() === 'english') return;
+    if (!text) return;
     
     const isCached = translationCache.has(text) && translationCache.get(text)!.has(language);
     if (isCached) return;
@@ -87,21 +86,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [language, processQueue, translationCache]);
   
   const getTranslation = useCallback((text: string): string | undefined => {
-    if (language.toLowerCase() === 'english') return text;
     return translationCache.get(text)?.get(language);
   }, [language, translationCache]);
 
-  // Effect to clear processing state when language changes
-  useEffect(() => {
-    isProcessing.current = false;
-    translationQueue.current.clear();
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
-  }, [language]);
-  
-
-  const value = { language, setLanguage, getTranslation, requestTranslation };
+  const value = { language, getTranslation, requestTranslation };
 
   return (
     <LanguageContext.Provider value={value}>

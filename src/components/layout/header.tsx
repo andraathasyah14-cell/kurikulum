@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { LanguageSelector } from '@/components/language-selector';
 import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { Translate } from '../translate';
@@ -95,7 +94,6 @@ export function Header() {
               className="pl-8 sm:w-[200px] lg:w-[300px]"
             />
           </div>
-          <LanguageSelector />
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
