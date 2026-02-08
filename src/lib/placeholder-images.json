@@ -1,3 +1,28 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero",
+      "description": "Modern glass skyscraper representing economic cooperation",
+      "imageUrl": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxvZmZpY2UlMjBidWlsZGluZ3xlbnwwfHx8fDE3NzA0Nzk4NDl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "office building"
+    },
+    {
+      "id": "sector-energy",
+      "description": "Wind turbines in a field, representing sustainable energy",
+      "imageUrl": "https://images.unsplash.com/photo-1548337138-e87d889cc369?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3aW5kJTIwdHVyYmluZXxlbnwwfHx8fDE3NzA1MzkwODZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wind turbine"
+    },
+    {
+      "id": "sector-trade",
+      "description": "Container ship at a port, representing international trade",
+      "imageUrl": "https://images.unsplash.com/photo-1670121180530-cfcba4438038?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjb250YWluZXIlMjBzaGlwfGVufDB8fHx8MTc3MDUxNTU1MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "container ship"
+    },
+    {
+      "id": "sector-tech",
+      "description": "Server racks in a data center, representing technology",
+      "imageUrl": "https://images.unsplash.com/photo-1682559736721-c2e77ff4c650?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxkYXRhJTIwY2VudGVyfGVufDB8fHx8MTc3MDQzOTI1NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "data center"
+    }
+  ]
 }
