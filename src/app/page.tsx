@@ -2,10 +2,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   ArrowRight,
-  BarChart3,
   Landmark,
-  Ship,
-  Workflow,
+  Scale,
+  ShieldCheck,
+  Globe,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -18,54 +18,54 @@ import {
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const heroImage = PlaceHolderImages.find(p => p.id === 'hero');
-const energyImage = PlaceHolderImages.find(p => p.id === 'sector-energy');
+const investmentImage = PlaceHolderImages.find(p => p.id === 'sector-investment');
 const tradeImage = PlaceHolderImages.find(p => p.id === 'sector-trade');
-const techImage = PlaceHolderImages.find(p => p.id === 'sector-tech');
+const socialImage = PlaceHolderImages.find(p => p.id === 'sector-social');
 
 const stats = [
   {
-    value: '25',
-    label: 'Negara Anggota',
+    value: '10',
+    label: 'Prinsip Inti',
     icon: Landmark,
   },
   {
-    value: '$45T',
-    label: 'PDB Kolektif',
-    icon: BarChart3,
+    value: '3',
+    label: 'Kekuatan Utama',
+    icon: Scale,
   },
   {
-    value: '$18T',
-    label: 'Volume Perdagangan Tahunan',
-    icon: Ship,
+    value: '7',
+    label: 'Strategi Implementasi',
+    icon: Globe,
   },
   {
-    value: '2045',
-    label: 'Peta Jalan Integrasi',
-    icon: Workflow,
+    value: '1',
+    label: 'Visi Dasar',
+    icon: ShieldCheck,
   },
 ];
 
 const sectors = [
   {
-    title: 'Perdagangan dan Konektivitas',
+    title: 'Investasi Produktif & Strategis',
     description:
-      'Memfasilitasi pengurangan hambatan tarif dan non-tarif untuk menciptakan pasar tunggal yang dinamis.',
+      'Fokus pada infrastruktur, pendidikan, kesehatan, dan inovasi untuk masa depan.',
+    image: investmentImage,
+    href: '/about',
+  },
+  {
+    title: 'Liberalitas Pasar & Keterbukaan',
+    description:
+      'Mengalokasikan sumber daya secara efisien dengan kontrol strategis dan keterbukaan selektif.',
     image: tradeImage,
-    href: '/sectors/trade',
+    href: '/about',
   },
   {
-    title: 'Inovasi dan Teknologi',
+    title: 'Perlindungan Sosial & Tata Kelola',
     description:
-      'Mempercepat riset bersama dan transformasi digital untuk meningkatkan daya saing kawasan.',
-    image: techImage,
-    href: '/sectors/technology',
-  },
-  {
-    title: 'Ketahanan Pangan & Energi',
-    description:
-      'Menjamin ketersediaan pangan dan energi yang berkelanjutan bagi seluruh negara anggota.',
-    image: energyImage,
-    href: '/sectors/energy',
+      'Menjamin keadilan sosial, akses universal, dan pemerintahan yang transparan.',
+    image: socialImage,
+    href: '/about',
   },
 ];
 
@@ -86,18 +86,18 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 mx-auto max-w-4xl p-4">
           <h1 className="font-headline text-4xl font-extrabold leading-tight drop-shadow-md md:text-6xl">
-            Mewujudkan Kawasan Ekonomi yang Terintegrasi, Adil, Inovatif, dan
-            Berkelanjutan
+            WERJIA CONSENSUS: “Pertumbuhan dengan Keadilan, Pragmatisme dengan
+            Kebebasan”
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg drop-shadow md:text-xl">
-            UECD bertujuan untuk memperkuat ketahanan ekonomi bersama,
-            meningkatkan daya saing kolektif, serta mendorong pembangunan
-            berkelanjutan di antara negara-negara anggotanya.
+            Kerangka kebijakan ekonomi modern yang dianut oleh negara-negara
+            anggota Uni Mirdiy Modern, menekankan pertumbuhan yang inklusif,
+            adaptif, dan berkelanjutan.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Button size="lg" asChild>
               <Link href="/about">
-                Jelajahi Misi Kami
+                Jelajahi Prinsip
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -107,7 +107,7 @@ export default function Home() {
               className="border-primary-foreground bg-transparent text-primary-foreground hover:bg-primary-foreground hover:text-accent"
               asChild
             >
-              <Link href="/treaty">Baca Traktat</Link>
+              <Link href="/treaty">Baca Konsensus</Link>
             </Button>
           </div>
         </div>
@@ -133,11 +133,11 @@ export default function Home() {
         <div className="container px-4 md:px-6">
           <div className="mb-12 text-center">
             <h2 className="font-headline text-3xl font-bold md:text-4xl">
-              Sektor Kebijakan Inti
+              Pilar Kebijakan
             </h2>
             <p className="mx-auto mt-2 max-w-2xl text-muted-foreground">
-              Pekerjaan UECD diatur dalam sektor-sektor kunci yang penting untuk
-              pertumbuhan ekonomi dan integrasi regional.
+              Pendekatan Werjia Consensus dibangun di atas pilar-pilar strategis
+              untuk mencapai pertumbuhan yang adil dan berkelanjutan.
             </p>
           </div>
 
@@ -182,16 +182,16 @@ export default function Home() {
           </h2>
           <div className="space-y-4">
             <NewsItem
-              date="26 Oktober 2023"
-              title="KTT UECD Diakhiri dengan Perjanjian Penting tentang Perdagangan Digital"
+              date="26 Oktober 2024"
+              title="Forum Werjia Consensus Pertama Digelar di Republik Leiysia"
             />
             <NewsItem
-              date="22 Oktober 2023"
-              title="Proyek Dana Kohesi Baru Diumumkan untuk Pembangunan Infrastruktur"
+              date="22 Oktober 2024"
+              title="Panduan Implementasi Privatisasi Strategis Diterbitkan"
             />
             <NewsItem
-              date="18 Oktober 2023"
-              title="Konsultasi Publik Dibuka untuk Peta Jalan Netralitas Iklim 2035"
+              date="18 Oktober 2024"
+              title="Dana Investasi Infrastruktur Baru Diluncurkan untuk Energi Bersih"
             />
           </div>
           <Button variant="outline" className="mt-6">
@@ -204,16 +204,16 @@ export default function Home() {
           </h2>
           <div className="space-y-4">
             <ReportItem
-              title="Prospek Ekonomi Tahunan 2023"
-              description="Analisis komprehensif wilayah ekonomi UECD."
+              title="Laporan Tahunan Disiplin Fiskal 2024"
+              description="Analisis komprehensif kesehatan fiskal Uni Mirdiy Modern."
             />
             <ReportItem
-              title="Indeks Integrasi Regional 2023"
-              description="Melacak kemajuan menuju pasar yang terintegrasi penuh."
+              title="Indeks Keadilan Sosial Kawasan 2024"
+              description="Melacak kemajuan dalam distribusi pendapatan dan akses."
             />
             <ReportItem
-              title="Masa Depan Ketenagakerjaan di UECD"
-              description="Penilaian kebijakan tentang transformasi pasar kerja."
+              title="Peta Jalan Deregulasi Adaptif"
+              description="Penilaian kebijakan tentang penyederhanaan regulasi bisnis."
             />
           </div>
           <Button variant="outline" className="mt-6">

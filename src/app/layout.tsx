@@ -5,9 +5,8 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 
 export const metadata: Metadata = {
-  title: 'Portal Resmi UECD',
-  description:
-    'Union of Economic Cooperation and Development (UECD) - Membangun Ruang Ekonomi yang Terintegrasi, Terbuka, dan Berkelanjutan',
+  title: 'Werjia Consensus',
+  description: 'Kerangka Kebijakan Ekonomi Modern Uni Mirdiy Modern',
 };
 
 export default function RootLayout({

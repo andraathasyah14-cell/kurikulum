@@ -8,28 +8,36 @@ export function Logo({ className }: { className?: string }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <title>UECD Logo</title>
-      <circle cx="20" cy="20" r="18" fill="url(#paint0_linear_1_2)" />
+      <title>Werjia Consensus Logo</title>
+      <rect width="40" height="40" rx="8" fill="url(#paint0_linear_logo)" />
       <path
-        d="M12 28C12 28 15 22 20 22C25 22 28 28 28 28M12 12C12 12 15 18 20 18C25 18 28 12 28 12"
+        d="M13 27L18 15L23 27"
         stroke="hsl(var(--primary-foreground))"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
-        d="M20 30V10"
+        d="M15.5 23H20.5"
         stroke="hsl(var(--primary-foreground))"
         strokeWidth="2.5"
         strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M22 19L27 19"
+        stroke="hsl(var(--primary-foreground))"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
       <defs>
         <linearGradient
-          id="paint0_linear_1_2"
+          id="paint0_linear_logo"
           x1="20"
-          y1="2"
+          y1="0"
           x2="20"
-          y2="38"
+          y2="40"
           gradientUnits="userSpaceOnUse"
         >
           <stop stopColor="hsl(var(--primary))" />
