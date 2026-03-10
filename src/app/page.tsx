@@ -7,7 +7,10 @@ import {
   TrendingUp, 
   Activity as ActivityIcon,
   ListChecks,
-  LogIn
+  LogIn,
+  Flame,
+  Calendar,
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -23,7 +26,7 @@ import {
 import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
-import { format } from 'date-fns';
+import { format, subDays, isSameDay, parseISO, differenceInDays } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 import { cn } from '@/lib/utils';
@@ -69,6 +72,7 @@ export default function DashboardPage() {
         value: 1,
         timestamp: serverTimestamp(),
       });
+      toast({ title: "Mantap!", description: "Aktivitas telah ditandai selesai." });
     }
   };
 
@@ -82,6 +86,32 @@ export default function DashboardPage() {
           : error.message,
       });
     });
+  };
+
+  // Streak Calculation
+  const calculateStreak = () => {
+    if (!logs || logs.length === 0) return 0;
+    
+    const uniqueDates = Array.from(new Set(logs.map(l => l.date))).sort((a, b) => b.localeCompare(a));
+    let streak = 0;
+    let checkDate = new Date();
+    
+    // Check if user has logged today or yesterday to continue streak
+    const lastLogDate = parseISO(uniqueDates[0]);
+    const diff = differenceInDays(new Date(), lastLogDate);
+    
+    if (diff > 1) return 0; // Streak broken
+
+    for (const dateStr of uniqueDates) {
+      const logDate = parseISO(dateStr);
+      if (isSameDay(checkDate, logDate) || isSameDay(subDays(checkDate, 1), logDate)) {
+        streak++;
+        checkDate = logDate;
+      } else {
+        break;
+      }
+    }
+    return streak;
   };
 
   if (isUserLoading) {
@@ -110,87 +140,137 @@ export default function DashboardPage() {
   }
 
   const totalActivities = activities?.length || 0;
-  const completedToday = todayLogs.length;
-  const progressPercent = totalActivities > 0 ? (completedToday / totalActivities) * 100 : 0;
+  const completedTodayCount = todayLogs.length;
+  const remainingToday = totalActivities - completedTodayCount;
+  const progressPercent = totalActivities > 0 ? (completedTodayCount / totalActivities) * 100 : 0;
+  const currentStreak = calculateStreak();
 
-  const statsData = [
-    { name: 'Sen', value: 4 },
-    { name: 'Sel', value: 3 },
-    { name: 'Rab', value: 5 },
-    { name: 'Kam', value: 2 },
-    { name: 'Jum', value: 6 },
-    { name: 'Sab', value: 7 },
-    { name: 'Min', value: completedToday },
-  ];
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = subDays(new Date(), 6 - i);
+    const dateStr = format(d, 'yyyy-MM-dd');
+    const count = logs?.filter(log => log.date === dateStr).length || 0;
+    return {
+      name: format(d, 'EEE', { locale: idLocale }),
+      value: count,
+      isToday: dateStr === today
+    };
+  });
 
   return (
     <div className="container px-4 py-8 md:px-6">
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-headline text-3xl font-bold">Halo, {user?.displayName?.split(' ')[0] || 'Sahabat Progres'}!</h1>
-          <p className="text-muted-foreground">
-            {format(new Date(), 'EEEE, d MMMM yyyy', { locale: idLocale })}. Waktunya fokus!
+          <h1 className="font-headline text-3xl font-bold tracking-tight">Halo, {user?.displayName?.split(' ')[0]}!</h1>
+          <p className="text-muted-foreground flex items-center gap-2">
+            <Calendar className="h-4 w-4" /> {format(new Date(), 'EEEE, d MMMM yyyy', { locale: idLocale })}
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" asChild>
+          <Button variant="outline" size="sm" asChild className="rounded-full">
             <Link href="/stats">
-              <TrendingUp className="mr-2 h-4 w-4" /> Statistik
+              <TrendingUp className="mr-2 h-4 w-4" /> Progres
             </Link>
           </Button>
-          <Button asChild>
+          <Button size="sm" asChild className="rounded-full">
             <Link href="/activities">
-              <ListChecks className="mr-2 h-4 w-4" /> Checklist
+              <ActivityIcon className="mr-2 h-4 w-4" /> Kelola Task
             </Link>
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-1 shadow-sm border-primary/10">
-          <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-primary" /> Progres Harian
+      <div className="grid gap-6 md:grid-cols-4">
+        {/* Progres Harian Card */}
+        <Card className="shadow-sm border-none bg-primary text-primary-foreground md:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center justify-between">
+              Target Hari Ini
+              <CheckCircle2 className="h-4 w-4 opacity-70" />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold mb-2">{completedToday}/{totalActivities}</div>
-            <div className="space-y-2">
-              <Progress value={progressPercent} className="h-2" />
-              <p className="text-xs text-right text-muted-foreground font-medium">{Math.round(progressPercent)}%</p>
+            <div className="flex items-baseline gap-2 mb-4">
+              <span className="text-5xl font-bold">{completedTodayCount}</span>
+              <span className="text-xl opacity-80">/ {totalActivities} Selesai</span>
+            </div>
+            <div className="space-y-3">
+              <Progress value={progressPercent} className="h-2 bg-white/20" />
+              <div className="flex justify-between text-xs font-medium">
+                <span>{Math.round(progressPercent)}% Tercapai</span>
+                <span>{remainingToday} Tugas Tersisa</span>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" /> Performa Pekan Ini
+        {/* Streak Card */}
+        <Card className="shadow-sm border-none bg-orange-500 text-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center justify-between">
+              Streak Konsistensi
+              <Flame className="h-4 w-4" />
             </CardTitle>
           </CardHeader>
-          <CardContent className="h-[180px] w-full pt-0">
+          <CardContent className="flex flex-col items-center justify-center pt-4">
+            <div className="text-6xl font-black mb-1">{currentStreak}</div>
+            <p className="text-sm font-bold uppercase tracking-widest">Hari</p>
+          </CardContent>
+        </Card>
+
+        {/* Remaining Info */}
+        <Card className="shadow-sm border-none bg-muted/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center justify-between">
+              Ringkasan Status
+              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-2">
+            <div className="flex justify-between items-center border-b pb-2 border-muted">
+              <span className="text-xs text-muted-foreground">Total Task</span>
+              <span className="font-bold">{totalActivities}</span>
+            </div>
+            <div className="flex justify-between items-center border-b pb-2 border-muted">
+              <span className="text-xs text-muted-foreground">Selesai</span>
+              <span className="font-bold text-green-600">{completedTodayCount}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">Belum Selesai</span>
+              <span className="font-bold text-orange-600">{remainingToday}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-3 mt-8">
+        {/* Weekly Chart */}
+        <Card className="md:col-span-2 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">Perkembangan Pekan Ini</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[250px] w-full pt-0">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={statsData}>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={12} />
+              <BarChart data={last7Days}>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={12} dy={10} />
                 <YAxis hide />
                 <Tooltip 
-                  cursor={{ fill: 'transparent' }}
+                  cursor={{ fill: 'rgba(0,0,0,0.05)' }}
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       return (
-                        <div className="rounded-lg border bg-background p-2 shadow-sm text-xs">
-                          {payload[0].value} Selesai
+                        <div className="rounded-lg border bg-background p-2 shadow-sm text-xs font-bold">
+                          {payload[0].value} Task Selesai
                         </div>
                       );
                     }
                     return null;
                   }}
                 />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                  {statsData.map((entry, index) => (
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {last7Days.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
-                      fill={index === 6 ? 'hsl(var(--primary))' : 'hsl(var(--muted))'} 
+                      fill={entry.isToday ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground) / 0.2)'} 
                     />
                   ))}
                 </Bar>
@@ -198,66 +278,50 @@ export default function DashboardPage() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
 
-      <div className="mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-headline font-bold flex items-center gap-2">
-            <ActivityIcon className="h-5 w-5 text-primary" /> Checklist Hari Ini
-          </h2>
-          <Link href="/activities" className="text-sm text-primary hover:underline font-medium">
-            Kelola Checklist
-          </Link>
-        </div>
-        
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {activitiesLoading ? (
-            Array(3).fill(0).map((_, i) => (
-              <Card key={i} className="animate-pulse h-20" />
-            ))
-          ) : activities?.length === 0 ? (
-            <Card className="col-span-full py-12 text-center border-dashed">
-              <CardContent>
-                <p className="text-muted-foreground">Belum ada aktivitas yang dipantau.</p>
-                <Button variant="outline" className="mt-4" asChild>
-                  <Link href="/activities">Mulai Buat Checklist</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            activities?.map((activity) => {
-              const isCompleted = todayLogs.some(log => log.activityId === activity.id);
-              return (
-                <Card 
-                  key={activity.id} 
-                  className={cn(
-                    "cursor-pointer transition-all hover:scale-[1.02] border-l-4",
-                    isCompleted 
-                      ? "bg-muted/30 border-l-primary opacity-70" 
-                      : "hover:shadow-md border-l-transparent"
-                  )}
-                  onClick={() => handleToggleComplete(activity.id)}
-                >
-                  <CardContent className="flex items-center gap-4 p-4">
-                    <div className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors",
-                      isCompleted 
-                        ? "bg-primary border-primary text-primary-foreground" 
-                        : "border-muted-foreground/20 text-muted-foreground/20"
-                    )}>
-                      {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className={cn("font-medium text-sm truncate", isCompleted && "line-through text-muted-foreground")}>
+        {/* Quick Checklist Section */}
+        <Card className="shadow-sm overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold">Checklist Hari Ini</CardTitle>
+              <Link href="/activities" className="text-xs text-primary font-bold hover:underline">Semua</Link>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-muted max-h-[300px] overflow-auto">
+              {activitiesLoading ? (
+                Array(3).fill(0).map((_, i) => <div key={i} className="p-4 animate-pulse h-12 bg-muted/20" />)
+              ) : activities?.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground text-sm italic">
+                  Belum ada aktivitas.
+                </div>
+              ) : (
+                activities?.map((activity) => {
+                  const isCompleted = todayLogs.some(log => log.activityId === activity.id);
+                  return (
+                    <div 
+                      key={activity.id} 
+                      className={cn(
+                        "flex items-center gap-3 p-4 cursor-pointer transition-colors hover:bg-muted/30",
+                        isCompleted && "bg-green-50/50"
+                      )}
+                      onClick={() => handleToggleComplete(activity.id)}
+                    >
+                      {isCompleted ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                      ) : (
+                        <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
+                      )}
+                      <span className={cn("text-sm font-medium truncate", isCompleted && "line-through text-muted-foreground")}>
                         {activity.title}
-                      </h3>
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
-        </div>
+                  );
+                })
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

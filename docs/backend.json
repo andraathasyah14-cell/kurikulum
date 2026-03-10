@@ -12,6 +12,7 @@
         "description": { "type": "string" },
         "category": { "type": "string", "enum": ["Kesehatan", "Kerja", "Belajar", "Lainnya"] },
         "targetValue": { "type": "number", "description": "Target penyelesaian (misal: 1 kali per hari)" },
+        "deadline": { "type": "string", "format": "date", "description": "Tenggat waktu opsional" },
         "color": { "type": "string", "description": "Kode warna hex untuk visualisasi" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
