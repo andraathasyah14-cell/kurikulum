@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { useUser, useAuth } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { signOut } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 const navLinks = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -32,6 +33,19 @@ export function Header() {
   const pathname = usePathname();
   const { user } = useUser();
   const auth = useAuth();
+  const { toast } = useToast();
+
+  const handleLogin = () => {
+    initiateGoogleSignIn(auth, (error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Masuk',
+        description: error.code === 'auth/operation-not-allowed' 
+          ? 'Metode login Google belum diaktifkan di Firebase Console.' 
+          : error.message,
+      });
+    });
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -90,7 +104,7 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button size="sm" onClick={() => initiateGoogleSignIn(auth)}>
+            <Button size="sm" onClick={handleLogin}>
               Masuk dengan Google
             </Button>
           )}

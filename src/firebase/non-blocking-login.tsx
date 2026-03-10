@@ -10,11 +10,12 @@ import {
 } from 'firebase/auth';
 
 /** Initiate Google sign-in (non-blocking). */
-export function initiateGoogleSignIn(authInstance: Auth): void {
+export function initiateGoogleSignIn(authInstance: Auth, onError?: (error: any) => void): void {
   const provider = new GoogleAuthProvider();
   // CRITICAL: Call signInWithPopup directly. Do NOT use 'await'.
   signInWithPopup(authInstance, provider).catch((error) => {
     console.error("Gagal login dengan Google:", error);
+    if (onError) onError(error);
   });
 }
 

@@ -6,7 +6,6 @@ import {
   Circle, 
   TrendingUp, 
   Activity as ActivityIcon,
-  ArrowRight,
   ListChecks,
   LogIn
 } from 'lucide-react';
@@ -28,11 +27,13 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const auth = useAuth();
+  const { toast } = useToast();
   const today = format(new Date(), 'yyyy-MM-dd');
 
   const activitiesQuery = useMemoFirebase(() => {
@@ -71,6 +72,18 @@ export default function DashboardPage() {
     }
   };
 
+  const handleLogin = () => {
+    initiateGoogleSignIn(auth, (error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Masuk',
+        description: error.code === 'auth/operation-not-allowed' 
+          ? 'Metode login Google belum diaktifkan di Firebase Console.' 
+          : error.message,
+      });
+    });
+  };
+
   if (isUserLoading) {
     return (
       <div className="container flex items-center justify-center min-h-[70vh]">
@@ -89,7 +102,7 @@ export default function DashboardPage() {
         <p className="text-xl text-muted-foreground max-w-lg mb-8">
           Monitor progres belajar, habit, dan project Anda dalam satu tempat yang sederhana dan intuitif.
         </p>
-        <Button size="lg" className="gap-2" onClick={() => initiateGoogleSignIn(auth)}>
+        <Button size="lg" className="gap-2" onClick={handleLogin}>
           <LogIn className="h-5 w-5" /> Mulai Sekarang dengan Google
         </Button>
       </div>
