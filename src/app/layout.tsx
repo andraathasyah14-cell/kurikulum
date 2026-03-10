@@ -6,9 +6,9 @@ import { Footer } from '@/components/layout/footer';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'Union of Economic Cooperation and Development (UECD)',
+  title: 'TrackPro - Monitor Progres Aktivitas Anda',
   description:
-    'Kerangka kerja sama ekonomi regional untuk memperkuat ketahanan, daya saing, dan pembangunan berkelanjutan.',
+    'Alat pelacak aktivitas personal yang simpel untuk memonitor progres belajar, habit, dan project Anda.',
 };
 
 export default function RootLayout({
@@ -26,11 +26,7 @@ export default function RootLayout({
           crossOrigin=""
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;500;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
       </head>
