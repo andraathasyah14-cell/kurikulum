@@ -1,0 +1,764 @@
+{
+  "entities": {
+    "OrganizationProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OrganizationProfile",
+      "type": "object",
+      "description": "Represents the core institutional information and key statistics for the Union of Economic Cooperation and Development (UECD).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the OrganizationProfile entity."
+        },
+        "mission": {
+          "type": "string",
+          "description": "The overarching mission statement of the UECD."
+        },
+        "values": {
+          "type": "array",
+          "description": "A list of core values guiding the UECD's operations and principles.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "objectives": {
+          "type": "array",
+          "description": "A list of the primary goals and objectives the UECD aims to achieve.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "foundingDate": {
+          "type": "string",
+          "description": "The date when the UECD was officially founded.",
+          "format": "date-time"
+        },
+        "totalMemberStates": {
+          "type": "number",
+          "description": "The current total number of member states within the UECD."
+        },
+        "collectiveGdp": {
+          "type": "number",
+          "description": "The collective Gross Domestic Product (GDP) of all member states, typically in a major currency unit (e.g., trillions USD)."
+        },
+        "tradeVolume": {
+          "type": "number",
+          "description": "The total volume of trade among member states or with external partners, typically in a major currency unit."
+        }
+      },
+      "required": [
+        "id",
+        "mission",
+        "values",
+        "objectives",
+        "foundingDate",
+        "totalMemberStates",
+        "collectiveGdp",
+        "tradeVolume"
+      ]
+    },
+    "MemberState": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MemberState",
+      "type": "object",
+      "description": "Represents a member country of the UECD, detailing its profile and membership status.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MemberState entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The common name of the member state."
+        },
+        "officialName": {
+          "type": "string",
+          "description": "The full official name of the member state."
+        },
+        "countryCode": {
+          "type": "string",
+          "description": "The ISO 3166-1 alpha-2 country code (e.g., 'US', 'FR')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief descriptive overview of the member state."
+        },
+        "flagUrl": {
+          "type": "string",
+          "description": "URL to an image of the member state's flag.",
+          "format": "uri"
+        },
+        "membershipStatus": {
+          "type": "string",
+          "description": "The current membership status within UECD (e.g., 'Full Member', 'Observer', 'Candidate')."
+        },
+        "accessionDate": {
+          "type": "string",
+          "description": "The date when the member state officially joined the UECD.",
+          "format": "date-time"
+        },
+        "levelOfIntegration": {
+          "type": "string",
+          "description": "Describes the current level of economic integration achieved by the member state within the UECD framework (e.g., 'Customs Union', 'Single Market', 'Free Trade Area')."
+        },
+        "capitalCity": {
+          "type": "string",
+          "description": "The capital city of the member state."
+        },
+        "headOfState": {
+          "type": "string",
+          "description": "The name of the current Head of State or Government of the member state."
+        },
+        "population": {
+          "type": "number",
+          "description": "The estimated population of the member state."
+        },
+        "gdp": {
+          "type": "number",
+          "description": "The Gross Domestic Product (GDP) of the member state, typically in a major currency unit."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "officialName",
+        "countryCode",
+        "description",
+        "flagUrl",
+        "membershipStatus",
+        "accessionDate",
+        "levelOfIntegration",
+        "capitalCity",
+        "headOfState",
+        "population",
+        "gdp"
+      ]
+    },
+    "Document": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Document",
+      "type": "object",
+      "description": "A generic entity for various types of official documents, including treaties, reports, regulations, and public records.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Document entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the document."
+        },
+        "documentType": {
+          "type": "string",
+          "description": "Categorization of the document (e.g., 'Treaty', 'Annual Report', 'Policy Assessment', 'Regulation', 'Audit Report', 'Procurement Document')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief summary or abstract of the document's content."
+        },
+        "publicationDate": {
+          "type": "string",
+          "description": "The date when the document was published or officially released.",
+          "format": "date-time"
+        },
+        "contentHtml": {
+          "type": "string",
+          "description": "The full content of the document formatted in HTML for online reading."
+        },
+        "fileUrl": {
+          "type": "string",
+          "description": "URL to the downloadable file version of the document (e.g., PDF).",
+          "format": "uri"
+        },
+        "language": {
+          "type": "string",
+          "description": "The primary language of the document (e.g., 'en', 'fr', 'es')."
+        },
+        "version": {
+          "type": "string",
+          "description": "The version identifier of the document, if applicable."
+        },
+        "relatedSectorIds": {
+          "type": "array",
+          "description": "References to Sectors relevant to this document. (Relationship: Sector N:N Document)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "relatedGovernanceBodyIds": {
+          "type": "array",
+          "description": "References to GovernanceBodies related to this document. (Relationship: GovernanceBody N:N Document)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "relatedMemberStateIds": {
+          "type": "array",
+          "description": "References to MemberStates to which this document is specifically relevant. (Relationship: MemberState N:N Document)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "documentType",
+        "description",
+        "publicationDate",
+        "contentHtml",
+        "fileUrl",
+        "language",
+        "version"
+      ]
+    },
+    "GovernanceBody": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "GovernanceBody",
+      "type": "object",
+      "description": "Details about the various governing and operational bodies within the UECD structure.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the GovernanceBody entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The official name of the governance body (e.g., 'High Council', 'Secretariat-General')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A general description of the body."
+        },
+        "function": {
+          "type": "string",
+          "description": "The primary functions and roles of the governance body."
+        },
+        "authority": {
+          "type": "string",
+          "description": "A description of the powers and jurisdiction held by the body."
+        },
+        "composition": {
+          "type": "string",
+          "description": "Details on the structure and members comprising the body."
+        },
+        "workingProcess": {
+          "type": "string",
+          "description": "An overview of how the body conducts its operations and decision-making."
+        },
+        "foundingDate": {
+          "type": "string",
+          "description": "The date when this governance body was established.",
+          "format": "date-time"
+        },
+        "parentBodyId": {
+          "type": "string",
+          "description": "Reference to a parent governance body, if applicable, forming a hierarchical structure. (Relationship: GovernanceBody 1:N GovernanceBody)"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "function",
+        "authority",
+        "composition",
+        "workingProcess",
+        "foundingDate"
+      ]
+    },
+    "Sector": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Sector",
+      "type": "object",
+      "description": "Defines an economic or policy sector that the UECD focuses on, detailing its objectives, programs, and regulations.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Sector entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the sector (e.g., 'Energy', 'Finance & Banking', 'Agriculture & Food Security')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A general description of the sector and its relevance to UECD's mission."
+        },
+        "policyObjectives": {
+          "type": "array",
+          "description": "A list of the main policy goals the UECD aims to achieve within this sector.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mainPrograms": {
+          "type": "array",
+          "description": "A list of key initiatives or programs implemented in this sector.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "coreRegulationsOverview": {
+          "type": "string",
+          "description": "A summary or high-level overview of core regulations and standards within the sector."
+        },
+        "economicImpactSummary": {
+          "type": "string",
+          "description": "A summary of the sector's economic importance and impact on the region."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "policyObjectives",
+        "mainPrograms",
+        "coreRegulationsOverview",
+        "economicImpactSummary"
+      ]
+    },
+    "EconomicIndicator": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EconomicIndicator",
+      "type": "object",
+      "description": "Represents a single economic data point or indicator, typically associated with a specific date, member state, or sector.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the EconomicIndicator entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the economic indicator (e.g., 'GDP Growth', 'Unemployment Rate', 'Inflation')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of what the indicator measures."
+        },
+        "value": {
+          "type": "number",
+          "description": "The numerical value of the indicator."
+        },
+        "unit": {
+          "type": "string",
+          "description": "The unit of measurement for the indicator (e.g., '%', 'USD Billions', 'Index Points')."
+        },
+        "date": {
+          "type": "string",
+          "description": "The specific date or period to which the indicator value corresponds.",
+          "format": "date-time"
+        },
+        "source": {
+          "type": "string",
+          "description": "The origin or source of the data (e.g., 'UECD Statistics', 'World Bank', 'National Statistical Office')."
+        },
+        "memberStateId": {
+          "type": "string",
+          "description": "Reference to the MemberState for which this indicator is reported, if country-specific. (Relationship: MemberState 1:N EconomicIndicator)"
+        },
+        "sectorId": {
+          "type": "string",
+          "description": "Reference to the Sector relevant to this indicator, if sector-specific. (Relationship: Sector 1:N EconomicIndicator)"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "value",
+        "unit",
+        "date",
+        "source"
+      ]
+    },
+    "NewsItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "NewsItem",
+      "type": "object",
+      "description": "Represents news articles, press releases, policy updates, events, and summits.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the NewsItem entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The headline or title of the news item."
+        },
+        "itemType": {
+          "type": "string",
+          "description": "The category of the news item (e.g., 'Press Release', 'Policy Update', 'Event', 'Summit')."
+        },
+        "publicationDate": {
+          "type": "string",
+          "description": "The date when the news item was published.",
+          "format": "date-time"
+        },
+        "summary": {
+          "type": "string",
+          "description": "A short summary or abstract of the news content."
+        },
+        "contentHtml": {
+          "type": "string",
+          "description": "The full content of the news item, formatted in HTML."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL to a featured image associated with the news item.",
+          "format": "uri"
+        },
+        "externalLink": {
+          "type": "string",
+          "description": "An optional external URL for more information or related content.",
+          "format": "uri"
+        },
+        "relatedSectorIds": {
+          "type": "array",
+          "description": "References to Sectors relevant to this news item. (Relationship: Sector N:N NewsItem)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "relatedMemberStateIds": {
+          "type": "array",
+          "description": "References to MemberStates relevant to this news item. (Relationship: MemberState N:N NewsItem)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "relatedGovernanceBodyIds": {
+          "type": "array",
+          "description": "References to GovernanceBodies relevant to this news item. (Relationship: GovernanceBody N:N NewsItem)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "itemType",
+        "publicationDate",
+        "summary",
+        "contentHtml"
+      ]
+    },
+    "PublicConsultation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PublicConsultation",
+      "type": "object",
+      "description": "Manages information about public consultations, allowing for transparency and engagement.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PublicConsultation entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title or subject of the public consultation."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description outlining the purpose and scope of the consultation."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the consultation (e.g., 'Open', 'Closed', 'Upcoming')."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The date when the consultation period began.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The date when the consultation period ends.",
+          "format": "date-time"
+        },
+        "submissionUrl": {
+          "type": "string",
+          "description": "URL where the public can submit their feedback or responses.",
+          "format": "uri"
+        },
+        "resultSummary": {
+          "type": "string",
+          "description": "A summary of the outcomes or findings once the consultation is closed."
+        },
+        "relatedDocumentIds": {
+          "type": "array",
+          "description": "References to supporting documents (e.g., background papers, full results reports). (Relationship: Document N:N PublicConsultation)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "status",
+        "startDate",
+        "endDate"
+      ]
+    },
+    "IntegrationStage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "IntegrationStage",
+      "type": "object",
+      "description": "Defines a distinct phase or level in the UECD's economic integration process.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the IntegrationStage entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the integration stage (e.g., 'Free Trade Area', 'Customs Union', 'Single Market')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of what this stage entails and its key characteristics."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The approximate start date of this integration stage.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The approximate end date of this integration stage, if applicable (null if ongoing).",
+          "format": "date-time"
+        },
+        "visualRepresentationUrl": {
+          "type": "string",
+          "description": "URL to a visual diagram or graphic illustrating this integration stage.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "startDate"
+      ]
+    },
+    "RoadmapItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RoadmapItem",
+      "type": "object",
+      "description": "Represents a specific goal, milestone, or initiative within the UECD's long-term economic integration roadmap.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the RoadmapItem entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title or short description of the roadmap item."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed explanation of the goal or initiative."
+        },
+        "targetYear": {
+          "type": "string",
+          "description": "The target year or period for achieving this roadmap item (e.g., '2030', '2025-2030')."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the roadmap item (e.g., 'Planned', 'In Progress', 'Completed', 'Delayed')."
+        },
+        "relatedSectorIds": {
+          "type": "array",
+          "description": "References to Sectors that this roadmap item primarily impacts or belongs to. (Relationship: Sector N:N RoadmapItem)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "relatedIntegrationStageId": {
+          "type": "string",
+          "description": "Reference to the IntegrationStage this roadmap item contributes to or is part of. (Relationship: IntegrationStage 1:N RoadmapItem)"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "targetYear",
+        "status"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/organization_profile/{profileId}",
+        "definition": {
+          "entityName": "OrganizationProfile",
+          "schema": {
+            "$ref": "#/backend/entities/OrganizationProfile"
+          },
+          "description": "Stores the single OrganizationProfile document, containing core institutional information and key statistics for UECD. Publicly readable, admin writeable.",
+          "params": [
+            {
+              "name": "profileId",
+              "description": "The unique identifier for the organization profile document (e.g., 'main' or 'uecd')."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/member_states/{memberStateId}",
+        "definition": {
+          "entityName": "MemberState",
+          "schema": {
+            "$ref": "#/backend/entities/MemberState"
+          },
+          "description": "Stores profiles of individual member countries of the UECD, detailing their status and relevant information. Publicly readable, admin writeable.",
+          "params": [
+            {
+              "name": "memberStateId",
+              "description": "The unique identifier for a member state."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/documents/{documentId}",
+        "definition": {
+          "entityName": "Document",
+          "schema": {
+            "$ref": "#/backend/entities/Document"
+          },
+          "description": "Stores various official documents such as treaties, reports, and regulations. Includes references to related sectors, governance bodies, and member states for easier querying and linking. Publicly readable, admin writeable.",
+          "params": [
+            {
+              "name": "documentId",
+              "description": "The unique identifier for a document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/governance_bodies/{governanceBodyId}",
+        "definition": {
+          "entityName": "GovernanceBody",
+          "schema": {
+            "$ref": "#/backend/entities/GovernanceBody"
+          },
+          "description": "Stores details about the various governing and operational bodies within the UECD structure. The 'parentBodyId' field facilitates hierarchical relationships within this flat collection. Publicly readable, admin writeable.",
+          "params": [
+            {
+              "name": "governanceBodyId",
+              "description": "The unique identifier for a governance body."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/sectors/{sectorId}",
+        "definition": {
+          "entityName": "Sector",
+          "schema": {
+            "$ref": "#/backend/entities/Sector"
+          },
+          "description": "Defines an economic or policy sector that the UECD focuses on, detailing its objectives, programs, and regulations. Publicly readable, admin writeable.",
+          "params": [
+            {
+              "name": "sectorId",
+              "description": "The unique identifier for a sector."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/economic_indicators/{indicatorId}",
+        "definition": {
+          "entityName": "EconomicIndicator",
+          "schema": {
+            "$ref": "#/backend/entities/EconomicIndicator"
+          },
+          "description": "Represents a single economic data point or indicator, typically associated with a specific date, member state, or sector. Publicly readable, admin writeable.",
+          "params": [
+            {
+              "name": "indicatorId",
+              "description": "The unique identifier for an economic indicator."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/news_items/{newsItemId}",
+        "definition": {
+          "entityName": "NewsItem",
+          "schema": {
+            "$ref": "#/backend/entities/NewsItem"
+          },
+          "description": "Stores news articles, press releases, policy updates, events, and summits. Includes references to related sectors, member states, and governance bodies. Publicly readable, admin writeable.",
+          "params": [
+            {
+              "name": "newsItemId",
+              "description": "The unique identifier for a news item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/public_consultations/{consultationId}",
+        "definition": {
+          "entityName": "PublicConsultation",
+          "schema": {
+            "$ref": "#/backend/entities/PublicConsultation"
+          },
+          "description": "Manages information about public consultations, including their status, purpose, and links to supporting documents. Publicly readable, admin writeable.",
+          "params": [
+            {
+              "name": "consultationId",
+              "description": "The unique identifier for a public consultation."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/integration_stages/{stageId}",
+        "definition": {
+          "entityName": "IntegrationStage",
+          "schema": {
+            "$ref": "#/backend/entities/IntegrationStage"
+          },
+          "description": "Defines a distinct phase or level in the UECD's economic integration process. Publicly readable, admin writeable.",
+          "params": [
+            {
+              "name": "stageId",
+              "description": "The unique identifier for an integration stage."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roadmap_items/{roadmapItemId}",
+        "definition": {
+          "entityName": "RoadmapItem",
+          "schema": {
+            "$ref": "#/backend/entities/RoadmapItem"
+          },
+          "description": "Represents a specific goal, milestone, or initiative within the UECD's long-term economic integration roadmap, linked to relevant sectors and integration stages. Publicly readable, admin writeable.",
+          "params": [
+            {
+              "name": "roadmapItemId",
+              "description": "The unique identifier for a roadmap item."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure for the UECD Official Portal is designed to prioritize public read access, secure admin write access, and simplified security rules, in alignment with the 'CORE DESIGN PRINCIPLES' and 'DESIGN STRATEGY MANDATES'. The portal's primary function is to serve as a public information repository, hence most data is globally accessible for reading, while administrative operations (creating, updating, deleting data) are restricted to authorized administrators.\n\n**Authorization Independence:** All core application data collections (e.g., '/member_states', '/documents', '/news_items') are structured for public read access. This eliminates the need for complex hierarchical authorization checks using `get()` operations in read rules, as all documents are freely readable. For write operations, administrative authorization is handled independently through a dedicated '/admin_users/{userId}' collection. An admin's write permission is determined solely by the existence of their Firebase Authentication UID in this collection (e.g., `exists(/databases/$(database)/documents/admin_users/$(request.auth.uid))`). This approach ensures that write authorization is atomic and does not depend on the content or hierarchical context of any application data, fully adhering to the Authorization Independence principle.\n\n**Querying for All Publics (QAPs):** The structural segregation mandate is fully applied by designing all application data collections to have a homogeneous security posture: public readability. Since all documents within collections like '/documents' or '/sectors' are intended to be publicly accessible, security rules will be straightforward (`allow read: if true;`). This guarantees that any `list` operation will return all documents matching the client's query without rules acting as implicit filters, thus satisfying the QAPs principle. There is no mixing of public and private data within the same collection.\n\n**Structural Segregation & Access Modeling:** Each primary entity (e.g., `MemberState`, `Document`, `Sector`) is mapped to its own top-level collection (e.g., '/member_states', '/documents', '/sectors'). This provides clear logical separation and ensures a consistent security posture within each collection. Relationships between entities (e.g., a `Document` related to multiple `Sectors`) are managed through arrays of IDs (e.g., `relatedSectorIds`) embedded within the respective documents. This denormalization strategy supports efficient queries without costly joins or complex rule dependencies. For `GovernanceBody`, the 'parentBodyId' field is used to model hierarchical relationships within a flat collection, which simplifies retrieval for a read-focused portal. Administrative roles are explicitly managed via a dedicated 'admin_users' collection, making DBAC clear and debuggable.\n\n**Data Clarity and Predictability:** The design uses explicit state fields such as 'status' in 'PublicConsultation' and 'RoadmapItem' to clearly denote the lifecycle stage, avoiding ambiguity. Semantic and consistent naming conventions are used for all paths and parameters (e.g., `{memberStateId}`, `{documentId}`). No dynamic keys are introduced, ensuring predictable schema for all documents."
+  }
+}
