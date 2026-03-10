@@ -14,7 +14,8 @@ import {
   Maximize2,
   ChevronRight,
   PenTool,
-  X
+  X,
+  ListChecks
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,7 @@ import {
 import { collection, query, orderBy, serverTimestamp, setDoc, doc, where } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
-import { format, subDays, isSameDay, parseISO, differenceInDays, eachDayOfInterval, startOfDay } from 'date-fns';
+import { format, subDays, isSameDay, parseISO, eachDayOfInterval } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -102,7 +103,7 @@ export default function DashboardPage() {
     return days.map(day => {
       const dateStr = format(day, 'yyyy-MM-dd');
       const count = logs?.filter(log => log.date === dateStr).length || 0;
-      return { date: dateStr, count };
+      return { date: dateStr, count, rawDate: day };
     });
   }, [logs]);
 
@@ -139,7 +140,7 @@ export default function DashboardPage() {
     <div className="container px-4 py-8 md:px-6 max-w-6xl">
       <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">
-          <h1 className="font-headline text-4xl font-black tracking-tight">Evolusi Hari Ini</h1>
+          <h1 className="font-headline text-4xl font-black tracking-tight text-foreground">Evolusi Hari Ini</h1>
           <p className="text-muted-foreground flex items-center gap-2 font-medium">
             <Calendar className="h-4 w-4" /> {format(new Date(), 'EEEE, d MMMM yyyy', { locale: idLocale })}
           </p>
@@ -161,11 +162,15 @@ export default function DashboardPage() {
           <CardContent>
             <div className="flex flex-wrap gap-1">
               {heatmapDays.map((d, i) => (
-                <div 
+                <button 
                   key={i} 
+                  onClick={() => toast({ 
+                    title: format(d.rawDate, 'd MMMM yyyy', { locale: idLocale }), 
+                    description: `${d.count} tugas selesai pada hari ini.` 
+                  })}
                   title={`${d.date}: ${d.count} tasks`}
                   className={cn(
-                    "h-3 w-3 rounded-sm transition-colors",
+                    "h-3 w-3 rounded-sm transition-all hover:ring-2 hover:ring-primary/50 cursor-pointer",
                     d.count === 0 ? "bg-muted" : 
                     d.count < 3 ? "bg-primary/30" : 
                     d.count < 6 ? "bg-primary/60" : "bg-primary"
@@ -174,7 +179,7 @@ export default function DashboardPage() {
               ))}
             </div>
             <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground uppercase font-bold">
-              <span>90 Hari Terakhir</span>
+              <span>90 Hari Terakhir (Klik kotak untuk detail)</span>
               <div className="flex gap-1 items-center">
                 <span>Less</span>
                 <div className="h-2 w-2 bg-muted rounded-sm" />
@@ -193,9 +198,9 @@ export default function DashboardPage() {
              <div className="absolute top-0 right-0 p-4 opacity-10"><Zap className="h-24 w-24" /></div>
              <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase">Progres Harian</CardTitle></CardHeader>
              <CardContent>
-               <div className="text-6xl font-black mb-4">{Math.round((todayLogs.length / (activities?.length || 1)) * 100)}%</div>
-               <Progress value={(todayLogs.length / (activities?.length || 1)) * 100} className="bg-white/20 h-2" />
-               <p className="mt-4 text-sm font-medium opacity-80">{todayLogs.length} dari {activities?.length} tugas selesai</p>
+               <div className="text-6xl font-black mb-4">{activities?.length ? Math.round((todayLogs.length / activities.length) * 100) : 0}%</div>
+               <Progress value={activities?.length ? (todayLogs.length / activities.length) * 100 : 0} className="bg-white/20 h-2" />
+               <p className="mt-4 text-sm font-medium opacity-80">{todayLogs.length} dari {activities?.length || 0} tugas selesai</p>
              </CardContent>
           </Card>
 
@@ -238,7 +243,7 @@ export default function DashboardPage() {
                         {isCompleted ? <CheckCircle2 className="h-6 w-6 text-green-600" /> : <Circle className="h-6 w-6 text-muted-foreground" />}
                       </button>
                       <div className="min-w-0">
-                        <p className={cn("font-bold truncate", isCompleted && "line-through text-muted-foreground")}>{activity.title}</p>
+                        <p className={cn("font-bold truncate text-foreground", isCompleted && "line-through text-muted-foreground")}>{activity.title}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <span className={cn(
                             "text-[10px] uppercase font-black px-1.5 py-0.5 rounded",

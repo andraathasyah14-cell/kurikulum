@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Menu, LayoutDashboard, ListChecks, TrendingUp, Settings, LogOut, Award } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -104,10 +104,28 @@ export function Header() {
               <Button variant="ghost" size="icon" className="md:hidden"><Menu className="h-6 w-6" /></Button>
             </SheetTrigger>
             <SheetContent side="left">
-              <Link href="/" className="mb-8 flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><ListChecks className="h-5 w-5" /></div><span className="font-headline font-black text-xl">TRACKPRO</span></Link>
+              <SheetHeader>
+                <SheetTitle className="text-left font-black tracking-tighter">MENU</SheetTitle>
+              </SheetHeader>
+              <Link href="/" className="mb-8 mt-4 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <ListChecks className="h-5 w-5" />
+                </div>
+                <span className="font-headline font-black text-xl tracking-tighter">TRACKPRO</span>
+              </Link>
               <nav className="flex flex-col gap-2">
                 {navLinks.map((link) => (
-                  <Link key={link.href} href={link.href} className={cn('flex items-center gap-3 text-sm font-bold uppercase py-3 px-4 rounded-xl', pathname === link.href ? 'text-primary bg-primary/5' : 'text-muted-foreground')}>{link.icon && <link.icon className="h-5 w-5" />}{link.label}</Link>
+                  <Link 
+                    key={link.href} 
+                    href={link.href} 
+                    className={cn(
+                      'flex items-center gap-3 text-sm font-bold uppercase py-3 px-4 rounded-xl', 
+                      pathname === link.href ? 'text-primary bg-primary/5' : 'text-muted-foreground'
+                    )}
+                  >
+                    {link.icon && <link.icon className="h-5 w-5" />}
+                    {link.label}
+                  </Link>
                 ))}
               </nav>
             </SheetContent>
