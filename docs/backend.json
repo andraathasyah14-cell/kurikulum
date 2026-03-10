@@ -9,14 +9,13 @@
         "id": { "type": "string" },
         "userId": { "type": "string" },
         "title": { "type": "string" },
-        "description": { "type": "string" },
         "category": { "type": "string", "enum": ["Kesehatan", "Kerja", "Belajar", "Lainnya"] },
-        "targetValue": { "type": "number", "description": "Target penyelesaian (misal: 1 kali per hari)" },
-        "deadline": { "type": "string", "format": "date", "description": "Tenggat waktu opsional" },
-        "color": { "type": "string", "description": "Kode warna hex untuk visualisasi" },
+        "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"], "default": "Medium" },
+        "targetValue": { "type": "number" },
+        "deadline": { "type": "string", "format": "date" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "userId", "title", "targetValue"]
+      "required": ["id", "userId", "title"]
     },
     "ActivityLog": {
       "title": "ActivityLog",
@@ -27,10 +26,23 @@
         "activityId": { "type": "string" },
         "userId": { "type": "string" },
         "date": { "type": "string", "format": "date" },
-        "value": { "type": "number", "description": "Jumlah yang diselesaikan" },
+        "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"] },
         "timestamp": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "activityId", "userId", "date", "value"]
+      "required": ["id", "activityId", "userId", "date"]
+    },
+    "Reflection": {
+      "title": "Reflection",
+      "type": "object",
+      "description": "Refleksi harian singkat pengguna.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "date", "content"]
     }
   },
   "auth": {
@@ -43,11 +55,7 @@
         "definition": {
           "entityName": "Activity",
           "schema": { "$ref": "#/backend/entities/Activity" },
-          "description": "Koleksi aktivitas milik pengguna tertentu.",
-          "params": [
-            { "name": "userId", "description": "UID pemilik aktivitas" },
-            { "name": "activityId", "description": "ID unik aktivitas" }
-          ]
+          "description": "Koleksi aktivitas milik pengguna."
         }
       },
       {
@@ -55,11 +63,15 @@
         "definition": {
           "entityName": "ActivityLog",
           "schema": { "$ref": "#/backend/entities/ActivityLog" },
-          "description": "Log penyelesaian aktivitas untuk tracking progres.",
-          "params": [
-            { "name": "userId", "description": "UID pemilik log" },
-            { "name": "logId", "description": "ID unik log" }
-          ]
+          "description": "Log penyelesaian aktivitas."
+        }
+      },
+      {
+        "path": "/users/{userId}/reflections/{reflectionId}",
+        "definition": {
+          "entityName": "Reflection",
+          "schema": { "$ref": "#/backend/entities/Reflection" },
+          "description": "Catatan refleksi harian."
         }
       }
     ]
