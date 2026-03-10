@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Plus, Trash2, BookOpen, Timer, Layers, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, BookOpen, Timer, Layers, ChevronDown, ChevronUp, Check, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,7 @@ export default function ActivitiesPage() {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [isAddingNewCategory, setIsAddingNewCategory] = useState(false);
   
   const [newActivity, setNewActivity] = useState({ 
     title: '', 
@@ -53,6 +54,13 @@ export default function ActivitiesPage() {
   }, [db, user]);
 
   const { data: activities } = useCollection(activitiesQuery);
+
+  // Get unique categories for selection
+  const uniqueCategories = useMemo(() => {
+    if (!activities) return [];
+    const cats = activities.map(a => a.category).filter(Boolean);
+    return Array.from(new Set(cats)).sort();
+  }, [activities]);
 
   // Grouping activities by category
   const groupedActivities = useMemo(() => {
@@ -92,6 +100,7 @@ export default function ActivitiesPage() {
 
     setNewActivity({ ...newActivity, title: '' }); // Keep category for easier batch adding
     setIsOpen(false);
+    setIsAddingNewCategory(false);
     toast({ title: "Berhasil", description: `Materi "${newActivity.title}" ditambahkan ke ${newActivity.category}.` });
   };
 
@@ -108,7 +117,10 @@ export default function ActivitiesPage() {
           <h1 className="font-headline text-4xl font-black tracking-tight">Katalog Kurikulum</h1>
           <p className="text-muted-foreground text-sm font-medium">Kelola kategori subjek dan detail materi belajar Anda.</p>
         </div>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isOpen} onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) setIsAddingNewCategory(false);
+        }}>
           <DialogTrigger asChild>
             <Button className="rounded-full shadow-lg gap-2 h-12 px-6">
               <Plus className="h-5 w-5" /> Tambah Materi
@@ -118,13 +130,61 @@ export default function ActivitiesPage() {
             <DialogHeader><DialogTitle>Tambah Materi Belajar</DialogTitle></DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="category">Nama Subjek / Kategori (Contoh: UTBK Inggris)</Label>
-                <Input id="category" placeholder="Masukkan nama subjek besar" value={newActivity.category} onChange={(e) => setNewActivity({...newActivity, category: e.target.value})} />
+                <Label htmlFor="category">Pilih Subjek / Kategori</Label>
+                
+                {!isAddingNewCategory && uniqueCategories.length > 0 ? (
+                  <div className="flex gap-2">
+                    <Select 
+                      value={newActivity.category} 
+                      onValueChange={(v) => setNewActivity({...newActivity, category: v})}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Pilih subjek yang ada" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {uniqueCategories.map(cat => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline" size="icon" onClick={() => {
+                      setIsAddingNewCategory(true);
+                      setNewActivity({...newActivity, category: ''});
+                    }}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Input 
+                        id="category" 
+                        placeholder="Masukkan nama subjek baru" 
+                        value={newActivity.category} 
+                        onChange={(e) => setNewActivity({...newActivity, category: e.target.value})}
+                        autoFocus
+                      />
+                      {uniqueCategories.length > 0 && (
+                        <Button variant="outline" size="icon" onClick={() => setIsAddingNewCategory(false)}>
+                          <Layers className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-medium">Contoh: UTBK Inggris, Matematika, Biologi.</p>
+                  </div>
+                )}
               </div>
+
               <div className="grid gap-2">
-                <Label htmlFor="title">Nama Materi / Topik (Contoh: Noun Clause)</Label>
-                <Input id="title" placeholder="Masukkan topik materi spesifik" value={newActivity.title} onChange={(e) => setNewActivity({...newActivity, title: e.target.value})} />
+                <Label htmlFor="title">Nama Materi / Topik</Label>
+                <Input 
+                  id="title" 
+                  placeholder="Contoh: Noun Clause, Fotosintesis" 
+                  value={newActivity.title} 
+                  onChange={(e) => setNewActivity({...newActivity, title: e.target.value})} 
+                />
               </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>Tingkat Kesulitan</Label>
