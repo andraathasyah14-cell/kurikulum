@@ -19,7 +19,7 @@ import {
   Cell,
   Legend
 } from 'recharts';
-import { TrendingUp, Calendar, CheckCircle2, Award, Zap, BarChart3, PieChart as PieChartIcon, Activity } from 'lucide-react';
+import { TrendingUp, Calendar, CheckCircle2, Award, Zap, BarChart3, PieChart as PieChartIcon, Activity, Timer } from 'lucide-react';
 import { format, subDays, parseISO, isSameDay, differenceInDays } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 
@@ -75,16 +75,34 @@ export default function StatsPage() {
   const distributionData = useMemo(() => {
     if (!logs || !activities) return [];
     
-    const categoryCounts: Record<string, number> = {};
-    const activityMap = new Map(activities.map(a => [a.id, a.category || 'Lainnya']));
+    const categoryStats: Record<string, { count: number, minutes: number }> = {};
+    const activityMap = new Map(activities.map(a => [a.id, { 
+      category: a.category || 'Lainnya', 
+      minutes: a.durationMinutes || 0 
+    }]));
 
     logs.forEach(log => {
-      const category = activityMap.get(log.activityId) || 'Terhapus/Lainnya';
-      categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+      const info = activityMap.get(log.activityId);
+      const category = info?.category || 'Terhapus/Lainnya';
+      const minutes = info?.minutes || 0;
+
+      if (!categoryStats[category]) {
+        categoryStats[category] = { count: 0, minutes: 0 };
+      }
+      categoryStats[category].count += 1;
+      categoryStats[category].minutes += minutes;
     });
 
-    return Object.entries(categoryCounts)
-      .map(([name, value]) => ({ name, value }))
+    const totalMinutes = Object.values(categoryStats).reduce((sum, s) => sum + s.minutes, 0);
+
+    return Object.entries(categoryStats)
+      .map(([name, stats]) => ({ 
+        name, 
+        value: stats.minutes, // Base the pie slice on minutes
+        count: stats.count,
+        minutes: stats.minutes,
+        percentage: totalMinutes > 0 ? Math.round((stats.minutes / totalMinutes) * 100) : 0
+      }))
       .sort((a, b) => b.value - a.value);
   }, [logs, activities]);
 
@@ -175,9 +193,9 @@ export default function StatsPage() {
             <CardTitle className="text-base flex items-center gap-2">
               <PieChartIcon className="h-5 w-5 text-primary" /> Study Distribution
             </CardTitle>
-            <CardDescription>Porsi penguasaan materi per kategori.</CardDescription>
+            <CardDescription>Porsi penguasaan materi per kategori (berdasarkan durasi).</CardDescription>
           </CardHeader>
-          <CardContent className="h-[350px]">
+          <CardContent className="h-[400px]">
             {distributionData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -189,13 +207,27 @@ export default function StatsPage() {
                     outerRadius={100}
                     paddingAngle={5}
                     dataKey="value"
+                    label={({ name, percentage }) => `${name} (${percentage}%)`}
                   >
                     {distributionData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="rounded-lg border bg-background p-3 shadow-md text-xs space-y-1">
+                            <p className="font-black uppercase text-primary">{data.name}</p>
+                            <p className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3" /> {data.count} Materi</p>
+                            <p className="flex items-center gap-2"><Timer className="h-3 w-3" /> {data.minutes} Menit</p>
+                            <p className="font-bold text-primary mt-1">{data.percentage}% Kontribusi</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
                   />
                   <Legend verticalAlign="bottom" height={36}/>
                 </PieChart>
@@ -216,7 +248,7 @@ export default function StatsPage() {
             </CardTitle>
             <CardDescription>Jumlah materi yang dikuasai 7 hari terakhir.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[350px]">
+          <CardContent className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
