@@ -278,22 +278,28 @@ export default function DashboardPage() {
   if (isUserLoading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
 
   if (!user) return (
-    <div className="container flex flex-col items-center justify-center min-h-[80vh] px-4 text-center">
-      <div className="mb-6 rounded-full bg-primary/10 p-8 animate-pulse"><BookOpen className="h-16 w-16 text-primary" /></div>
-      <h1 className="font-headline text-5xl font-black mb-2 tracking-tighter uppercase">StudyPro</h1>
+    <div className="container px-4 flex flex-col items-center justify-center min-h-[80vh] text-center">
+      <div className="mb-8 rounded-full bg-primary/10 p-8 animate-pulse">
+        <BookOpen className="h-16 w-16 text-primary" />
+      </div>
       
-      <div className="mb-8 space-y-2 max-w-2xl bg-muted/30 p-6 rounded-2xl border border-dashed">
-        <Quote className="h-6 w-6 text-primary/40 mx-auto mb-2" />
-        <p className="text-xl font-bold italic text-foreground leading-snug">
+      <div className="mb-8 space-y-2 max-w-2xl bg-muted/30 p-8 rounded-3xl border border-dashed shadow-sm">
+        <Quote className="h-8 w-8 text-primary/40 mx-auto mb-4" />
+        <p className="text-2xl font-black italic text-foreground leading-snug tracking-tight">
           "The only true wisdom is in knowing you know nothing."
         </p>
-        <p className="text-sm text-muted-foreground font-medium">
+        <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest mt-4">
           (Satu-satunya kebijaksanaan sejati adalah mengetahui bahwa kamu tidak mengetahui apa-apa)
         </p>
       </div>
 
-      <p className="text-lg text-muted-foreground max-w-lg mb-8">Visualisasikan penguasaan kurikulum belajar Anda secara terstruktur dan terukur.</p>
-      <Button size="lg" className="rounded-full px-8 gap-2 shadow-xl" onClick={() => initiateGoogleSignIn(auth)}><LogIn className="h-5 w-5" /> Mulai Kurikulum</Button>
+      <p className="text-lg text-muted-foreground max-w-lg mb-10 font-medium">
+        Visualisasikan penguasaan kurikulum belajar Anda secara terstruktur dan terukur.
+      </p>
+      
+      <Button size="lg" className="rounded-full px-10 py-7 text-lg font-black gap-3 shadow-2xl hover:scale-105 transition-transform" onClick={() => initiateGoogleSignIn(auth)}>
+        <LogIn className="h-6 w-6" /> Mulai Kurikulum Sekarang
+      </Button>
     </div>
   );
 
@@ -322,8 +328,8 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" asChild className="rounded-full shadow-sm"><Link href="/journal">Riwayat Jurnal</Link></Button>
-          <Button asChild className="rounded-full shadow-md"><Link href="/activities">Kelola Materi</Link></Button>
+          <Button variant="outline" asChild className="rounded-full shadow-sm font-bold uppercase tracking-tight text-xs"><Link href="/journal">Riwayat Jurnal</Link></Button>
+          <Button asChild className="rounded-full shadow-md font-bold uppercase tracking-tight text-xs"><Link href="/activities">Kelola Materi</Link></Button>
         </div>
       </div>
 
@@ -402,10 +408,10 @@ export default function DashboardPage() {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Button size="sm" className="w-full rounded-full gap-2" onClick={handleSaveShortNote}>
+                <Button size="sm" className="w-full rounded-full gap-2 font-bold uppercase text-xs" onClick={handleSaveShortNote}>
                   Simpan Refleksi
                 </Button>
-                <Button variant="ghost" size="sm" asChild className="w-full rounded-full gap-2 text-xs">
+                <Button variant="ghost" size="sm" asChild className="w-full rounded-full gap-2 text-[10px] font-black uppercase">
                   <Link href="/journal">
                     Tulis Jurnal Detail <ArrowRight className="h-3 w-3" />
                   </Link>
