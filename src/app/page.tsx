@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -9,13 +10,14 @@ import {
   Flame,
   Calendar,
   Zap,
-  PenTool,
   Play,
   Pause,
   RotateCcw,
   Timer as TimerIcon,
   BookOpen,
-  Layers
+  Layers,
+  Star,
+  NotebookPen
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -45,6 +47,7 @@ export default function DashboardPage() {
   const today = format(new Date(), 'yyyy-MM-dd');
   
   const [reflection, setReflection] = useState('');
+  const [rating, setRating] = useState(0);
   const [timers, setTimers] = useState<Record<string, number>>({});
   const [runningTimers, setRunningTimers] = useState<Set<string>>(new Set());
 
@@ -68,6 +71,13 @@ export default function DashboardPage() {
   const { data: reflections } = useCollection(reflectionQuery);
 
   const currentReflection = reflections?.[0];
+
+  useEffect(() => {
+    if (currentReflection) {
+      setReflection(currentReflection.content || '');
+      setRating(currentReflection.productivityRating || 0);
+    }
+  }, [currentReflection]);
 
   // Set of all completed activity IDs (across all time)
   const completedActivityIds = useMemo(() => {
@@ -137,15 +147,19 @@ export default function DashboardPage() {
   };
 
   const handleSaveReflection = () => {
-    if (!user || !db || !reflection) return;
-    const refId = currentReflection?.id || today;
+    if (!user || !db || !reflection) {
+      toast({ variant: "destructive", title: "Error", description: "Tulis isi jurnal terlebih dahulu." });
+      return;
+    }
+    const refId = currentReflection?.id || `${user.uid}_${today}`;
     setDoc(doc(db, 'users', user.uid, 'reflections', refId), {
       userId: user.uid,
       date: today,
       content: reflection,
+      productivityRating: rating,
       timestamp: serverTimestamp(),
     }, { merge: true });
-    toast({ title: "Tersimpan", description: "Catatan belajar hari ini telah disimpan." });
+    toast({ title: "Tersimpan", description: "Jurnal belajar hari ini telah diperbarui." });
   };
 
   const heatmapDays = useMemo(() => {
@@ -251,7 +265,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" asChild className="rounded-full shadow-sm"><Link href="/review">Weekly Review</Link></Button>
+          <Button variant="outline" asChild className="rounded-full shadow-sm"><Link href="/journal">Riwayat Jurnal</Link></Button>
           <Button asChild className="rounded-full shadow-md"><Link href="/activities">Kelola Materi</Link></Button>
         </div>
       </div>
@@ -305,32 +319,52 @@ export default function DashboardPage() {
                <div className="text-6xl font-black mb-4">{totalMasteryProgress}%</div>
                <Progress value={totalMasteryProgress} className="bg-white/20 h-2" />
                <div className="mt-4 flex justify-between items-center">
-                  <p className="text-sm font-medium opacity-80">{completedActivityIds.size} / {activities?.length || 0} materi dikuasai</p>
+                  <p className="text-sm font-medium opacity-80">{completedActivityIds.size} / {activities?.length || 0} materi</p>
                   <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-full">
                     <Flame className="h-3 w-3 text-orange-400 fill-current" />
                     <span className="text-xs font-black">{currentStreak} Day Streak</span>
                   </div>
                </div>
-               <p className="mt-2 text-[10px] uppercase font-bold opacity-60">Selesaikan {todayLogsCount} materi hari ini</p>
              </CardContent>
           </Card>
 
           <Card className="border-none bg-muted/50">
-            <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase flex items-center gap-2"><PenTool className="h-3 w-3" /> Insight Belajar Hari Ini</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              {currentReflection ? (
-                <p className="text-sm italic font-serif leading-relaxed">"{currentReflection.content}"</p>
-              ) : (
-                <>
-                  <Textarea 
-                    placeholder="Apa insight belajarmu hari ini?" 
-                    className="min-h-[80px] bg-background border-none text-sm"
-                    value={reflection}
-                    onChange={(e) => setReflection(e.target.value)}
-                  />
-                  <Button size="sm" className="w-full rounded-full" onClick={handleSaveReflection}>Simpan Catatan</Button>
-                </>
-              )}
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-bold uppercase flex items-center gap-2">
+                <NotebookPen className="h-3 w-3" /> Jurnal Belajar Hari Ini
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <p className="text-[10px] uppercase font-black text-muted-foreground">Tingkat Produktivitas</p>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button 
+                      key={s} 
+                      onClick={() => setRating(s)}
+                      className={cn(
+                        "p-1 transition-colors",
+                        rating >= s ? "text-yellow-500" : "text-muted-foreground opacity-30"
+                      )}
+                    >
+                      <Star className={cn("h-6 w-6", rating >= s && "fill-current")} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-[10px] uppercase font-black text-muted-foreground">Apa insight belajarmu hari ini?</p>
+                <Textarea 
+                  placeholder="Hari ini ngapain aja jam berapa? Gimana rasanya?" 
+                  className="min-h-[120px] bg-background border-none text-sm leading-relaxed"
+                  value={reflection}
+                  onChange={(e) => setReflection(e.target.value)}
+                />
+              </div>
+              <Button size="sm" className="w-full rounded-full gap-2" onClick={handleSaveReflection}>
+                Simpan Jurnal
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -397,17 +431,17 @@ export default function DashboardPage() {
                                 </div>
                                 <div className="flex items-center gap-0.5">
                                   {!isRunning ? (
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => startTimer(activity.id, activity.durationMinutes || 25)}>
+                                    <button onClick={() => startTimer(activity.id, activity.durationMinutes || 25)} className="p-1.5 rounded-full hover:bg-muted transition-colors">
                                       <Play className="h-3.5 w-3.5 fill-current" />
-                                    </Button>
+                                    </button>
                                   ) : (
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-primary" onClick={() => stopTimer(activity.id)}>
+                                    <button onClick={() => stopTimer(activity.id)} className="p-1.5 rounded-full hover:bg-muted text-primary transition-colors">
                                       <Pause className="h-3.5 w-3.5 fill-current" />
-                                    </Button>
+                                    </button>
                                   )}
-                                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground" onClick={() => resetTimer(activity.id, activity.durationMinutes || 25)}>
+                                  <button onClick={() => resetTimer(activity.id, activity.durationMinutes || 25)} className="p-1.5 rounded-full hover:bg-muted text-muted-foreground transition-colors">
                                     <RotateCcw className="h-3.5 w-3.5" />
-                                  </Button>
+                                  </button>
                                 </div>
                               </div>
                             )}

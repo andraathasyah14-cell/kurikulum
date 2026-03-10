@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, LayoutDashboard, BookOpen, TrendingUp, Settings, LogOut, Award } from 'lucide-react';
+import { Menu, LayoutDashboard, BookOpen, TrendingUp, Settings, LogOut, Award, NotebookPen } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -23,10 +24,10 @@ import { useToast } from '@/hooks/use-toast';
 
 const navLinks = [
   { href: '/', label: 'Target', icon: LayoutDashboard },
-  { href: '/activities', label: 'Checklist', icon: BookOpen },
+  { href: '/activities', label: 'Kurikulum', icon: BookOpen },
+  { href: '/journal', label: 'Jurnal', icon: NotebookPen },
   { href: '/stats', label: 'Statistik', icon: TrendingUp },
   { href: '/review', label: 'Review', icon: Award },
-  { href: '/settings', label: 'Profil', icon: Settings },
 ];
 
 export function Header() {
