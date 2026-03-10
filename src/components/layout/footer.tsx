@@ -1,65 +1,25 @@
+
+import { ListChecks } from 'lucide-react';
 import Link from 'next/link';
-
-import { Logo } from '@/components/logo';
-
-const footerNav = {
-  'Tentang UECD': [
-    { label: 'Visi & Misi', href: '/about' },
-    { label: 'Peran Strategis', href: '/about' },
-    { label: 'Prinsip Inti', href: '/treaty' },
-    { label: 'Implementasi', href: '/treaty' },
-  ],
-  'Kerangka Kerja': [
-    { label: 'Konsensus Werjia', href: '/treaty' },
-    { label: 'Tata Kelola', href: '/governance' },
-    { label: 'Transparansi', href: '/contact' },
-  ],
-  'Sumber Daya': [
-    { label: 'Data & Laporan', href: '/data' },
-    { label: 'Berita', href: '/news' },
-    { label: 'Hubungi Kami', href: '/contact' },
-  ],
-};
 
 export function Footer() {
   return (
-    <footer className="border-t bg-card">
-      <div className="container px-4 py-12 md:px-6">
-        <div className="grid gap-8 md:grid-cols-4 lg:grid-cols-5">
-          <div className="lg:col-span-2">
-            <Link href="/" className="mb-4 inline-flex items-center gap-2">
-              <Logo />
-              <span className="font-headline text-lg font-bold">
-                UECD
-              </span>
-            </Link>
-            <p className="max-w-sm text-sm text-muted-foreground">
-             Union of Economic Cooperation and Development.
-            </p>
-          </div>
-          {Object.entries(footerNav).map(([title, links]) => (
-            <div key={title}>
-              <h4 className="mb-4 font-headline font-semibold">{title}</h4>
-              <ul className="space-y-2">
-                {links.map(link => (
-                  <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-muted-foreground transition-colors hover:text-primary"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+    <footer className="border-t bg-card mt-auto">
+      <div className="container px-4 py-8 md:px-6">
+        <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+          <div className="flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-primary text-primary-foreground">
+              <ListChecks className="h-4 w-4" />
             </div>
-          ))}
-        </div>
-        <div className="mt-12 border-t pt-8">
-          <p className="text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Union of Economic Cooperation and Development. Hak cipta
-            dilindungi undang-undang.
+            <span className="font-headline font-bold">TrackPro</span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            &copy; {new Date().getFullYear()} TrackPro - Fokus pada Progres Anda.
           </p>
+          <nav className="flex gap-4">
+            <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary">Privasi</Link>
+            <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary">Ketentuan</Link>
+          </nav>
         </div>
       </div>
     </footer>

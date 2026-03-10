@@ -1,108 +1,91 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, Search } from 'lucide-react';
+import { Menu, LayoutDashboard, ListChecks, TrendingUp, User } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/firebase';
 
 const navLinks = [
-  { href: '/', label: 'Beranda' },
-  { href: '/about', label: 'Tentang UECD' },
-  { href: '/treaty', label: 'Konsensus Werjia' },
-  { href: '/governance', label: 'Tata Kelola' },
-  { href: '/integration', label: 'Implementasi' },
-  { href: '/data', label: 'Data & Laporan' },
-  { href: '/news', label: 'Berita' },
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/activities', label: 'Aktivitas', icon: ListChecks },
+  { href: '/stats', label: 'Statistik', icon: TrendingUp },
 ];
 
-function NavLink({ href, label }: { href: string; label: string }) {
-  const pathname = usePathname();
-  return (
-    <Link
-      href={href}
-      className={cn(
-        'text-sm font-medium transition-colors hover:text-primary',
-        pathname === href ? 'text-primary' : 'text-muted-foreground'
-      )}
-    >
-      {label}
-    </Link>
-  );
-}
-
-const NavItems = ({ className }: { className?: string }) => (
-  <nav className={cn('flex items-center gap-4 lg:gap-6', className)}>
-    {navLinks.slice(0, 3).map(link => (
-      <NavLink key={link.href} href={link.href} label={link.label} />
-    ))}
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="px-0 text-sm font-medium text-muted-foreground hover:text-primary focus-visible:ring-0"
-        >
-          Lainnya
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        {navLinks.slice(3).map(link => (
-          <DropdownMenuItem key={link.href} asChild>
-            <Link href={link.href}>{link.label}</Link>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </nav>
-);
-
 export function Header() {
+  const pathname = usePathname();
+  const { user } = useUser();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center px-4 md:px-6">
         <Link href="/" className="mr-6 flex items-center gap-2">
-          <Logo />
-          <span className="hidden font-headline font-bold sm:inline-block">
-            UECD
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <ListChecks className="h-5 w-5" />
+          </div>
+          <span className="font-headline font-bold text-xl sm:inline-block">
+            TrackPro
           </span>
         </Link>
 
-        <div className="hidden md:flex md:flex-1">
-          <NavItems />
-        </div>
+        <nav className="hidden md:flex md:flex-1 items-center gap-6">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                'flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary',
+                pathname === link.href ? 'text-primary' : 'text-muted-foreground'
+              )}
+            >
+              <link.icon className="h-4 w-4" />
+              {link.label}
+            </Link>
+          ))}
+        </nav>
 
         <div className="flex flex-1 items-center justify-end gap-2">
-          <div className="relative hidden sm:block">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Cari..."
-              className="pl-8 sm:w-[200px] lg:w-[300px]"
-            />
-          </div>
+          {user ? (
+             <Button variant="ghost" size="icon" className="rounded-full">
+               <User className="h-5 w-5" />
+             </Button>
+          ) : (
+            <Button size="sm">Mulai Gratis</Button>
+          )}
+          
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="h-6 w-6" />
-                <span className="sr-only">Buka menu navigasi</span>
+                <span className="sr-only">Menu</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left">
-              <Link href="/" className="mb-6 flex items-center gap-2">
-                <Logo />
-                <span className="font-headline font-bold">UECD</span>
+              <Link href="/" className="mb-8 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <ListChecks className="h-5 w-5" />
+                </div>
+                <span className="font-headline font-bold text-xl">TrackPro</span>
               </Link>
-              <NavItems className="flex-col items-start gap-4" />
+              <nav className="flex flex-col gap-4">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      'flex items-center gap-3 text-lg font-medium py-2',
+                      pathname === link.href ? 'text-primary' : 'text-muted-foreground'
+                    )}
+                  >
+                    <link.icon className="h-5 w-5" />
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
             </SheetContent>
           </Sheet>
         </div>

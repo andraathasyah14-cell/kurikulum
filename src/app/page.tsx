@@ -1,250 +1,209 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import {
-  ArrowRight,
-  Landmark,
-  Scale,
-  ShieldCheck,
-  Globe,
+'use client';
+
+import { useState, useEffect } from 'react';
+import { 
+  Plus, 
+  CheckCircle2, 
+  Circle, 
+  TrendingUp, 
+  Calendar as CalendarIcon,
+  Activity as ActivityIcon
 } from 'lucide-react';
-
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { 
+  useUser, 
+  useCollection, 
+  useMemoFirebase, 
+  useFirestore 
+} from '@/firebase';
+import { collection, query, orderBy, serverTimestamp, doc, setDoc } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { format } from 'date-fns';
+import { id as idLocale } from 'date-fns/locale';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from 'recharts';
+import { cn } from '@/lib/utils';
 
-const heroImage = PlaceHolderImages.find(p => p.id === 'hero');
-const investmentImage = PlaceHolderImages.find(p => p.id === 'sector-investment');
-const tradeImage = PlaceHolderImages.find(p => p.id === 'sector-trade');
-const socialImage = PlaceHolderImages.find(p => p.id === 'sector-social');
+export default function DashboardPage() {
+  const { user } = useUser();
+  const db = useFirestore();
+  const today = format(new Date(), 'yyyy-MM-dd');
 
-const stats = [
-  {
-    value: '11',
-    label: 'Misi Utama',
-    icon: Landmark,
-  },
-  {
-    value: '6',
-    label: 'Peran Strategis',
-    icon: Scale,
-  },
-  {
-    value: '20 th',
-    label: 'Roadmap Integrasi',
-    icon: Globe,
-  },
-  {
-    value: '1',
-    label: 'Konsensus Inti',
-    icon: ShieldCheck,
-  },
-];
+  const activitiesQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(
+      collection(db, 'users', user.uid, 'activities'),
+      orderBy('createdAt', 'desc')
+    );
+  }, [db, user]);
 
-const sectors = [
-  {
-    title: 'Integrasi Pasar & Investasi',
-    description:
-      'Memfasilitasi arus modal, standardisasi teknis, dan pengurangan hambatan untuk pertumbuhan bersama.',
-    image: investmentImage,
-    href: '/about',
-  },
-  {
-    title: 'Inovasi dan Konektivitas',
-    description:
-      'Mendorong kebijakan industri berbasis inovasi, transformasi digital, dan pembangunan infrastruktur.',
-    image: tradeImage,
-    href: '/about',
-  },
-  {
-    title: 'Pembangunan Inklusif & Tata Kelola',
-    description:
-      'Menjamin pemerataan pembangunan, stabilitas ekonomi, dan supremasi hukum yang transparan.',
-    image: socialImage,
-    href: '/about',
-  },
-];
+  const logsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(
+      collection(db, 'users', user.uid, 'logs'),
+      orderBy('timestamp', 'desc')
+    );
+  }, [db, user]);
 
-export default function Home() {
+  const { data: activities, isLoading: activitiesLoading } = useCollection(activitiesQuery);
+  const { data: logs } = useCollection(logsQuery);
+
+  const todayLogs = logs?.filter(log => log.date === today) || [];
+
+  const handleToggleComplete = (activityId: string) => {
+    if (!user || !db) return;
+    
+    const existingLog = todayLogs.find(log => log.activityId === activityId);
+    
+    if (!existingLog) {
+      addDocumentNonBlocking(collection(db, 'users', user.uid, 'logs'), {
+        activityId,
+        userId: user.uid,
+        date: today,
+        value: 1,
+        timestamp: serverTimestamp(),
+      });
+    }
+  };
+
+  const statsData = [
+    { name: 'Sen', value: 4 },
+    { name: 'Sel', value: 3 },
+    { name: 'Rab', value: 5 },
+    { name: 'Kam', value: 2 },
+    { name: 'Jum', value: 6 },
+    { name: 'Sab', value: 7 },
+    { name: 'Min', value: 4 },
+  ];
+
+  const totalActivities = activities?.length || 0;
+  const completedToday = todayLogs.length;
+  const progressPercent = totalActivities > 0 ? (completedToday / totalActivities) * 100 : 0;
+
   return (
-    <>
-      <section className="relative flex h-[60vh] w-full items-center justify-center text-center text-primary-foreground md:h-[80vh]">
-        {heroImage && (
-          <Image
-            src={heroImage.imageUrl}
-            alt={heroImage.description}
-            fill
-            className="object-cover"
-            priority
-            data-ai-hint={heroImage.imageHint}
-          />
-        )}
-        <div className="absolute inset-0 bg-black/60" />
-        <div className="relative z-10 mx-auto max-w-4xl p-4">
-          <h1 className="font-headline text-4xl font-extrabold leading-tight drop-shadow-md md:text-6xl">
-            Union of Economic Cooperation and Development (UECD)
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg drop-shadow md:text-xl">
-            Mewujudkan kawasan ekonomi yang terintegrasi, adil, inovatif, dan berkelanjutan melalui kerja sama yang memperkuat ketahanan dan membuka peluang pertumbuhan baru.
+    <div className="container px-4 py-8 md:px-6">
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="font-headline text-3xl font-bold">Halo, {user?.displayName || 'Pengguna'}!</h1>
+          <p className="text-muted-foreground">
+            Hari ini adalah {format(new Date(), 'EEEE, d MMMM yyyy', { locale: idLocale })}.
           </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Button size="lg" asChild>
-              <Link href="/about">
-                Pelajari UECD
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-primary-foreground bg-transparent text-primary-foreground hover:bg-primary-foreground hover:text-accent"
-              asChild
-            >
-              <Link href="/treaty">Baca Konsensus Werjia</Link>
-            </Button>
-          </div>
         </div>
-      </section>
+        <Button asChild>
+          <Link href="/activities">
+            <Plus className="mr-2 h-4 w-4" /> Tambah Aktivitas
+          </Link>
+        </Button>
+      </div>
 
-      <section className="bg-card py-12 md:py-20">
-        <div className="container px-4 md:px-6">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.map((stat, index) => (
-              <div key={index} className="flex items-center gap-4">
-                <stat.icon className="h-10 w-10 text-primary" />
-                <div>
-                  <p className="text-3xl font-bold">{stat.value}</p>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-background py-12 md:py-24">
-        <div className="container px-4 md:px-6">
-          <div className="mb-12 text-center">
-            <h2 className="font-headline text-3xl font-bold md:text-4xl">
-              Pilar Operasional UECD
-            </h2>
-            <p className="mx-auto mt-2 max-w-2xl text-muted-foreground">
-              UECD dibangun di atas pilar-pilar strategis untuk mencapai transformasi struktural kawasan yang resilien, inklusif, dan adaptif.
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Ringkasan Hari Ini */}
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-primary" /> Progres Hari Ini
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold mb-2">{completedToday}/{totalActivities}</div>
+            <Progress value={progressPercent} className="h-2" />
+            <p className="mt-2 text-xs text-muted-foreground">
+              {progressPercent === 100 ? 'Luar biasa! Semua tugas selesai.' : `${totalActivities - completedToday} aktivitas tersisa.`}
             </p>
-          </div>
+          </CardContent>
+        </Card>
 
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {sectors.map(sector => (
-              <Card key={sector.title} className="group overflow-hidden">
-                <div className="relative h-56 w-full">
-                  {sector.image && (
-                    <Image
-                      src={sector.image.imageUrl}
-                      alt={sector.image.description}
-                      fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      data-ai-hint={sector.image.imageHint}
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    />
+        {/* Visual Tracking */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" /> Aktivitas Mingguan
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="h-[200px] w-full pt-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={statsData}>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                <YAxis hide />
+                <Tooltip 
+                  cursor={{ fill: 'transparent' }}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="rounded-lg border bg-background p-2 shadow-sm text-xs">
+                          {payload[0].value} aktivitas
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {statsData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={index === 6 ? 'hsl(var(--primary))' : 'hsl(var(--muted))'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Daftar Aktivitas Cepat */}
+      <div className="mt-8">
+        <h2 className="mb-4 text-lg font-semibold flex items-center gap-2">
+          <ActivityIcon className="h-5 w-5 text-primary" /> Aktivitas Hari Ini
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {activitiesLoading ? (
+            Array(3).fill(0).map((_, i) => (
+              <Card key={i} className="animate-pulse h-24" />
+            ))
+          ) : activities?.length === 0 ? (
+            <Card className="col-span-full py-12 text-center">
+              <CardContent>
+                <p className="text-muted-foreground">Belum ada aktivitas. Mulai buat rencana Anda!</p>
+                <Button variant="outline" className="mt-4" asChild>
+                  <Link href="/activities">Buat Aktivitas Pertama</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            activities?.map((activity) => {
+              const isCompleted = todayLogs.some(log => log.activityId === activity.id);
+              return (
+                <Card 
+                  key={activity.id} 
+                  className={cn(
+                    "cursor-pointer transition-all hover:shadow-md",
+                    isCompleted && "bg-muted/50 opacity-80"
                   )}
-                </div>
-                <CardHeader>
-                  <CardTitle className="font-headline">{sector.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="mb-4 text-muted-foreground">
-                    {sector.description}
-                  </p>
-                  <Button variant="link" className="p-0" asChild>
-                    <Link href={sector.href}>
-                      Selengkapnya <ArrowRight className="ml-1 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  onClick={() => handleToggleComplete(activity.id)}
+                >
+                  <CardContent className="flex items-center gap-4 p-4">
+                    <div className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-full border-2",
+                      isCompleted ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30 text-muted-foreground/30"
+                    )}>
+                      {isCompleted ? <CheckCircle2 className="h-6 w-6" /> : <Circle className="h-6 w-6" />}
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <h3 className={cn("font-medium truncate", isCompleted && "line-through text-muted-foreground")}>
+                        {activity.title}
+                      </h3>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {activity.category || 'Personal'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
         </div>
-      </section>
-
-      <section className="grid gap-12 bg-card py-12 md:py-24 lg:grid-cols-2">
-        <div className="container px-4 md:px-6">
-          <h2 className="mb-4 font-headline text-3xl font-bold">
-            Berita & Informasi Terbaru
-          </h2>
-          <div className="space-y-4">
-            <NewsItem
-              date="26 Oktober 2024"
-              title="UECD Summit: Pemimpin Negara Anggota Bahas Roadmap Integrasi Tahap II"
-            />
-            <NewsItem
-              date="22 Oktober 2024"
-              title="Badan Teknis UECD Rilis Standar Baru untuk Perdagangan Digital"
-            />
-            <NewsItem
-              date="18 Oktober 2024"
-              title="UECD Luncurkan Dana Kohesi untuk Proyek Infrastruktur Lintas Batas"
-            />
-          </div>
-          <Button asChild variant="outline" className="mt-6">
-            <Link href="/news">Lihat Semua Berita <ArrowRight className="ml-2 h-4 w-4" /></Link>
-          </Button>
-        </div>
-        <div className="container px-4 md:px-6">
-          <h2 className="mb-4 font-headline text-3xl font-bold">
-            Laporan Unggulan
-          </h2>
-          <div className="space-y-4">
-            <ReportItem
-              title="Laporan Stabilitas Ekonomi Kawasan UECD 2024"
-              description="Analisis komprehensif kesehatan makroekonomi kawasan."
-            />
-            <ReportItem
-              title="Indeks Daya Saing Digital UECD 2024"
-              description="Melacak kemajuan transformasi digital di negara anggota."
-            />
-            <ReportItem
-              title="Peta Jalan Pembangunan Berkelanjutan UECD"
-              description="Evaluasi implementasi target keberlanjutan lingkungan."
-            />
-          </div>
-          <Button asChild variant="outline" className="mt-6">
-            <Link href="/data">Buka Data & Laporan <ArrowRight className="ml-2 h-4 w-4" /></Link>
-          </Button>
-        </div>
-      </section>
-    </>
-  );
-}
-
-function NewsItem({ date, title }: { date: string; title: string }) {
-  return (
-    <div className="border-b pb-4">
-      <p className="text-sm text-muted-foreground">{date}</p>
-      <h3 className="cursor-pointer font-semibold transition-colors hover:text-primary">
-        {title}
-      </h3>
-    </div>
-  );
-}
-
-function ReportItem({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="border-b pb-4">
-      <h3 className="cursor-pointer font-semibold transition-colors hover:text-primary">
-        {title}
-      </h3>
-      <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
     </div>
   );
 }

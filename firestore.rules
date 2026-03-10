@@ -1,206 +1,24 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * CORE PHILOSOPHY:
-     * This ruleset implements a centralized administrative Role-Based Access Control (RBAC) model. 
-     * The application serves as a public information portal for the Union of Economic Cooperation 
-     * and Development (UECD). 
-     *
-     * DATA STRUCTURE:
-     * Data is organized into flat, top-level collections representing organizational entities 
-     * (e.g., member states, documents, sectors). There is no user-specific private data in 
-     * these collections.
-     *
-     * KEY SECURITY DECISIONS:
-     * 1. Public Read Access: All core content collections are globally readable (get and list) 
-     *    to facilitate public transparency.
-     * 2. Administrative Writes: Write operations (create, update, delete) are strictly 
-     *    restricted to users whose UID exists in the 'admin_users' collection.
-     * 3. Relational Integrity: On creation, we ensure the document's internal 'id' field 
-     *    matches the Firestore document ID to maintain path consistency.
-     * 4. Denormalization for Authorization: Instead of checking ownership on every document, 
-     *    a single 'exists' check against the 'admin_users' collection determines 
-     *    administrative privileges for the entire database.
-     */
-
-    // --- Global Helper Functions ---
-
-    /** @description Checks if the user is authenticated. */
+    // Fungsi bantuan untuk keamanan
     function isSignedIn() {
       return request.auth != null;
     }
-
-    /** @description Checks if the authenticated user is registered as an administrator. */
-    function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Verifies administrative status and ensures the resource exists for destructive operations. */
-    function isExistingAdmin() {
-      return isAdmin() && resource != null;
-    }
-
-    /** @description Validates that the internal ID matches the document path ID. */
-    function isIdConsistent(docId) {
-      return request.resource.data.id == docId;
-    }
-
-    /** @description Ensures the internal ID field remains immutable during updates. */
-    function isIdImmutable() {
-      return request.resource.data.id == resource.data.id;
-    }
-
-    // --- Collection Rules ---
-
-    /**
-     * @description Rules for the central admin registry.
-     * @path /admin_users/{userId}
-     */
-    match /admin_users/{userId} {
-      allow get: if isSignedIn();
-      allow list, write: if isAdmin();
-    }
-
-    /**
-     * @description Stores the single OrganizationProfile document. Public read, admin write.
-     * @path /organization_profile/{profileId}
-     * @allow Public user (get) any profile.
-     * @deny Non-admin user (create) a profile document.
-     * @principle Role-Based Access Control (RBAC) for data management.
-     */
-    match /organization_profile/{profileId} {
-      allow get, list: if true;
-      allow create: if isAdmin() && isIdConsistent(profileId);
-      allow update: if isExistingAdmin() && isIdImmutable();
-      allow delete: if isExistingAdmin();
-    }
-
-    /**
-     * @description Stores profiles of individual member countries. Public read, admin write.
-     * @path /member_states/{memberStateId}
-     * @allow Public user (list) all member states.
-     * @deny Authenticated non-admin (update) a member state flag.
-     * @principle Path-to-data consistency and administrative write restriction.
-     */
-    match /member_states/{memberStateId} {
-      allow get, list: if true;
-      allow create: if isAdmin() && isIdConsistent(memberStateId);
-      allow update: if isExistingAdmin() && isIdImmutable();
-      allow delete: if isExistingAdmin();
-    }
-
-    /**
-     * @description Stores various official documents (treaties, reports). Public read, admin write.
-     * @path /documents/{documentId}
-     * @allow Public user (get) a specific document.
-     * @deny Admin (create) a document where data.id does not match documentId.
-     * @principle Public transparency with controlled authoritative updates.
-     */
-    match /documents/{documentId} {
-      allow get, list: if true;
-      allow create: if isAdmin() && isIdConsistent(documentId);
-      allow update: if isExistingAdmin() && isIdImmutable();
-      allow delete: if isExistingAdmin();
-    }
-
-    /**
-     * @description Stores details about governing bodies. Public read, admin write.
-     * @path /governance_bodies/{governanceBodyId}
-     * @allow Public user (list) the UECD hierarchy.
-     * @deny Anonymous user (delete) a governance body record.
-     * @principle Validates relational integrity between path and document data.
-     */
-    match /governance_bodies/{governanceBodyId} {
-      allow get, list: if true;
-      allow create: if isAdmin() && isIdConsistent(governanceBodyId);
-      allow update: if isExistingAdmin() && isIdImmutable();
-      allow delete: if isExistingAdmin();
-    }
-
-    /**
-     * @description Defines economic or policy sectors. Public read, admin write.
-     * @path /sectors/{sectorId}
-     * @allow Public user (get) sector objectives.
-     * @deny Admin (update) the sector ID field.
-     * @principle Immutable relational fields for database consistency.
-     */
-    match /sectors/{sectorId} {
-      allow get, list: if true;
-      allow create: if isAdmin() && isIdConsistent(sectorId);
-      allow update: if isExistingAdmin() && isIdImmutable();
-      allow delete: if isExistingAdmin();
-    }
-
-    /**
-     * @description Stores single economic data points. Public read, admin write.
-     * @path /economic_indicators/{indicatorId}
-     * @allow Public user (list) indicator trends.
-     * @deny Non-admin (create) an economic data point.
-     * @principle Centralized data authority.
-     */
-    match /economic_indicators/{indicatorId} {
-      allow get, list: if true;
-      allow create: if isAdmin() && isIdConsistent(indicatorId);
-      allow update: if isExistingAdmin() && isIdImmutable();
-      allow delete: if isExistingAdmin();
-    }
-
-    /**
-     * @description Stores news articles and press releases. Public read, admin write.
-     * @path /news_items/{newsItemId}
-     * @allow Public user (get) latest press releases.
-     * @deny Admin (delete) a news item that doesn't exist.
-     * @principle Ensures resource existence for destructive operations.
-     */
-    match /news_items/{newsItemId} {
-      allow get, list: if true;
-      allow create: if isAdmin() && isIdConsistent(newsItemId);
-      allow update: if isExistingAdmin() && isIdImmutable();
-      allow delete: if isExistingAdmin();
-    }
-
-    /**
-     * @description Manages public consultation information. Public read, admin write.
-     * @path /public_consultations/{consultationId}
-     * @allow Public user (list) open consultations.
-     * @deny Admin (create) consultation with mismatched path ID.
-     * @principle Path-based relational integrity.
-     */
-    match /public_consultations/{consultationId} {
-      allow get, list: if true;
-      allow create: if isAdmin() && isIdConsistent(consultationId);
-      allow update: if isExistingAdmin() && isIdImmutable();
-      allow delete: if isExistingAdmin();
-    }
-
-    /**
-     * @description Defines phases of economic integration. Public read, admin write.
-     * @path /integration_stages/{stageId}
-     * @allow Public user (get) integration level details.
-     * @deny Authenticated non-admin (update) stage descriptions.
-     * @principle Global read access with RBAC-protected writes.
-     */
-    match /integration_stages/{stageId} {
-      allow get, list: if true;
-      allow create: if isAdmin() && isIdConsistent(stageId);
-      allow update: if isExistingAdmin() && isIdImmutable();
-      allow delete: if isExistingAdmin();
-    }
-
-    /**
-     * @description Represents roadmap milestones for integration. Public read, admin write.
-     * @path /roadmap_items/{roadmapItemId}
-     * @allow Public user (list) future milestones.
-     * @deny Admin (update) the internal ID of a roadmap item.
-     * @principle Consistency between internal data and Firestore path.
-     */
-    match /roadmap_items/{roadmapItemId} {
-      allow get, list: if true;
-      allow create: if isAdmin() && isIdConsistent(roadmapItemId);
-      allow update: if isExistingAdmin() && isIdImmutable();
-      allow delete: if isExistingAdmin();
+    // Aturan untuk data pengguna (Aktivitas dan Log)
+    match /users/{userId} {
+      match /activities/{activityId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /logs/{logId} {
+        allow read, write: if isOwner(userId);
+      }
     }
   }
 }
