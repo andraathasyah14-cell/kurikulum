@@ -16,8 +16,8 @@ import {
   Timer as TimerIcon,
   BookOpen,
   Layers,
-  Star,
-  NotebookPen
+  NotebookPen,
+  ArrowRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -46,8 +46,7 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const today = format(new Date(), 'yyyy-MM-dd');
   
-  const [reflection, setReflection] = useState('');
-  const [rating, setRating] = useState(0);
+  const [shortNote, setShortNote] = useState('');
   const [timers, setTimers] = useState<Record<string, number>>({});
   const [runningTimers, setRunningTimers] = useState<Set<string>>(new Set());
 
@@ -74,22 +73,16 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (currentReflection) {
-      setReflection(currentReflection.content || '');
-      setRating(currentReflection.productivityRating || 0);
+      setShortNote(currentReflection.shortNote || '');
     }
   }, [currentReflection]);
 
-  // Set of all completed activity IDs (across all time)
+  // Set of all completed activity IDs
   const completedActivityIds = useMemo(() => {
     return new Set(logs?.map(log => log.activityId) || []);
   }, [logs]);
 
-  // Logs specifically for today (for stats)
-  const todayLogsCount = useMemo(() => {
-    return logs?.filter(log => log.date === today).length || 0;
-  }, [logs, today]);
-
-  // Grouping activities by category (Subject)
+  // Grouping activities by category
   const groupedActivities = useMemo(() => {
     if (!activities) return {};
     return activities.reduce((acc, act) => {
@@ -142,24 +135,23 @@ export default function DashboardPage() {
         timestamp: serverTimestamp(),
       });
       stopTimer(activity.id);
-      toast({ title: "Materi Dikuasai!", description: `Progres penguasaan "${activity.title}" telah dicatat pada hari ini.` });
+      toast({ title: "Materi Dikuasai!", description: `Progres "${activity.title}" telah dicatat.` });
     }
   };
 
-  const handleSaveReflection = () => {
-    if (!user || !db || !reflection) {
-      toast({ variant: "destructive", title: "Error", description: "Tulis isi jurnal terlebih dahulu." });
+  const handleSaveShortNote = () => {
+    if (!user || !db || !shortNote) {
+      toast({ variant: "destructive", title: "Error", description: "Tulis catatan singkat terlebih dahulu." });
       return;
     }
     const refId = currentReflection?.id || `${user.uid}_${today}`;
     setDoc(doc(db, 'users', user.uid, 'reflections', refId), {
       userId: user.uid,
       date: today,
-      content: reflection,
-      productivityRating: rating,
+      shortNote: shortNote,
       timestamp: serverTimestamp(),
     }, { merge: true });
-    toast({ title: "Tersimpan", description: "Jurnal belajar hari ini telah diperbarui." });
+    toast({ title: "Tersimpan", description: "Target harian telah diperbarui." });
   };
 
   const heatmapDays = useMemo(() => {
@@ -331,45 +323,34 @@ export default function DashboardPage() {
           <Card className="border-none bg-muted/50">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-bold uppercase flex items-center gap-2">
-                <NotebookPen className="h-3 w-3" /> Jurnal Belajar Hari Ini
+                <NotebookPen className="h-3 w-3" /> Target / Refleksi Singkat
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <p className="text-[10px] uppercase font-black text-muted-foreground">Tingkat Produktivitas</p>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <button 
-                      key={s} 
-                      onClick={() => setRating(s)}
-                      className={cn(
-                        "p-1 transition-colors",
-                        rating >= s ? "text-yellow-500" : "text-muted-foreground opacity-30"
-                      )}
-                    >
-                      <Star className={cn("h-6 w-6", rating >= s && "fill-current")} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-[10px] uppercase font-black text-muted-foreground">Apa insight belajarmu hari ini?</p>
+                <p className="text-[10px] uppercase font-black text-muted-foreground">Apa fokus utamamu hari ini?</p>
                 <Textarea 
-                  placeholder="Hari ini ngapain aja jam berapa? Gimana rasanya?" 
-                  className="min-h-[120px] bg-background border-none text-sm leading-relaxed"
-                  value={reflection}
-                  onChange={(e) => setReflection(e.target.value)}
+                  placeholder="Contoh: Menyelesaikan Noun Clause dan latihan soal..." 
+                  className="min-h-[100px] bg-background border-none text-sm leading-relaxed"
+                  value={shortNote}
+                  onChange={(e) => setShortNote(e.target.value)}
                 />
               </div>
-              <Button size="sm" className="w-full rounded-full gap-2" onClick={handleSaveReflection}>
-                Simpan Jurnal
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button size="sm" className="w-full rounded-full gap-2" onClick={handleSaveShortNote}>
+                  Simpan Target
+                </Button>
+                <Button variant="ghost" size="sm" asChild className="w-full rounded-full gap-2 text-xs">
+                  <Link href="/journal">
+                    Tulis Jurnal Detail <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Grouped Activities List (Subject Hierarchy) */}
+        {/* Grouped Activities List */}
         <div className="md:col-span-8 space-y-6">
           {Object.entries(groupedActivities).map(([category, items]) => {
             const completedInCategory = items.filter(item => completedActivityIds.has(item.id)).length;
@@ -385,7 +366,7 @@ export default function DashboardPage() {
                     </CardTitle>
                     <div className="text-right">
                       <span className="block text-xs font-bold text-muted-foreground uppercase">{completedInCategory} / {items.length} Dikuasai</span>
-                      <span className="text-[10px] text-muted-foreground font-medium">{totalMinutes} menit total materi</span>
+                      <span className="text-[10px] text-muted-foreground font-medium">{totalMinutes} menit total</span>
                     </div>
                   </div>
                   <Progress value={progress} className="h-2" />
@@ -454,13 +435,6 @@ export default function DashboardPage() {
               </Card>
             );
           })}
-          {activities?.length === 0 && (
-            <div className="p-12 text-center border-2 border-dashed rounded-xl opacity-50">
-              <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="font-medium text-muted-foreground">Belum ada struktur kurikulum belajar. Buat kategori subjek sekarang!</p>
-              <Button asChild className="mt-4 rounded-full"><Link href="/activities">Buat Subjek Baru</Link></Button>
-            </div>
-          )}
         </div>
       </div>
     </div>

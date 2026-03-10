@@ -35,16 +35,17 @@
     "Reflection": {
       "title": "Reflection",
       "type": "object",
-      "description": "Refleksi harian singkat pengguna.",
+      "description": "Refleksi harian pengguna, terdiri dari catatan singkat dan jurnal detail.",
       "properties": {
         "id": { "type": "string" },
         "userId": { "type": "string" },
         "date": { "type": "string", "format": "date" },
-        "content": { "type": "string" },
+        "shortNote": { "type": "string", "description": "Catatan singkat atau target untuk Dashboard." },
+        "content": { "type": "string", "description": "Jurnal detail tentang aktivitas harian." },
         "productivityRating": { "type": "number", "minimum": 1, "maximum": 5 },
         "timestamp": { "type": "string", "format": "date-time" }
       },
-      "required": ["userId", "date", "content"]
+      "required": ["userId", "date"]
     }
   },
   "auth": {
