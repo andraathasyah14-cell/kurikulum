@@ -16,7 +16,8 @@ import {
   BookOpen,
   Layers,
   NotebookPen,
-  ArrowRight
+  ArrowRight,
+  RefreshCw
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -30,13 +31,24 @@ import {
   useFirestore,
   useAuth 
 } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp, setDoc, doc, where } from 'firebase/firestore';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, query, orderBy, serverTimestamp, setDoc, doc, where, deleteDoc } from 'firebase/firestore';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { format, subDays, eachDayOfInterval, differenceInDays, parseISO, isSameDay } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -76,10 +88,19 @@ export default function DashboardPage() {
     }
   }, [currentReflection]);
 
-  // Set of all completed activity IDs
-  const completedActivityIds = useMemo(() => {
-    return new Set(logs?.map(log => log.activityId) || []);
+  // Map activity IDs to their log IDs for easy deletion
+  const completedActivityMap = useMemo(() => {
+    if (!logs) return new Map<string, string>();
+    const map = new Map<string, string>();
+    logs.forEach(log => {
+      if (log.activityId) map.set(log.activityId, log.id);
+    });
+    return map;
   }, [logs]);
+
+  const completedActivityIds = useMemo(() => {
+    return new Set(completedActivityMap.keys());
+  }, [completedActivityMap]);
 
   // Grouping activities by category
   const groupedActivities = useMemo(() => {
@@ -122,10 +143,19 @@ export default function DashboardPage() {
     localStorage.setItem(`studypro_last_updated_${user.uid}`, Date.now().toString());
   }, [timers, runningTimers, user]);
 
-  const handleToggleComplete = (activity: any) => {
+  const handleToggleMastery = (activity: any) => {
     if (!user || !db) return;
     const isAlreadyCompleted = completedActivityIds.has(activity.id);
-    if (!isAlreadyCompleted) {
+    
+    if (isAlreadyCompleted) {
+      // RESET / UNCHECK
+      const logId = completedActivityMap.get(activity.id);
+      if (logId) {
+        deleteDocumentNonBlocking(doc(db, 'users', user.uid, 'logs', logId));
+        toast({ title: "Reset Berhasil", description: `Materi "${activity.title}" dikembalikan ke daftar belajar.` });
+      }
+    } else {
+      // COMPLETE / CHECK
       addDocumentNonBlocking(collection(db, 'users', user.uid, 'logs'), {
         activityId: activity.id,
         userId: user.uid,
@@ -136,6 +166,17 @@ export default function DashboardPage() {
       stopTimer(activity.id);
       toast({ title: "Materi Dikuasai!", description: `Progres "${activity.title}" telah dicatat.` });
     }
+  };
+
+  const handleResetCategory = (items: any[]) => {
+    if (!user || !db) return;
+    items.forEach(item => {
+      const logId = completedActivityMap.get(item.id);
+      if (logId) {
+        deleteDocumentNonBlocking(doc(db, 'users', user.uid, 'logs', logId));
+      }
+    });
+    toast({ title: "Kategori Reset", description: "Seluruh progres dalam kategori ini telah dibersihkan." });
   };
 
   const handleSaveShortNote = () => {
@@ -182,7 +223,7 @@ export default function DashboardPage() {
     runningTimers.forEach(id => {
       if (timers[id] === 0) {
         const activity = activities?.find(a => a.id === id);
-        if (activity) handleToggleComplete(activity);
+        if (activity) handleToggleMastery(activity);
       }
     });
   }, [timers, runningTimers, activities]);
@@ -363,9 +404,31 @@ export default function DashboardPage() {
                     <CardTitle className="text-xl font-black flex items-center gap-2">
                       <Layers className="h-5 w-5 text-primary" /> {category}
                     </CardTitle>
-                    <div className="text-right">
-                      <span className="block text-xs font-bold text-muted-foreground uppercase">{completedInCategory} / {items.length} Dikuasai</span>
-                      <span className="text-[10px] text-muted-foreground font-medium">{totalMinutes} menit total</span>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <span className="block text-xs font-bold text-muted-foreground uppercase">{completedInCategory} / {items.length} Dikuasai</span>
+                        <span className="text-[10px] text-muted-foreground font-medium">{totalMinutes} menit total</span>
+                      </div>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive">
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Reset Progres Kategori?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Ini akan menghapus seluruh status penguasaan materi dalam kategori "{category}". Anda harus mengulangi centang secara manual.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleResetCategory(items)} className="bg-destructive hover:bg-destructive/90">Reset Semua</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                   <Progress value={progress} className="h-2" />
@@ -381,8 +444,12 @@ export default function DashboardPage() {
                         <div key={activity.id} className={cn("group flex flex-col p-4 transition-colors", isCompleted ? "bg-green-50/30" : "hover:bg-muted/30")}>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4 flex-1 min-w-0">
-                              <button onClick={() => handleToggleComplete(activity)} disabled={isCompleted}>
-                                {isCompleted ? <CheckCircle2 className="h-6 w-6 text-green-600" /> : <Circle className="h-6 w-6 text-muted-foreground hover:text-primary" />}
+                              <button onClick={() => handleToggleMastery(activity)}>
+                                {isCompleted ? (
+                                  <CheckCircle2 className="h-6 w-6 text-green-600 hover:text-muted-foreground transition-colors" />
+                                ) : (
+                                  <Circle className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
+                                )}
                               </button>
                               <div className="min-w-0">
                                 <p className={cn("font-bold truncate text-foreground", isCompleted && "line-through text-muted-foreground")}>{activity.title}</p>
@@ -424,6 +491,17 @@ export default function DashboardPage() {
                                   </button>
                                 </div>
                               </div>
+                            )}
+
+                            {isCompleted && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 text-[10px] font-black uppercase text-muted-foreground hover:text-primary gap-1"
+                                onClick={() => handleToggleMastery(activity)}
+                              >
+                                <RefreshCw className="h-3 w-3" /> Pelajari Lagi
+                              </Button>
                             )}
                           </div>
                         </div>
