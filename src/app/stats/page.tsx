@@ -1,6 +1,6 @@
-
 'use client';
 
+import { useMemo, useState } from 'react';
 import { useMemoFirebase, useUser, useCollection, useFirestore } from '@/firebase';
 import { query, collection, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,15 +12,18 @@ import {
   YAxis, 
   Tooltip, 
   CartesianGrid,
-  LineChart,
-  Line,
-  Cell,
   AreaChart,
-  Area
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
 } from 'recharts';
-import { TrendingUp, Calendar, CheckCircle2, Award, Zap, BarChart3 } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, subDays, parseISO, isSameDay } from 'date-fns';
+import { TrendingUp, Calendar, CheckCircle2, Award, Zap, BarChart3, PieChart as PieChartIcon, Activity } from 'lucide-react';
+import { format, subDays, parseISO, isSameDay, differenceInDays } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+
+const COLORS = ['hsl(var(--primary))', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function StatsPage() {
   const { user } = useUser();
@@ -34,9 +37,16 @@ export default function StatsPage() {
     );
   }, [db, user]);
 
-  const { data: logs, isLoading } = useCollection(logsQuery);
+  const activitiesQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'users', user.uid, 'activities'));
+  }, [db, user]);
 
-  const weeklyData = useMemoFirebase(() => {
+  const { data: logs } = useCollection(logsQuery);
+  const { data: activities } = useCollection(activitiesQuery);
+
+  // 1. Weekly Data for Bar/Area Charts
+  const weeklyData = useMemo(() => {
     if (!logs) return [];
     const days = Array.from({ length: 7 }, (_, i) => subDays(new Date(), 6 - i));
 
@@ -51,35 +61,60 @@ export default function StatsPage() {
     });
   }, [logs]);
 
-  const totalLogs = logs?.length || 0;
-  const averagePerDay = logs && totalLogs > 0 ? (totalLogs / (logs.length > 30 ? 30 : logs.length)).toFixed(1) : 0;
-  
-  // Calculate Streak
-  const currentStreak = useMemoFirebase(() => {
+  // 2. Learning Velocity Calculation
+  const velocity = useMemo(() => {
+    if (!logs || logs.length === 0) return 0;
+    const sortedLogs = [...logs].sort((a, b) => a.date.localeCompare(b.date));
+    const firstLogDate = parseISO(sortedLogs[0].date);
+    const today = new Date();
+    const daysDiff = Math.max(1, differenceInDays(today, firstLogDate) + 1);
+    return (logs.length / daysDiff).toFixed(1);
+  }, [logs]);
+
+  // 3. Study Distribution Calculation (by Category)
+  const distributionData = useMemo(() => {
+    if (!logs || !activities) return [];
+    
+    const categoryCounts: Record<string, number> = {};
+    const activityMap = new Map(activities.map(a => [a.id, a.category || 'Lainnya']));
+
+    logs.forEach(log => {
+      const category = activityMap.get(log.activityId) || 'Terhapus/Lainnya';
+      categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+    });
+
+    return Object.entries(categoryCounts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [logs, activities]);
+
+  // 4. Streak Calculation
+  const currentStreak = useMemo(() => {
     if (!logs || logs.length === 0) return 0;
     const uniqueDates = Array.from(new Set(logs.map(l => l.date))).sort((a, b) => b.localeCompare(a));
     let streak = 0;
     let checkDate = new Date();
-    if (differenceInDays(new Date(), parseISO(uniqueDates[0])) > 1) return 0;
+    
+    // Check if the latest log is from today or yesterday
+    if (uniqueDates.length > 0 && differenceInDays(new Date(), parseISO(uniqueDates[0])) > 1) return 0;
+    
     for (const d of uniqueDates) {
-      if (isSameDay(checkDate, parseISO(d)) || isSameDay(subDays(checkDate, 1), parseISO(d))) {
+      const logDate = parseISO(d);
+      if (isSameDay(checkDate, logDate) || isSameDay(subDays(checkDate, 1), logDate)) {
         streak++;
-        checkDate = parseISO(d);
+        checkDate = logDate;
       } else break;
     }
     return streak;
   }, [logs]);
 
-  function differenceInDays(d1: Date, d2: Date) {
-    const timeDiff = Math.abs(d1.getTime() - d2.getTime());
-    return Math.floor(timeDiff / (1000 * 3600 * 24));
-  }
+  const totalLogs = logs?.length || 0;
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-6xl">
       <div className="mb-8">
         <h1 className="font-headline text-3xl font-bold">Analisis Performa</h1>
-        <p className="text-muted-foreground">Lihat bagaimana perkembangan produktivitas Anda sejauh ini.</p>
+        <p className="text-muted-foreground">Analisis mendalam tentang kecepatan dan distribusi belajar Anda.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-4 mb-8">
@@ -109,19 +144,20 @@ export default function StatsPage() {
 
         <Card className="border-none shadow-sm bg-green-50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold text-green-600 uppercase">Efektivitas</CardTitle>
+            <CardTitle className="text-xs font-bold text-green-600 uppercase">Learning Velocity</CardTitle>
+            <CardDescription className="text-[10px] text-green-700">Materi / Hari</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <span className="text-3xl font-black text-green-900">{averagePerDay}</span>
-              <TrendingUp className="h-8 w-8 text-green-200" />
+              <span className="text-3xl font-black text-green-900">{velocity}</span>
+              <Activity className="h-8 w-8 text-green-200" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-sm bg-purple-50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold text-purple-600 uppercase">Level Akun</CardTitle>
+            <CardTitle className="text-xs font-bold text-purple-600 uppercase">Status Akun</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -132,14 +168,55 @@ export default function StatsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-sm">
+      <div className="grid gap-6 md:grid-cols-12 mb-8">
+        {/* Study Distribution Pie Chart */}
+        <Card className="md:col-span-5 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <PieChartIcon className="h-5 w-5 text-primary" /> Study Distribution
+            </CardTitle>
+            <CardDescription>Porsi penguasaan materi per kategori.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[350px]">
+            {distributionData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={distributionData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {distributionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  />
+                  <Legend verticalAlign="bottom" height={36}/>
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground italic text-sm">
+                Belum ada data distribusi.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Weekly Progress Bar Chart */}
+        <Card className="md:col-span-7 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" /> Distribusi Mingguan
             </CardTitle>
+            <CardDescription>Jumlah materi yang dikuasai 7 hari terakhir.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
@@ -151,7 +228,7 @@ export default function StatsPage() {
                     if (active && payload && payload.length) {
                       return (
                         <div className="rounded-lg border bg-background p-2 shadow-md text-xs font-bold">
-                          {payload[0].value} Task
+                          {payload[0].value} Materi Dikuasai
                         </div>
                       );
                     }
@@ -163,39 +240,41 @@ export default function StatsPage() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" /> Tren Konsistensi
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={weeklyData}>
-                <defs>
-                  <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={12} />
-                <YAxis axisLine={false} tickLine={false} fontSize={12} />
-                <Tooltip />
-                <Area 
-                  type="monotone" 
-                  dataKey="count" 
-                  stroke="hsl(var(--primary))" 
-                  fillOpacity={1} 
-                  fill="url(#colorCount)" 
-                  strokeWidth={3}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Consistency Area Chart */}
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" /> Tren Konsistensi
+          </CardTitle>
+          <CardDescription>Grafik intensitas belajar harian.</CardDescription>
+        </CardHeader>
+        <CardContent className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={weeklyData}>
+              <defs>
+                <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={12} />
+              <YAxis axisLine={false} tickLine={false} fontSize={12} />
+              <Tooltip />
+              <Area 
+                type="monotone" 
+                dataKey="count" 
+                stroke="hsl(var(--primary))" 
+                fillOpacity={1} 
+                fill="url(#colorCount)" 
+                strokeWidth={3}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 }
