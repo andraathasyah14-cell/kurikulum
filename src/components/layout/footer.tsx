@@ -1,5 +1,4 @@
-
-import { ListChecks } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import Link from 'next/link';
 
 export function Footer() {
@@ -9,12 +8,12 @@ export function Footer() {
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded bg-primary text-primary-foreground">
-              <ListChecks className="h-4 w-4" />
+              <BookOpen className="h-4 w-4" />
             </div>
-            <span className="font-headline font-bold">TrackPro</span>
+            <span className="font-headline font-bold">StudyPro</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} TrackPro - Fokus pada Progres Anda.
+            &copy; {new Date().getFullYear()} StudyPro - Mastering your materials.
           </p>
           <nav className="flex gap-4">
             <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary">Privasi</Link>

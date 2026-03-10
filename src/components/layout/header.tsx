@@ -1,9 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, LayoutDashboard, ListChecks, TrendingUp, Settings, LogOut, Award } from 'lucide-react';
+import { Menu, LayoutDashboard, BookOpen, TrendingUp, Settings, LogOut, Award } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -23,11 +22,11 @@ import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 
 const navLinks = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/activities', label: 'Checklist', icon: ListChecks },
+  { href: '/', label: 'Target', icon: LayoutDashboard },
+  { href: '/activities', label: 'Checklist', icon: BookOpen },
   { href: '/stats', label: 'Statistik', icon: TrendingUp },
   { href: '/review', label: 'Review', icon: Award },
-  { href: '/settings', label: 'Pengaturan', icon: Settings },
+  { href: '/settings', label: 'Profil', icon: Settings },
 ];
 
 export function Header() {
@@ -53,10 +52,10 @@ export function Header() {
       <div className="container flex h-16 items-center px-4 md:px-6">
         <Link href="/" className="mr-6 flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <ListChecks className="h-5 w-5" />
+            <BookOpen className="h-5 w-5" />
           </div>
           <span className="font-headline font-black text-xl tracking-tighter sm:inline-block">
-            TRACKPRO
+            STUDYPRO
           </span>
         </Link>
 
@@ -96,7 +95,7 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button size="sm" className="rounded-full" onClick={handleLogin}>Masuk</Button>
+            <Button size="sm" className="rounded-full px-6" onClick={handleLogin}>Masuk</Button>
           )}
           
           <Sheet>
@@ -105,13 +104,13 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="left">
               <SheetHeader>
-                <SheetTitle className="text-left font-black tracking-tighter">MENU</SheetTitle>
+                <SheetTitle className="text-left font-black tracking-tighter">NAVIGASI</SheetTitle>
               </SheetHeader>
               <Link href="/" className="mb-8 mt-4 flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <ListChecks className="h-5 w-5" />
+                  <BookOpen className="h-5 w-5" />
                 </div>
-                <span className="font-headline font-black text-xl tracking-tighter">TRACKPRO</span>
+                <span className="font-headline font-black text-xl tracking-tighter">STUDYPRO</span>
               </Link>
               <nav className="flex flex-col gap-2">
                 {navLinks.map((link) => (

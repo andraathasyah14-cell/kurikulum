@@ -6,9 +6,9 @@ import { Footer } from '@/components/layout/footer';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'TrackPro - Monitor Progres Aktivitas Anda',
+  title: 'StudyPro - Master Your Materials',
   description:
-    'Alat pelacak aktivitas personal yang simpel untuk memonitor progres belajar, habit, dan project Anda.',
+    'Alat pelacak progres belajar berbasis kategori untuk membantu Anda menguasai materi secara mendalam.',
 };
 
 export default function RootLayout({
@@ -26,7 +26,7 @@ export default function RootLayout({
           crossOrigin=""
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
           rel="stylesheet"
         />
       </head>

@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2, ListChecks, Zap, Timer } from 'lucide-react';
+import { Plus, Trash2, BookOpen, Zap, Timer, LayoutList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -40,7 +39,7 @@ export default function ActivitiesPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [newActivity, setNewActivity] = useState({ 
     title: '', 
-    category: 'Lainnya', 
+    category: '', 
     difficulty: 'Medium',
     durationMinutes: '25',
     deadline: ''
@@ -54,7 +53,10 @@ export default function ActivitiesPage() {
   const { data: activities } = useCollection(activitiesQuery);
 
   const handleAddActivity = () => {
-    if (!user || !db || !newActivity.title) return;
+    if (!user || !db || !newActivity.title || !newActivity.category) {
+      toast({ variant: "destructive", title: "Error", description: "Nama kategori dan materi harus diisi." });
+      return;
+    }
 
     addDocumentNonBlocking(collection(db, 'users', user.uid, 'activities'), {
       userId: user.uid,
@@ -66,36 +68,40 @@ export default function ActivitiesPage() {
       createdAt: serverTimestamp(),
     });
 
-    setNewActivity({ title: '', category: 'Lainnya', difficulty: 'Medium', durationMinutes: '25', deadline: '' });
+    setNewActivity({ title: '', category: newActivity.category, difficulty: 'Medium', durationMinutes: '25', deadline: '' });
     setIsOpen(false);
-    toast({ title: "Berhasil", description: "Aktivitas baru telah ditambahkan." });
+    toast({ title: "Berhasil", description: "Materi baru telah ditambahkan ke checklist." });
   };
 
   const handleDelete = (id: string) => {
     if (!user || !db) return;
     deleteDoc(doc(db, 'users', user.uid, 'activities', id));
-    toast({ title: "Dihapus", description: "Aktivitas telah dihapus." });
+    toast({ title: "Dihapus", description: "Materi telah dihapus dari daftar." });
   };
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-4xl">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-headline text-3xl font-bold tracking-tight">Katalog Aktivitas</h1>
-          <p className="text-muted-foreground text-sm font-medium">Definisikan rencana rutinmu di sini.</p>
+          <h1 className="font-headline text-3xl font-black tracking-tight">Struktur Materi</h1>
+          <p className="text-muted-foreground text-sm font-medium">Susun rencana belajarmu berdasarkan kategori.</p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button className="rounded-full shadow-lg gap-2">
-              <Plus className="h-4 w-4" /> Tambah Baru
+              <Plus className="h-4 w-4" /> Tambah Materi
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader><DialogTitle>Aktivitas Baru</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Tambah Materi Belajar</DialogTitle></DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="title">Nama Aktivitas</Label>
-                <Input id="title" placeholder="Misal: Belajar NextJS" value={newActivity.title} onChange={(e) => setNewActivity({...newActivity, title: e.target.value})} />
+                <Label htmlFor="category">Nama Kategori / Subjek</Label>
+                <Input id="category" placeholder="Misal: UTBK Inggris" value={newActivity.category} onChange={(e) => setNewActivity({...newActivity, category: e.target.value})} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="title">Nama Materi / Topik</Label>
+                <Input id="title" placeholder="Misal: Grammar Dasar" value={newActivity.title} onChange={(e) => setNewActivity({...newActivity, title: e.target.value})} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
@@ -103,33 +109,15 @@ export default function ActivitiesPage() {
                   <Select value={newActivity.difficulty} onValueChange={(v) => setNewActivity({...newActivity, difficulty: v})}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Easy">Easy (1pt)</SelectItem>
-                      <SelectItem value="Medium">Medium (2pt)</SelectItem>
-                      <SelectItem value="Hard">Hard (3pt)</SelectItem>
+                      <SelectItem value="Easy">Easy (Santai)</SelectItem>
+                      <SelectItem value="Medium">Medium (Sedang)</SelectItem>
+                      <SelectItem value="Hard">Hard (Padat)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="duration">Durasi (Menit)</Label>
+                  <Label htmlFor="duration">Durasi Belajar (Menit)</Label>
                   <Input id="duration" type="number" value={newActivity.durationMinutes} onChange={(e) => setNewActivity({...newActivity, durationMinutes: e.target.value})} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>Kategori</Label>
-                  <Select value={newActivity.category} onValueChange={(v) => setNewActivity({...newActivity, category: v})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Kesehatan">Kesehatan</SelectItem>
-                      <SelectItem value="Kerja">Kerja</SelectItem>
-                      <SelectItem value="Belajar">Belajar</SelectItem>
-                      <SelectItem value="Lainnya">Lainnya</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="deadline">Deadline</Label>
-                  <Input id="deadline" type="date" value={newActivity.deadline} onChange={(e) => setNewActivity({...newActivity, deadline: e.target.value})} />
                 </div>
               </div>
             </div>
@@ -150,12 +138,12 @@ export default function ActivitiesPage() {
                   "flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground",
                   activity.difficulty === 'Hard' ? "text-red-500" : activity.difficulty === 'Easy' ? "text-green-500" : "text-blue-500"
                 )}>
-                  <Zap className="h-5 w-5 fill-current" />
+                  <BookOpen className="h-5 w-5" />
                 </div>
                 <div>
                   <h3 className="font-bold text-lg leading-none">{activity.title}</h3>
-                  <div className="flex flex-wrap gap-2 mt-2 text-xs font-bold uppercase items-center">
-                    <span className="bg-muted px-2 py-0.5 rounded text-muted-foreground">{activity.category}</span>
+                  <div className="flex flex-wrap gap-2 mt-2 text-[10px] font-black uppercase items-center">
+                    <span className="bg-primary/10 text-primary px-2 py-0.5 rounded">{activity.category}</span>
                     <span className={cn(
                       "px-2 py-0.5 rounded",
                       activity.difficulty === 'Hard' ? "bg-red-100 text-red-700" : 
@@ -171,8 +159,8 @@ export default function ActivitiesPage() {
         ))}
         {activities?.length === 0 && (
           <div className="py-20 text-center border-2 border-dashed rounded-xl opacity-50">
-             <ListChecks className="h-12 w-12 mx-auto mb-4" />
-             <p className="font-medium">Belum ada aktivitas.</p>
+             <LayoutList className="h-12 w-12 mx-auto mb-4" />
+             <p className="font-medium">Belum ada struktur materi belajar.</p>
           </div>
         )}
       </div>
