@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   CheckCircle2, 
   Circle, 
@@ -12,10 +12,11 @@ import {
   Calendar,
   Zap,
   Maximize2,
-  ChevronRight,
   PenTool,
   X,
-  ListChecks
+  Play,
+  Pause,
+  RotateCcw
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -32,7 +33,7 @@ import {
 import { collection, query, orderBy, serverTimestamp, setDoc, doc, where } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
-import { format, subDays, isSameDay, parseISO, eachDayOfInterval } from 'date-fns';
+import { format, subDays, eachDayOfInterval } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -46,6 +47,10 @@ export default function DashboardPage() {
   
   const [focusTask, setFocusTask] = useState<any | null>(null);
   const [reflection, setReflection] = useState('');
+
+  // Timer State for Focus Mode
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [timerActive, setTimerActive] = useState(false);
 
   const activitiesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -62,7 +67,7 @@ export default function DashboardPage() {
     return query(collection(db, 'users', user.uid, 'reflections'), where('date', '==', today));
   }, [db, user, today]);
 
-  const { data: activities, isLoading: activitiesLoading } = useCollection(activitiesQuery);
+  const { data: activities } = useCollection(activitiesQuery);
   const { data: logs } = useCollection(logsQuery);
   const { data: reflections } = useCollection(reflectionQuery);
 
@@ -71,8 +76,8 @@ export default function DashboardPage() {
 
   const handleToggleComplete = (activity: any) => {
     if (!user || !db) return;
-    const isCompleted = todayLogs.some(log => log.activityId === activity.id);
-    if (!isCompleted) {
+    const isAlreadyCompleted = todayLogs.some(log => log.activityId === activity.id);
+    if (!isAlreadyCompleted) {
       addDocumentNonBlocking(collection(db, 'users', user.uid, 'logs'), {
         activityId: activity.id,
         userId: user.uid,
@@ -80,7 +85,10 @@ export default function DashboardPage() {
         difficulty: activity.difficulty || 'Medium',
         timestamp: serverTimestamp(),
       });
-      toast({ title: "Selesai!", description: `+${activity.difficulty === 'Hard' ? 3 : activity.difficulty === 'Easy' ? 1 : 2} poin produktivitas.` });
+      toast({ 
+        title: "Selesai!", 
+        description: `+${activity.difficulty === 'Hard' ? 3 : activity.difficulty === 'Easy' ? 1 : 2} poin produktivitas.` 
+      });
     }
   };
 
@@ -107,6 +115,39 @@ export default function DashboardPage() {
     });
   }, [logs]);
 
+  // Timer Effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timerActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && timerActive) {
+      setTimerActive(false);
+      if (focusTask) {
+        handleToggleComplete(focusTask);
+        setFocusTask(null);
+        toast({ 
+          title: "Waktu Habis!", 
+          description: `Tugas "${focusTask.title}" telah otomatis ditandai selesai. Kerja bagus!` 
+        });
+      }
+    }
+    return () => clearInterval(interval);
+  }, [timerActive, timeLeft, focusTask]);
+
+  const startFocus = (activity: any) => {
+    setFocusTask(activity);
+    setTimeLeft((activity.durationMinutes || 25) * 60);
+    setTimerActive(false);
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   if (isUserLoading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
 
   if (!user) return (
@@ -120,18 +161,43 @@ export default function DashboardPage() {
 
   if (focusTask) return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in duration-300">
-      <Button variant="ghost" className="absolute top-6 right-6" onClick={() => setFocusTask(null)}><X className="h-8 w-8" /></Button>
-      <div className="max-w-2xl w-full space-y-8">
+      <Button variant="ghost" className="absolute top-6 right-6" onClick={() => { setFocusTask(null); setTimerActive(false); }}><X className="h-8 w-8" /></Button>
+      <div className="max-w-2xl w-full space-y-10">
         <div className="flex items-center justify-center gap-2 text-primary">
-          <Zap className="h-6 w-6 animate-bounce" />
+          <Zap className={cn("h-6 w-6", timerActive && "animate-pulse")} />
           <span className="uppercase tracking-widest text-sm font-bold">Focus Mode</span>
         </div>
-        <h2 className="text-5xl md:text-7xl font-black tracking-tighter">{focusTask.title}</h2>
-        <p className="text-muted-foreground text-xl">Jangan biarkan distraksi mengganggu Anda. Selesaikan tugas ini sekarang.</p>
-        <Button size="lg" className="h-20 w-20 rounded-full shadow-2xl hover:scale-110 transition-transform" onClick={() => { handleToggleComplete(focusTask); setFocusTask(null); }}>
-          <CheckCircle2 className="h-10 w-10" />
-        </Button>
-        <p className="text-sm font-medium animate-pulse">Klik ikon di atas jika selesai</p>
+        <h2 className="text-4xl md:text-6xl font-black tracking-tighter">{focusTask.title}</h2>
+        
+        <div className="space-y-4">
+          <div className="text-8xl md:text-9xl font-black font-mono tabular-nums text-foreground">
+            {formatTime(timeLeft)}
+          </div>
+          <div className="flex items-center justify-center gap-4">
+            {!timerActive ? (
+              <Button size="lg" className="rounded-full h-16 w-16 shadow-xl" onClick={() => setTimerActive(true)}>
+                <Play className="h-8 w-8 fill-current" />
+              </Button>
+            ) : (
+              <Button size="lg" variant="outline" className="rounded-full h-16 w-16" onClick={() => setTimerActive(false)}>
+                <Pause className="h-8 w-8 fill-current" />
+              </Button>
+            )}
+            <Button size="lg" variant="ghost" className="rounded-full h-12 w-12 text-muted-foreground" onClick={() => { setTimeLeft((focusTask.durationMinutes || 25) * 60); setTimerActive(false); }}>
+              <RotateCcw className="h-6 w-6" />
+            </Button>
+          </div>
+        </div>
+
+        <p className="text-muted-foreground text-lg max-w-md mx-auto italic">
+          "Fokus adalah kunci untuk menyelesaikan apa yang Anda mulai."
+        </p>
+        
+        <div className="pt-8">
+           <Button variant="ghost" className="text-destructive font-bold uppercase tracking-widest text-xs" onClick={() => { setFocusTask(null); setTimerActive(false); }}>
+             Hentikan & Keluar
+           </Button>
+        </div>
       </div>
     </div>
   );
@@ -252,11 +318,14 @@ export default function DashboardPage() {
                           )}>
                             {activity.difficulty || 'Medium'}
                           </span>
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                             <TrendingUp className="h-3 w-3" /> {activity.durationMinutes || 25}m
+                          </span>
                         </div>
                       </div>
                     </div>
                     {!isCompleted && (
-                      <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 rounded-full" onClick={() => setFocusTask(activity)}>
+                      <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 rounded-full" onClick={() => startFocus(activity)}>
                         <Maximize2 className="h-4 w-4" />
                       </Button>
                     )}

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2, ListChecks, Calendar, Zap } from 'lucide-react';
+import { Plus, Trash2, ListChecks, Zap, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -31,8 +31,6 @@ import {
 import { collection, query, orderBy, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { format, parseISO, isAfter } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 export default function ActivitiesPage() {
@@ -44,7 +42,7 @@ export default function ActivitiesPage() {
     title: '', 
     category: 'Lainnya', 
     difficulty: 'Medium',
-    target: '1',
+    durationMinutes: '25',
     deadline: ''
   });
 
@@ -53,7 +51,7 @@ export default function ActivitiesPage() {
     return query(collection(db, 'users', user.uid, 'activities'), orderBy('createdAt', 'desc'));
   }, [db, user]);
 
-  const { data: activities, isLoading } = useCollection(activitiesQuery);
+  const { data: activities } = useCollection(activitiesQuery);
 
   const handleAddActivity = () => {
     if (!user || !db || !newActivity.title) return;
@@ -63,12 +61,12 @@ export default function ActivitiesPage() {
       title: newActivity.title,
       category: newActivity.category,
       difficulty: newActivity.difficulty,
-      targetValue: parseInt(newActivity.target),
+      durationMinutes: parseInt(newActivity.durationMinutes) || 25,
       deadline: newActivity.deadline || null,
       createdAt: serverTimestamp(),
     });
 
-    setNewActivity({ title: '', category: 'Lainnya', difficulty: 'Medium', target: '1', deadline: '' });
+    setNewActivity({ title: '', category: 'Lainnya', difficulty: 'Medium', durationMinutes: '25', deadline: '' });
     setIsOpen(false);
     toast({ title: "Berhasil", description: "Aktivitas baru telah ditambahkan." });
   };
@@ -112,21 +110,27 @@ export default function ActivitiesPage() {
                   </Select>
                 </div>
                 <div className="grid gap-2">
+                  <Label htmlFor="duration">Durasi (Menit)</Label>
+                  <Input id="duration" type="number" value={newActivity.durationMinutes} onChange={(e) => setNewActivity({...newActivity, durationMinutes: e.target.value})} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Kategori</Label>
+                  <Select value={newActivity.category} onValueChange={(v) => setNewActivity({...newActivity, category: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Kesehatan">Kesehatan</SelectItem>
+                      <SelectItem value="Kerja">Kerja</SelectItem>
+                      <SelectItem value="Belajar">Belajar</SelectItem>
+                      <SelectItem value="Lainnya">Lainnya</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
                   <Label htmlFor="deadline">Deadline</Label>
                   <Input id="deadline" type="date" value={newActivity.deadline} onChange={(e) => setNewActivity({...newActivity, deadline: e.target.value})} />
                 </div>
-              </div>
-              <div className="grid gap-2">
-                <Label>Kategori</Label>
-                <Select value={newActivity.category} onValueChange={(v) => setNewActivity({...newActivity, category: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Kesehatan">Kesehatan</SelectItem>
-                    <SelectItem value="Kerja">Kerja</SelectItem>
-                    <SelectItem value="Belajar">Belajar</SelectItem>
-                    <SelectItem value="Lainnya">Lainnya</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
             <DialogFooter>
@@ -150,13 +154,14 @@ export default function ActivitiesPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-lg leading-none">{activity.title}</h3>
-                  <div className="flex flex-wrap gap-2 mt-2 text-xs font-bold uppercase">
+                  <div className="flex flex-wrap gap-2 mt-2 text-xs font-bold uppercase items-center">
                     <span className="bg-muted px-2 py-0.5 rounded text-muted-foreground">{activity.category}</span>
                     <span className={cn(
                       "px-2 py-0.5 rounded",
                       activity.difficulty === 'Hard' ? "bg-red-100 text-red-700" : 
                       activity.difficulty === 'Easy' ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
                     )}>{activity.difficulty || 'Medium'}</span>
+                    <span className="flex items-center gap-1 text-muted-foreground"><Timer className="h-3 w-3" /> {activity.durationMinutes || 25}m</span>
                   </div>
                 </div>
               </div>

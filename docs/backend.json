@@ -11,6 +11,7 @@
         "title": { "type": "string" },
         "category": { "type": "string", "enum": ["Kesehatan", "Kerja", "Belajar", "Lainnya"] },
         "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"], "default": "Medium" },
+        "durationMinutes": { "type": "number", "default": 25, "description": "Durasi target untuk menyelesaikan tugas dalam menit." },
         "targetValue": { "type": "number" },
         "deadline": { "type": "string", "format": "date" },
         "createdAt": { "type": "string", "format": "date-time" }
