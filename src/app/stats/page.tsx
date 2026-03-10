@@ -10,19 +10,15 @@ import {
   ResponsiveContainer, 
   XAxis, 
   YAxis, 
-  Tooltip, 
+  Tooltip as RechartsTooltip, 
   CartesianGrid,
-  AreaChart,
-  Area,
   PieChart,
   Pie,
-  Cell,
-  Legend
+  Cell
 } from 'recharts';
 import { 
   TrendingUp, 
   CheckCircle2, 
-  Award, 
   Zap, 
   BarChart3, 
   PieChart as PieChartIcon, 
@@ -32,11 +28,18 @@ import {
   ArrowDownRight,
   Target,
   AlertTriangle,
-  Hourglass
+  Hourglass,
+  Info
 } from 'lucide-react';
 import { format, subDays, parseISO, isSameDay, differenceInDays, isWithinInterval } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const COLORS = ['hsl(var(--primary))', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -86,7 +89,6 @@ export default function StatsPage() {
     const daysDiff = Math.max(1, differenceInDays(today, firstLogDate) + 1);
     const globalVelocity = logs.length / daysDiff;
 
-    // Acceleration: velocity last 7 days vs 7-14 days ago
     const now = new Date();
     const last7DaysCount = logs.filter(l => isWithinInterval(parseISO(l.date), { start: subDays(now, 7), end: now })).length;
     const prev7DaysCount = logs.filter(l => isWithinInterval(parseISO(l.date), { start: subDays(now, 14), end: subDays(now, 8) })).length;
@@ -102,7 +104,7 @@ export default function StatsPage() {
     };
   }, [logs]);
 
-  // 3. Distribution, Focus Ratio & Gap Index
+  // 3. Distribution
   const distributionMetrics = useMemo(() => {
     if (!logs || !activities) return { data: [], focusRatio: 0, gapIndex: 0 };
     
@@ -137,17 +139,14 @@ export default function StatsPage() {
       }))
       .sort((a, b) => b.value - a.value);
 
-    // Focus Ratio: max category count / total count
     const maxCategoryCount = data.length > 0 ? Math.max(...data.map(d => d.count)) : 0;
     const focusRatio = totalCount > 0 ? Math.round((maxCategoryCount / totalCount) * 100) : 0;
-
-    // Gap Index: max count - min count (among active categories)
     const gapIndex = data.length > 1 ? Math.max(...data.map(d => d.count)) - Math.min(...data.map(d => d.count)) : 0;
 
     return { data, focusRatio, gapIndex };
   }, [logs, activities]);
 
-  // 4. Abandon Rate & Prediction
+  // 4. Prediction
   const predictionMetrics = useMemo(() => {
     const totalActivities = activities?.length || 0;
     const totalCompleted = logs?.length || 0;
@@ -177,6 +176,19 @@ export default function StatsPage() {
     return streak;
   }, [logs]);
 
+  const InfoTooltip = ({ content }: { content: string }) => (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Info className="h-3.5 w-3.5 ml-1.5 cursor-help opacity-50 hover:opacity-100 transition-opacity" />
+        </TooltipTrigger>
+        <TooltipContent className="max-w-[250px] text-xs leading-relaxed p-3">
+          <p>{content}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+
   return (
     <div className="container px-4 py-8 md:px-6 max-w-6xl pb-24">
       <div className="mb-8">
@@ -187,7 +199,10 @@ export default function StatsPage() {
       <div className="grid gap-6 md:grid-cols-4 mb-8">
         <Card className="border-none shadow-sm bg-blue-50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold text-blue-600 uppercase">Total Selesai</CardTitle>
+            <CardTitle className="text-xs font-bold text-blue-600 uppercase flex items-center">
+              Total Selesai
+              <InfoTooltip content="Total kumulatif materi yang telah Anda kuasai. Semakin besar angka ini, semakin dekat Anda dengan penguasaan kurikulum penuh." />
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -199,7 +214,10 @@ export default function StatsPage() {
         
         <Card className="border-none shadow-sm bg-orange-50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold text-orange-600 uppercase">Streak Harian</CardTitle>
+            <CardTitle className="text-xs font-bold text-orange-600 uppercase flex items-center">
+              Streak Harian
+              <InfoTooltip content="Jumlah hari berturut-turut Anda menyelesaikan minimal satu materi. Menjaga angka di atas 3 hari sangat bagus untuk membangun kebiasaan." />
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -211,7 +229,10 @@ export default function StatsPage() {
 
         <Card className="border-none shadow-sm bg-green-50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold text-green-600 uppercase">Velocity</CardTitle>
+            <CardTitle className="text-xs font-bold text-green-600 uppercase flex items-center">
+              Velocity
+              <InfoTooltip content="Rata-rata materi yang diselesaikan per hari. Angka di atas 1.0 menunjukkan kemajuan harian yang stabil dan produktif." />
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -228,9 +249,12 @@ export default function StatsPage() {
         )}>
           <CardHeader className="pb-2">
             <CardTitle className={cn(
-              "text-xs font-bold uppercase",
+              "text-xs font-bold uppercase flex items-center",
               velocityMetrics.trend === 'up' ? "text-emerald-600" : velocityMetrics.trend === 'down' ? "text-rose-600" : "text-slate-600"
-            )}>Acceleration</CardTitle>
+            )}>
+              Acceleration
+              <InfoTooltip content="Perubahan kecepatan belajar dibandingkan minggu sebelumnya. Angka positif (+) berarti ritme Anda sedang meningkat." />
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -248,11 +272,12 @@ export default function StatsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-12 mb-8">
-        {/* Pie Chart */}
         <Card className="md:col-span-5 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <PieChartIcon className="h-5 w-5 text-primary" /> Study Distribution
+              <PieChartIcon className="h-5 w-5 text-primary" /> 
+              Study Distribution
+              <InfoTooltip content="Distribusi waktu belajar Anda berdasarkan menit. Idealnya, subjek prioritas Anda harus memiliki porsi 40-60%." />
             </CardTitle>
             <CardDescription>Porsi waktu belajar per kategori.</CardDescription>
           </CardHeader>
@@ -268,7 +293,7 @@ export default function StatsPage() {
                     outerRadius={90}
                     paddingAngle={5}
                     dataKey="value"
-                    label={({ name, percentage, minutes, x, y, cx }) => (
+                    label={({ name, percentage, x, y, cx }) => (
                       <text x={x} y={y} fill="hsl(var(--muted-foreground))" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-[9px] font-bold">
                         {`${name} (${percentage}%)`}
                       </text>
@@ -278,7 +303,7 @@ export default function StatsPage() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <RechartsTooltip 
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
@@ -301,11 +326,12 @@ export default function StatsPage() {
           </CardContent>
         </Card>
 
-        {/* Weekly Bar Chart */}
         <Card className="md:col-span-7 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" /> Progress Mingguan
+              <BarChart3 className="h-5 w-5 text-primary" /> 
+              Progress Mingguan
+              <InfoTooltip content="Visualisasi jumlah materi harian. Grafik yang rata atau menanjak menunjukkan konsistensi belajar yang sehat." />
             </CardTitle>
             <CardDescription>Materi yang dikuasai 7 hari terakhir.</CardDescription>
           </CardHeader>
@@ -315,7 +341,7 @@ export default function StatsPage() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={12} />
                 <YAxis axisLine={false} tickLine={false} fontSize={12} />
-                <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} content={({ active, payload }) => (
+                <RechartsTooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} content={({ active, payload }) => (
                   active && payload && payload.length ? (
                     <div className="rounded-lg border bg-background p-2 shadow-md text-xs font-bold">
                       {payload[0].value} Materi
@@ -329,12 +355,12 @@ export default function StatsPage() {
         </Card>
       </div>
 
-      {/* Advanced Metrics Grid */}
       <div className="grid gap-6 md:grid-cols-3 mb-8">
         <Card className="shadow-sm border-none bg-indigo-50/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-bold flex items-center gap-2 text-indigo-700">
-              <Target className="h-4 w-4" /> Focus Ratio
+            <CardTitle className="text-sm font-bold flex items-center text-indigo-700">
+              <Target className="h-4 w-4 mr-2" /> Focus Ratio
+              <InfoTooltip content="Persentase dominasi subjek utama. Nilai 40-60% menandakan Anda fokus pada target utama tanpa mengabaikan subjek lain." />
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -345,8 +371,9 @@ export default function StatsPage() {
 
         <Card className="shadow-sm border-none bg-amber-50/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-bold flex items-center gap-2 text-amber-700">
-              <AlertTriangle className="h-4 w-4" /> Learning Gap Index
+            <CardTitle className="text-sm font-bold flex items-center text-amber-700">
+              <AlertTriangle className="h-4 w-4 mr-2" /> Learning Gap Index
+              <InfoTooltip content="Selisih penguasaan antar subjek terpopuler. Angka di bawah 10 menunjukkan Anda belajar secara seimbang antar kategori." />
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -357,8 +384,9 @@ export default function StatsPage() {
 
         <Card className="shadow-sm border-none bg-slate-50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
-              <Hourglass className="h-4 w-4" /> Abandon Rate
+            <CardTitle className="text-sm font-bold flex items-center text-slate-700">
+              <Hourglass className="h-4 w-4 mr-2" /> Abandon Rate
+              <InfoTooltip content="Persentase materi dalam kurikulum yang belum pernah Anda sentuh. Targetkan untuk menurunkan angka ini setiap minggu." />
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -368,10 +396,13 @@ export default function StatsPage() {
         </Card>
       </div>
 
-      {/* Prediction Section */}
       <Card className="shadow-lg border-none bg-primary text-primary-foreground">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Hourglass className="h-5 w-5" /> Prediksi Penyelesaian Kurikulum</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Hourglass className="h-5 w-5" /> 
+            Prediksi Penyelesaian Kurikulum
+            <InfoTooltip content="Estimasi hari tersisa hingga seluruh kurikulum selesai dikuasai, berdasarkan rata-rata kecepatan belajar Anda saat ini." />
+          </CardTitle>
           <CardDescription className="text-primary-foreground/70">Estimasi berdasarkan ritme belajar Anda saat ini.</CardDescription>
         </CardHeader>
         <CardContent>
