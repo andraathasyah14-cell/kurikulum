@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Plus, Trash2, BookOpen, Timer, Layers, ChevronDown, ChevronUp, Check, Hash } from 'lucide-react';
+import { Plus, Trash2, BookOpen, Timer, Layers, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -101,21 +101,21 @@ export default function ActivitiesPage() {
     setNewActivity({ ...newActivity, title: '' }); // Keep category for easier batch adding
     setIsOpen(false);
     setIsAddingNewCategory(false);
-    toast({ title: "Berhasil", description: `Materi "${newActivity.title}" ditambahkan ke ${newActivity.category}.` });
+    toast({ title: "Berhasil", description: `Materi "${newActivity.title}" ditambahkan ke kurikulum ${newActivity.category}.` });
   };
 
   const handleDelete = (id: string) => {
     if (!user || !db) return;
     deleteDoc(doc(db, 'users', user.uid, 'activities', id));
-    toast({ title: "Dihapus", description: "Materi telah dihapus." });
+    toast({ title: "Dihapus", description: "Materi telah dihapus dari kurikulum." });
   };
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-4xl">
       <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-headline text-4xl font-black tracking-tight">Katalog Kurikulum</h1>
-          <p className="text-muted-foreground text-sm font-medium">Kelola kategori subjek dan detail materi belajar Anda.</p>
+          <h1 className="font-headline text-4xl font-black tracking-tight">Struktur Kurikulum</h1>
+          <p className="text-muted-foreground text-sm font-medium">Definisikan subjek dan daftar materi yang ingin Anda kuasai.</p>
         </div>
         <Dialog open={isOpen} onOpenChange={(open) => {
           setIsOpen(open);
@@ -127,7 +127,7 @@ export default function ActivitiesPage() {
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader><DialogTitle>Tambah Materi Belajar</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Tambah Materi ke Kurikulum</DialogTitle></DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="category">Pilih Subjek / Kategori</Label>
@@ -170,7 +170,6 @@ export default function ActivitiesPage() {
                         </Button>
                       )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground font-medium">Contoh: UTBK Inggris, Matematika, Biologi.</p>
                   </div>
                 )}
               </div>
@@ -205,7 +204,7 @@ export default function ActivitiesPage() {
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setIsOpen(false)}>Batal</Button>
-              <Button onClick={handleAddActivity}>Simpan ke Katalog</Button>
+              <Button onClick={handleAddActivity}>Simpan ke Kurikulum</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -227,7 +226,7 @@ export default function ActivitiesPage() {
                     </div>
                     <div>
                       <CardTitle className="text-xl font-black">{category}</CardTitle>
-                      <span className="text-xs font-bold text-muted-foreground uppercase">{items.length} Topik Tersedia</span>
+                      <span className="text-xs font-bold text-muted-foreground uppercase">{items.length} Materi Terdaftar</span>
                     </div>
                   </div>
                   {isExpanded ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
@@ -269,8 +268,8 @@ export default function ActivitiesPage() {
         {activities?.length === 0 && (
           <div className="py-24 text-center border-2 border-dashed rounded-3xl opacity-50 bg-muted/20">
              <Layers className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-             <p className="font-bold text-xl mb-1">Katalog Masih Kosong</p>
-             <p className="text-muted-foreground text-sm">Mulai buat kategori subjek dan tambahkan materi belajar Anda.</p>
+             <p className="font-bold text-xl mb-1">Kurikulum Masih Kosong</p>
+             <p className="text-muted-foreground text-sm">Mulai definisikan subjek dan materi yang ingin Anda pelajari.</p>
           </div>
         )}
       </div>

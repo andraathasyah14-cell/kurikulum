@@ -67,8 +67,17 @@ export default function DashboardPage() {
   const { data: logs } = useCollection(logsQuery);
   const { data: reflections } = useCollection(reflectionQuery);
 
-  const todayLogs = logs?.filter(log => log.date === today) || [];
   const currentReflection = reflections?.[0];
+
+  // Set of all completed activity IDs (across all time)
+  const completedActivityIds = useMemo(() => {
+    return new Set(logs?.map(log => log.activityId) || []);
+  }, [logs]);
+
+  // Logs specifically for today (for stats)
+  const todayLogsCount = useMemo(() => {
+    return logs?.filter(log => log.date === today).length || 0;
+  }, [logs, today]);
 
   // Grouping activities by category (Subject)
   const groupedActivities = useMemo(() => {
@@ -113,7 +122,7 @@ export default function DashboardPage() {
 
   const handleToggleComplete = (activity: any) => {
     if (!user || !db) return;
-    const isAlreadyCompleted = todayLogs.some(log => log.activityId === activity.id);
+    const isAlreadyCompleted = completedActivityIds.has(activity.id);
     if (!isAlreadyCompleted) {
       addDocumentNonBlocking(collection(db, 'users', user.uid, 'logs'), {
         activityId: activity.id,
@@ -123,7 +132,7 @@ export default function DashboardPage() {
         timestamp: serverTimestamp(),
       });
       stopTimer(activity.id);
-      toast({ title: "Materi Dikuasai!", description: `Progres materi ${activity.title} telah dicatat.` });
+      toast({ title: "Materi Dikuasai!", description: `Progres penguasaan "${activity.title}" telah dicatat pada hari ini.` });
     }
   };
 
@@ -225,16 +234,18 @@ export default function DashboardPage() {
     <div className="container flex flex-col items-center justify-center min-h-[80vh] px-4 text-center">
       <div className="mb-6 rounded-full bg-primary/10 p-8 animate-pulse"><BookOpen className="h-16 w-16 text-primary" /></div>
       <h1 className="font-headline text-5xl font-black mb-4 tracking-tighter uppercase">StudyPro</h1>
-      <p className="text-xl text-muted-foreground max-w-lg mb-8">Mastering materials through structured subject checklists and focused study.</p>
-      <Button size="lg" className="rounded-full px-8 gap-2 shadow-xl" onClick={() => initiateGoogleSignIn(auth)}><LogIn className="h-5 w-5" /> Mulai Belajar</Button>
+      <p className="text-xl text-muted-foreground max-w-lg mb-8">Visualisasikan penguasaan kurikulum belajar Anda secara terstruktur dan terukur.</p>
+      <Button size="lg" className="rounded-full px-8 gap-2 shadow-xl" onClick={() => initiateGoogleSignIn(auth)}><LogIn className="h-5 w-5" /> Mulai Kurikulum</Button>
     </div>
   );
+
+  const totalMasteryProgress = activities?.length ? Math.round((completedActivityIds.size / activities.length) * 100) : 0;
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-6xl">
       <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">
-          <h1 className="font-headline text-4xl font-black tracking-tight text-foreground">Target Belajar</h1>
+          <h1 className="font-headline text-4xl font-black tracking-tight text-foreground">Status Kurikulum</h1>
           <p className="text-muted-foreground flex items-center gap-2 font-medium">
             <Calendar className="h-4 w-4" /> {format(new Date(), 'EEEE, d MMMM yyyy', { locale: idLocale })}
           </p>
@@ -250,7 +261,7 @@ export default function DashboardPage() {
         <Card className="md:col-span-12 border-none bg-muted/20 shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-              Study Consistency <TrendingUp className="h-3 w-3 text-primary" />
+              Konsistensi Belajar <TrendingUp className="h-3 w-3 text-primary" />
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -260,7 +271,7 @@ export default function DashboardPage() {
                   key={i} 
                   onClick={() => toast({ 
                     title: format(d.rawDate, 'd MMMM yyyy', { locale: idLocale }), 
-                    description: `${d.count} materi dikuasai hari ini.` 
+                    description: `${d.count} materi dikuasai pada hari ini.` 
                   })}
                   className={cn(
                     "h-3 w-3 rounded-sm transition-all hover:ring-2 hover:ring-primary/50 cursor-pointer",
@@ -272,14 +283,14 @@ export default function DashboardPage() {
               ))}
             </div>
             <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground uppercase font-bold">
-              <span>90 Hari Terakhir</span>
+              <span>Aktivitas 90 Hari Terakhir</span>
               <div className="flex gap-1 items-center">
-                <span>Santai</span>
+                <span>0</span>
                 <div className="h-2 w-2 bg-muted rounded-sm" />
                 <div className="h-2 w-2 bg-primary/30 rounded-sm" />
                 <div className="h-2 w-2 bg-primary/60 rounded-sm" />
                 <div className="h-2 w-2 bg-primary rounded-sm" />
-                <span>Produktif</span>
+                <span>Banyak</span>
               </div>
             </div>
           </CardContent>
@@ -289,22 +300,23 @@ export default function DashboardPage() {
         <div className="md:col-span-4 space-y-6">
           <Card className="border-none bg-primary text-primary-foreground shadow-lg overflow-hidden relative">
              <div className="absolute top-0 right-0 p-4 opacity-10"><Zap className="h-24 w-24" /></div>
-             <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase">Progres Hari Ini</CardTitle></CardHeader>
+             <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase">Total Penguasaan</CardTitle></CardHeader>
              <CardContent>
-               <div className="text-6xl font-black mb-4">{activities?.length ? Math.round((todayLogs.length / activities.length) * 100) : 0}%</div>
-               <Progress value={activities?.length ? (todayLogs.length / activities.length) * 100 : 0} className="bg-white/20 h-2" />
+               <div className="text-6xl font-black mb-4">{totalMasteryProgress}%</div>
+               <Progress value={totalMasteryProgress} className="bg-white/20 h-2" />
                <div className="mt-4 flex justify-between items-center">
-                  <p className="text-sm font-medium opacity-80">{todayLogs.length} materi hari ini</p>
+                  <p className="text-sm font-medium opacity-80">{completedActivityIds.size} / {activities?.length || 0} materi dikuasai</p>
                   <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-full">
                     <Flame className="h-3 w-3 text-orange-400 fill-current" />
                     <span className="text-xs font-black">{currentStreak} Day Streak</span>
                   </div>
                </div>
+               <p className="mt-2 text-[10px] uppercase font-bold opacity-60">Selesaikan {todayLogsCount} materi hari ini</p>
              </CardContent>
           </Card>
 
           <Card className="border-none bg-muted/50">
-            <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase flex items-center gap-2"><PenTool className="h-3 w-3" /> Insight Belajar</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase flex items-center gap-2"><PenTool className="h-3 w-3" /> Insight Belajar Hari Ini</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {currentReflection ? (
                 <p className="text-sm italic font-serif leading-relaxed">"{currentReflection.content}"</p>
@@ -326,7 +338,7 @@ export default function DashboardPage() {
         {/* Grouped Activities List (Subject Hierarchy) */}
         <div className="md:col-span-8 space-y-6">
           {Object.entries(groupedActivities).map(([category, items]) => {
-            const completedInCategory = items.filter(item => todayLogs.some(log => log.activityId === item.id)).length;
+            const completedInCategory = items.filter(item => completedActivityIds.has(item.id)).length;
             const progress = (completedInCategory / items.length) * 100;
             const totalMinutes = items.reduce((sum, act) => sum + (act.durationMinutes || 0), 0);
 
@@ -338,8 +350,8 @@ export default function DashboardPage() {
                       <Layers className="h-5 w-5 text-primary" /> {category}
                     </CardTitle>
                     <div className="text-right">
-                      <span className="block text-xs font-bold text-muted-foreground uppercase">{completedInCategory} / {items.length} Materi</span>
-                      <span className="text-[10px] text-muted-foreground font-medium">{totalMinutes} menit total</span>
+                      <span className="block text-xs font-bold text-muted-foreground uppercase">{completedInCategory} / {items.length} Dikuasai</span>
+                      <span className="text-[10px] text-muted-foreground font-medium">{totalMinutes} menit total materi</span>
                     </div>
                   </div>
                   <Progress value={progress} className="h-2" />
@@ -347,7 +359,7 @@ export default function DashboardPage() {
                 <CardContent className="p-0">
                   <div className="divide-y divide-muted">
                     {items.map(activity => {
-                      const isCompleted = todayLogs.some(log => log.activityId === activity.id);
+                      const isCompleted = completedActivityIds.has(activity.id);
                       const isRunning = runningTimers.has(activity.id);
                       const currentTime = timers[activity.id] !== undefined ? timers[activity.id] : (activity.durationMinutes || 25) * 60;
                       
@@ -411,7 +423,7 @@ export default function DashboardPage() {
           {activities?.length === 0 && (
             <div className="p-12 text-center border-2 border-dashed rounded-xl opacity-50">
               <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="font-medium text-muted-foreground">Belum ada struktur materi belajar. Buat kategori subjek sekarang!</p>
+              <p className="font-medium text-muted-foreground">Belum ada struktur kurikulum belajar. Buat kategori subjek sekarang!</p>
               <Button asChild className="mt-4 rounded-full"><Link href="/activities">Buat Subjek Baru</Link></Button>
             </div>
           )}
