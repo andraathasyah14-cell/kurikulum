@@ -210,9 +210,6 @@ export default function StatsPage() {
                     label={({
                       cx,
                       cy,
-                      midAngle,
-                      innerRadius,
-                      outerRadius,
                       name,
                       percentage,
                       minutes,
@@ -293,7 +290,6 @@ export default function StatsPage() {
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
-        </BarChart>
         </Card>
       </div>
 
