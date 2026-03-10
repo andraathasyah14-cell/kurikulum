@@ -72,6 +72,40 @@ export default function DashboardPage() {
   const todayLogs = logs?.filter(log => log.date === today) || [];
   const currentReflection = reflections?.[0];
 
+  // Persistence: Load timers on mount
+  useEffect(() => {
+    if (!user) return;
+    const savedTimers = localStorage.getItem(`trackpro_timers_${user.uid}`);
+    const savedRunning = localStorage.getItem(`trackpro_running_${user.uid}`);
+    const lastUpdated = localStorage.getItem(`trackpro_last_updated_${user.uid}`);
+
+    if (savedTimers) {
+      const parsedTimers = JSON.parse(savedTimers);
+      const activeIds = savedRunning ? (JSON.parse(savedRunning) as string[]) : [];
+      
+      if (activeIds.length > 0 && lastUpdated) {
+        const elapsed = Math.floor((Date.now() - parseInt(lastUpdated)) / 1000);
+        activeIds.forEach(id => {
+          if (parsedTimers[id] !== undefined) {
+            parsedTimers[id] = Math.max(0, parsedTimers[id] - elapsed);
+          }
+        });
+        setRunningTimers(new Set(activeIds));
+      }
+      setTimers(parsedTimers);
+    }
+  }, [user]);
+
+  // Persistence: Save timers on change
+  useEffect(() => {
+    if (!user) return;
+    if (Object.keys(timers).length > 0 || runningTimers.size > 0) {
+      localStorage.setItem(`trackpro_timers_${user.uid}`, JSON.stringify(timers));
+      localStorage.setItem(`trackpro_running_${user.uid}`, JSON.stringify(Array.from(runningTimers)));
+      localStorage.setItem(`trackpro_last_updated_${user.uid}`, Date.now().toString());
+    }
+  }, [timers, runningTimers, user]);
+
   const handleToggleComplete = (activity: any) => {
     if (!user || !db) return;
     const isAlreadyCompleted = todayLogs.some(log => log.activityId === activity.id);
@@ -84,7 +118,6 @@ export default function DashboardPage() {
         timestamp: serverTimestamp(),
       });
       
-      // Stop timer if it was running
       stopTimer(activity.id);
 
       toast({ 
@@ -124,23 +157,38 @@ export default function DashboardPage() {
     const interval = setInterval(() => {
       setTimers((prev) => {
         const next = { ...prev };
+        let hasFinished = false;
+        
         runningTimers.forEach((id) => {
           if (next[id] > 0) {
             next[id] -= 1;
-          } else {
-            // Timer hit 0
-            const activity = activities?.find(a => a.id === id);
-            if (activity) {
-              handleToggleComplete(activity);
-            }
+          } else if (next[id] === 0) {
+            hasFinished = true;
           }
         });
+
+        if (hasFinished) {
+          // We handle completion in the next render cycle or using a side effect
+          // to avoid state updates during render
+        }
         return next;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [runningTimers, activities, todayLogs]);
+  }, [runningTimers]);
+
+  // Handle completion check separately
+  useEffect(() => {
+    runningTimers.forEach(id => {
+      if (timers[id] === 0) {
+        const activity = activities?.find(a => a.id === id);
+        if (activity) {
+          handleToggleComplete(activity);
+        }
+      }
+    });
+  }, [timers, runningTimers, activities]);
 
   const startTimer = (id: string, initialMinutes: number) => {
     setTimers(prev => ({
@@ -172,14 +220,12 @@ export default function DashboardPage() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Calculate Streak
   const currentStreak = useMemo(() => {
     if (!logs || logs.length === 0) return 0;
     const uniqueDates = Array.from(new Set(logs.map(l => l.date))).sort((a, b) => b.localeCompare(a));
     let streak = 0;
     let checkDate = new Date();
     
-    // If the latest log is older than yesterday, streak is 0
     if (uniqueDates.length > 0 && differenceInDays(new Date(), parseISO(uniqueDates[0])) > 1) {
       return 0;
     }
@@ -223,7 +269,6 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-12">
-        {/* Heatmap Section */}
         <Card className="md:col-span-12 border-none bg-muted/20 shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
@@ -263,7 +308,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Stats Column */}
         <div className="md:col-span-4 space-y-6">
           <Card className="border-none bg-primary text-primary-foreground shadow-lg overflow-hidden relative">
              <div className="absolute top-0 right-0 p-4 opacity-10"><Zap className="h-24 w-24" /></div>
@@ -301,7 +345,6 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Checklist Column */}
         <Card className="md:col-span-8 border-none shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
