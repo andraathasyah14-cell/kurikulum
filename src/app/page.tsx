@@ -11,12 +11,11 @@ import {
   Flame,
   Calendar,
   Zap,
-  Maximize2,
   PenTool,
-  X,
   Play,
   Pause,
-  RotateCcw
+  RotateCcw,
+  Timer as TimerIcon
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -33,7 +32,7 @@ import {
 import { collection, query, orderBy, serverTimestamp, setDoc, doc, where } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
-import { format, subDays, eachDayOfInterval } from 'date-fns';
+import { format, subDays, eachDayOfInterval, differenceInDays, parseISO, isSameDay } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -45,12 +44,12 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const today = format(new Date(), 'yyyy-MM-dd');
   
-  const [focusTask, setFocusTask] = useState<any | null>(null);
   const [reflection, setReflection] = useState('');
 
-  // Timer State for Focus Mode
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [timerActive, setTimerActive] = useState(false);
+  // Timer State: Record of activityId -> remainingSeconds
+  const [timers, setTimers] = useState<Record<string, number>>({});
+  // Running Timers: Set of activityIds that are currently active
+  const [runningTimers, setRunningTimers] = useState<Set<string>>(new Set());
 
   const activitiesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -85,6 +84,10 @@ export default function DashboardPage() {
         difficulty: activity.difficulty || 'Medium',
         timestamp: serverTimestamp(),
       });
+      
+      // Stop timer if it was running
+      stopTimer(activity.id);
+
       toast({ 
         title: "Selesai!", 
         description: `+${activity.difficulty === 'Hard' ? 3 : activity.difficulty === 'Easy' ? 1 : 2} poin produktivitas.` 
@@ -115,31 +118,53 @@ export default function DashboardPage() {
     });
   }, [logs]);
 
-  // Timer Effect
+  // Global Timer Effect
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (timerActive && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0 && timerActive) {
-      setTimerActive(false);
-      if (focusTask) {
-        handleToggleComplete(focusTask);
-        setFocusTask(null);
-        toast({ 
-          title: "Waktu Habis!", 
-          description: `Tugas "${focusTask.title}" telah otomatis ditandai selesai. Kerja bagus!` 
-        });
-      }
-    }
-    return () => clearInterval(interval);
-  }, [timerActive, timeLeft, focusTask]);
+    if (runningTimers.size === 0) return;
 
-  const startFocus = (activity: any) => {
-    setFocusTask(activity);
-    setTimeLeft((activity.durationMinutes || 25) * 60);
-    setTimerActive(false);
+    const interval = setInterval(() => {
+      setTimers((prev) => {
+        const next = { ...prev };
+        runningTimers.forEach((id) => {
+          if (next[id] > 0) {
+            next[id] -= 1;
+          } else {
+            // Timer hit 0
+            const activity = activities?.find(a => a.id === id);
+            if (activity) {
+              handleToggleComplete(activity);
+            }
+          }
+        });
+        return next;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [runningTimers, activities, todayLogs]);
+
+  const startTimer = (id: string, initialMinutes: number) => {
+    setTimers(prev => ({
+      ...prev,
+      [id]: prev[id] !== undefined ? prev[id] : initialMinutes * 60
+    }));
+    setRunningTimers(prev => new Set(prev).add(id));
+  };
+
+  const stopTimer = (id: string) => {
+    setRunningTimers(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  const resetTimer = (id: string, initialMinutes: number) => {
+    stopTimer(id);
+    setTimers(prev => ({
+      ...prev,
+      [id]: initialMinutes * 60
+    }));
   };
 
   const formatTime = (seconds: number) => {
@@ -148,57 +173,38 @@ export default function DashboardPage() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  // Calculate Streak
+  const currentStreak = useMemo(() => {
+    if (!logs || logs.length === 0) return 0;
+    const uniqueDates = Array.from(new Set(logs.map(l => l.date))).sort((a, b) => b.localeCompare(a));
+    let streak = 0;
+    let checkDate = new Date();
+    
+    // If the latest log is older than yesterday, streak is 0
+    if (uniqueDates.length > 0 && differenceInDays(new Date(), parseISO(uniqueDates[0])) > 1) {
+      return 0;
+    }
+
+    for (const d of uniqueDates) {
+      const logDate = parseISO(d);
+      if (isSameDay(checkDate, logDate) || isSameDay(subDays(checkDate, 1), logDate)) {
+        streak++;
+        checkDate = logDate;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }, [logs]);
+
   if (isUserLoading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
 
   if (!user) return (
     <div className="container flex flex-col items-center justify-center min-h-[80vh] px-4 text-center">
       <div className="mb-6 rounded-full bg-primary/10 p-8 animate-pulse"><TrendingUp className="h-16 w-16 text-primary" /></div>
-      <h1 className="font-headline text-5xl font-black mb-4 tracking-tighter">TRACKPRO</h1>
-      <p className="text-xl text-muted-foreground max-w-lg mb-8">Pelacak aktivitas tingkat lanjut untuk pertumbuhan personal yang terukur.</p>
+      <h1 className="font-headline text-5xl font-black mb-4 tracking-tighter uppercase">TrackPro</h1>
+      <p className="text-xl text-muted-foreground max-w-lg mb-8">Pelacak aktivitas simpel untuk pertumbuhan personal yang terukur.</p>
       <Button size="lg" className="rounded-full px-8 gap-2 shadow-xl" onClick={() => initiateGoogleSignIn(auth)}><LogIn className="h-5 w-5" /> Masuk dengan Google</Button>
-    </div>
-  );
-
-  if (focusTask) return (
-    <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in duration-300">
-      <Button variant="ghost" className="absolute top-6 right-6" onClick={() => { setFocusTask(null); setTimerActive(false); }}><X className="h-8 w-8" /></Button>
-      <div className="max-w-2xl w-full space-y-10">
-        <div className="flex items-center justify-center gap-2 text-primary">
-          <Zap className={cn("h-6 w-6", timerActive && "animate-pulse")} />
-          <span className="uppercase tracking-widest text-sm font-bold">Focus Mode</span>
-        </div>
-        <h2 className="text-4xl md:text-6xl font-black tracking-tighter">{focusTask.title}</h2>
-        
-        <div className="space-y-4">
-          <div className="text-8xl md:text-9xl font-black font-mono tabular-nums text-foreground">
-            {formatTime(timeLeft)}
-          </div>
-          <div className="flex items-center justify-center gap-4">
-            {!timerActive ? (
-              <Button size="lg" className="rounded-full h-16 w-16 shadow-xl" onClick={() => setTimerActive(true)}>
-                <Play className="h-8 w-8 fill-current" />
-              </Button>
-            ) : (
-              <Button size="lg" variant="outline" className="rounded-full h-16 w-16" onClick={() => setTimerActive(false)}>
-                <Pause className="h-8 w-8 fill-current" />
-              </Button>
-            )}
-            <Button size="lg" variant="ghost" className="rounded-full h-12 w-12 text-muted-foreground" onClick={() => { setTimeLeft((focusTask.durationMinutes || 25) * 60); setTimerActive(false); }}>
-              <RotateCcw className="h-6 w-6" />
-            </Button>
-          </div>
-        </div>
-
-        <p className="text-muted-foreground text-lg max-w-md mx-auto italic">
-          "Fokus adalah kunci untuk menyelesaikan apa yang Anda mulai."
-        </p>
-        
-        <div className="pt-8">
-           <Button variant="ghost" className="text-destructive font-bold uppercase tracking-widest text-xs" onClick={() => { setFocusTask(null); setTimerActive(false); }}>
-             Hentikan & Keluar
-           </Button>
-        </div>
-      </div>
     </div>
   );
 
@@ -266,7 +272,13 @@ export default function DashboardPage() {
              <CardContent>
                <div className="text-6xl font-black mb-4">{activities?.length ? Math.round((todayLogs.length / activities.length) * 100) : 0}%</div>
                <Progress value={activities?.length ? (todayLogs.length / activities.length) * 100 : 0} className="bg-white/20 h-2" />
-               <p className="mt-4 text-sm font-medium opacity-80">{todayLogs.length} dari {activities?.length || 0} tugas selesai</p>
+               <div className="mt-4 flex justify-between items-center">
+                  <p className="text-sm font-medium opacity-80">{todayLogs.length} dari {activities?.length || 0} tugas</p>
+                  <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-full">
+                    <Flame className="h-3 w-3 text-orange-400 fill-current" />
+                    <span className="text-xs font-black">{currentStreak} Day Streak</span>
+                  </div>
+               </div>
              </CardContent>
           </Card>
 
@@ -302,33 +314,58 @@ export default function DashboardPage() {
             <div className="divide-y divide-muted">
               {activities?.map(activity => {
                 const isCompleted = todayLogs.some(log => log.activityId === activity.id);
+                const isRunning = runningTimers.has(activity.id);
+                const currentTime = timers[activity.id] !== undefined ? timers[activity.id] : (activity.durationMinutes || 25) * 60;
+                
                 return (
-                  <div key={activity.id} className={cn("group flex items-center justify-between p-4 transition-colors", isCompleted ? "bg-green-50/30" : "hover:bg-muted/30")}>
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <button onClick={() => handleToggleComplete(activity)}>
-                        {isCompleted ? <CheckCircle2 className="h-6 w-6 text-green-600" /> : <Circle className="h-6 w-6 text-muted-foreground" />}
-                      </button>
-                      <div className="min-w-0">
-                        <p className={cn("font-bold truncate text-foreground", isCompleted && "line-through text-muted-foreground")}>{activity.title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={cn(
-                            "text-[10px] uppercase font-black px-1.5 py-0.5 rounded",
-                            activity.difficulty === 'Hard' ? "bg-red-100 text-red-700" :
-                            activity.difficulty === 'Easy' ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
-                          )}>
-                            {activity.difficulty || 'Medium'}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                             <TrendingUp className="h-3 w-3" /> {activity.durationMinutes || 25}m
-                          </span>
+                  <div key={activity.id} className={cn("group flex flex-col p-4 transition-colors", isCompleted ? "bg-green-50/30" : "hover:bg-muted/30")}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <button onClick={() => handleToggleComplete(activity)}>
+                          {isCompleted ? <CheckCircle2 className="h-6 w-6 text-green-600" /> : <Circle className="h-6 w-6 text-muted-foreground" />}
+                        </button>
+                        <div className="min-w-0">
+                          <p className={cn("font-bold truncate text-foreground", isCompleted && "line-through text-muted-foreground")}>{activity.title}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={cn(
+                              "text-[10px] uppercase font-black px-1.5 py-0.5 rounded",
+                              activity.difficulty === 'Hard' ? "bg-red-100 text-red-700" :
+                              activity.difficulty === 'Easy' ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
+                            )}>
+                              {activity.difficulty || 'Medium'}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1 font-bold">
+                               <TimerIcon className="h-3 w-3" /> {activity.durationMinutes || 25}m
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      
+                      {!isCompleted && (
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "text-xl font-black font-mono tabular-nums px-3 py-1 rounded-lg",
+                            isRunning ? "bg-primary text-primary-foreground animate-pulse" : "bg-muted text-muted-foreground"
+                          )}>
+                            {formatTime(currentTime)}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {!isRunning ? (
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => startTimer(activity.id, activity.durationMinutes || 25)}>
+                                <Play className="h-4 w-4 fill-current" />
+                              </Button>
+                            ) : (
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-primary" onClick={() => stopTimer(activity.id)}>
+                                <Pause className="h-4 w-4 fill-current" />
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground" onClick={() => resetTimer(activity.id, activity.durationMinutes || 25)}>
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    {!isCompleted && (
-                      <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 rounded-full" onClick={() => startFocus(activity)}>
-                        <Maximize2 className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 );
               })}
