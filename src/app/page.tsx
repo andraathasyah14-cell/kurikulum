@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -342,25 +341,25 @@ export default function DashboardPage() {
                       </div>
                       
                       {!isCompleted && (
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                           <div className={cn(
-                            "text-xl font-black font-mono tabular-nums px-3 py-1 rounded-lg",
+                            "text-sm font-bold font-mono tabular-nums px-2 py-0.5 rounded-md",
                             isRunning ? "bg-primary text-primary-foreground animate-pulse" : "bg-muted text-muted-foreground"
                           )}>
                             {formatTime(currentTime)}
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-0.5">
                             {!isRunning ? (
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => startTimer(activity.id, activity.durationMinutes || 25)}>
-                                <Play className="h-4 w-4 fill-current" />
+                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => startTimer(activity.id, activity.durationMinutes || 25)}>
+                                <Play className="h-3.5 w-3.5 fill-current" />
                               </Button>
                             ) : (
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-primary" onClick={() => stopTimer(activity.id)}>
-                                <Pause className="h-4 w-4 fill-current" />
+                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-primary" onClick={() => stopTimer(activity.id)}>
+                                <Pause className="h-3.5 w-3.5 fill-current" />
                               </Button>
                             )}
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground" onClick={() => resetTimer(activity.id, activity.durationMinutes || 25)}>
-                              <RotateCcw className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground" onClick={() => resetTimer(activity.id, activity.durationMinutes || 25)}>
+                              <RotateCcw className="h-3.5 w-3.5" />
                             </Button>
                           </div>
                         </div>
