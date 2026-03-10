@@ -17,7 +17,8 @@ import {
   Layers,
   NotebookPen,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Quote
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -279,8 +280,19 @@ export default function DashboardPage() {
   if (!user) return (
     <div className="container flex flex-col items-center justify-center min-h-[80vh] px-4 text-center">
       <div className="mb-6 rounded-full bg-primary/10 p-8 animate-pulse"><BookOpen className="h-16 w-16 text-primary" /></div>
-      <h1 className="font-headline text-5xl font-black mb-4 tracking-tighter uppercase">StudyPro</h1>
-      <p className="text-xl text-muted-foreground max-w-lg mb-8">Visualisasikan penguasaan kurikulum belajar Anda secara terstruktur dan terukur.</p>
+      <h1 className="font-headline text-5xl font-black mb-2 tracking-tighter uppercase">StudyPro</h1>
+      
+      <div className="mb-8 space-y-2 max-w-2xl bg-muted/30 p-6 rounded-2xl border border-dashed">
+        <Quote className="h-6 w-6 text-primary/40 mx-auto mb-2" />
+        <p className="text-xl font-bold italic text-foreground leading-snug">
+          "The only true wisdom is in knowing you know nothing."
+        </p>
+        <p className="text-sm text-muted-foreground font-medium">
+          (Satu-satunya kebijaksanaan sejati adalah mengetahui bahwa kamu tidak mengetahui apa-apa)
+        </p>
+      </div>
+
+      <p className="text-lg text-muted-foreground max-w-lg mb-8">Visualisasikan penguasaan kurikulum belajar Anda secara terstruktur dan terukur.</p>
       <Button size="lg" className="rounded-full px-8 gap-2 shadow-xl" onClick={() => initiateGoogleSignIn(auth)}><LogIn className="h-5 w-5" /> Mulai Kurikulum</Button>
     </div>
   );
@@ -289,6 +301,19 @@ export default function DashboardPage() {
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-6xl">
+      {/* Intro Quote for Authenticated Users */}
+      <div className="mb-8 flex items-center justify-center text-center">
+        <div className="bg-primary/5 px-6 py-4 rounded-3xl border border-primary/10 relative max-w-3xl">
+          <Quote className="absolute -top-2 -left-2 h-8 w-8 text-primary/10 fill-current" />
+          <p className="text-sm md:text-base font-bold italic text-primary leading-relaxed">
+            "The only true wisdom is in knowing you know nothing."
+          </p>
+          <p className="text-[10px] md:text-xs text-muted-foreground mt-1 font-medium uppercase tracking-tight">
+            Satu-satunya kebijaksanaan sejati adalah mengetahui bahwa kamu tidak mengetahui apa-apa
+          </p>
+        </div>
+      </div>
+
       <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">
           <h1 className="font-headline text-4xl font-black tracking-tight text-foreground">Status Kurikulum</h1>
