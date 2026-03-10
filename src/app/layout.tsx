@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { FirebaseClientProvider } from '@/firebase';
+import { CountdownBanner } from '@/components/layout/countdown-banner';
 
 export const metadata: Metadata = {
   title: 'StudyPro - Master Your Materials',
@@ -30,13 +31,14 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased bg-background text-foreground">
+      <body className="font-body antialiased bg-background text-foreground pb-20 md:pb-24">
         <FirebaseClientProvider>
           <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex-grow">{children}</main>
             <Footer />
           </div>
+          <CountdownBanner />
           <Toaster />
         </FirebaseClientProvider>
       </body>
