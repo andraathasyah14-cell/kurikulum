@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2, BookOpen, Zap, Timer, LayoutList } from 'lucide-react';
+import { Plus, Trash2, BookOpen, Zap, Timer, LayoutList, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -54,7 +54,7 @@ export default function ActivitiesPage() {
 
   const handleAddActivity = () => {
     if (!user || !db || !newActivity.title || !newActivity.category) {
-      toast({ variant: "destructive", title: "Error", description: "Nama kategori dan materi harus diisi." });
+      toast({ variant: "destructive", title: "Error", description: "Nama subjek dan materi harus diisi." });
       return;
     }
 
@@ -83,8 +83,8 @@ export default function ActivitiesPage() {
     <div className="container px-4 py-8 md:px-6 max-w-4xl">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-headline text-3xl font-black tracking-tight">Struktur Materi</h1>
-          <p className="text-muted-foreground text-sm font-medium">Susun rencana belajarmu berdasarkan kategori.</p>
+          <h1 className="font-headline text-3xl font-black tracking-tight">Katalog Subjek</h1>
+          <p className="text-muted-foreground text-sm font-medium">Susun rencana belajarmu berdasarkan subjek dan topik materi.</p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
@@ -96,16 +96,16 @@ export default function ActivitiesPage() {
             <DialogHeader><DialogTitle>Tambah Materi Belajar</DialogTitle></DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="category">Nama Kategori / Subjek</Label>
+                <Label htmlFor="category">Nama Subjek / Kategori Besar</Label>
                 <Input id="category" placeholder="Misal: UTBK Inggris" value={newActivity.category} onChange={(e) => setNewActivity({...newActivity, category: e.target.value})} />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="title">Nama Materi / Topik</Label>
+                <Label htmlFor="title">Nama Materi / Topik Spesifik</Label>
                 <Input id="title" placeholder="Misal: Grammar Dasar" value={newActivity.title} onChange={(e) => setNewActivity({...newActivity, title: e.target.value})} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label>Kesulitan</Label>
+                  <Label>Bobot Kesulitan</Label>
                   <Select value={newActivity.difficulty} onValueChange={(v) => setNewActivity({...newActivity, difficulty: v})}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -116,7 +116,7 @@ export default function ActivitiesPage() {
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="duration">Durasi Belajar (Menit)</Label>
+                  <Label htmlFor="duration">Target Durasi (Menit)</Label>
                   <Input id="duration" type="number" value={newActivity.durationMinutes} onChange={(e) => setNewActivity({...newActivity, durationMinutes: e.target.value})} />
                 </div>
               </div>
@@ -143,13 +143,15 @@ export default function ActivitiesPage() {
                 <div>
                   <h3 className="font-bold text-lg leading-none">{activity.title}</h3>
                   <div className="flex flex-wrap gap-2 mt-2 text-[10px] font-black uppercase items-center">
-                    <span className="bg-primary/10 text-primary px-2 py-0.5 rounded">{activity.category}</span>
+                    <span className="bg-primary/10 text-primary px-2 py-0.5 rounded flex items-center gap-1">
+                      <Layers className="h-3 w-3" /> {activity.category}
+                    </span>
                     <span className={cn(
                       "px-2 py-0.5 rounded",
                       activity.difficulty === 'Hard' ? "bg-red-100 text-red-700" : 
                       activity.difficulty === 'Easy' ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
                     )}>{activity.difficulty || 'Medium'}</span>
-                    <span className="flex items-center gap-1 text-muted-foreground"><Timer className="h-3 w-3" /> {activity.durationMinutes || 25}m</span>
+                    <span className="flex items-center gap-1 text-muted-foreground font-bold"><Timer className="h-3 w-3" /> {activity.durationMinutes || 25}m</span>
                   </div>
                 </div>
               </div>
@@ -160,7 +162,7 @@ export default function ActivitiesPage() {
         {activities?.length === 0 && (
           <div className="py-20 text-center border-2 border-dashed rounded-xl opacity-50">
              <LayoutList className="h-12 w-12 mx-auto mb-4" />
-             <p className="font-medium">Belum ada struktur materi belajar.</p>
+             <p className="font-medium">Belum ada daftar materi belajar.</p>
           </div>
         )}
       </div>

@@ -15,7 +15,8 @@ import {
   RotateCcw,
   Timer as TimerIcon,
   BookOpen,
-  ChevronRight
+  ChevronRight,
+  Layers
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -70,7 +71,7 @@ export default function DashboardPage() {
   const todayLogs = logs?.filter(log => log.date === today) || [];
   const currentReflection = reflections?.[0];
 
-  // Grouping activities by category for the study plan view
+  // Grouping activities by category (Subject)
   const groupedActivities = useMemo(() => {
     if (!activities) return {};
     return activities.reduce((acc, act) => {
@@ -227,7 +228,7 @@ export default function DashboardPage() {
     <div className="container flex flex-col items-center justify-center min-h-[80vh] px-4 text-center">
       <div className="mb-6 rounded-full bg-primary/10 p-8 animate-pulse"><BookOpen className="h-16 w-16 text-primary" /></div>
       <h1 className="font-headline text-5xl font-black mb-4 tracking-tighter uppercase">StudyPro</h1>
-      <p className="text-xl text-muted-foreground max-w-lg mb-8">Mastering materials through structured checklists and focused study.</p>
+      <p className="text-xl text-muted-foreground max-w-lg mb-8">Mastering materials through structured subject checklists and focused study.</p>
       <Button size="lg" className="rounded-full px-8 gap-2 shadow-xl" onClick={() => initiateGoogleSignIn(auth)}><LogIn className="h-5 w-5" /> Mulai Belajar</Button>
     </div>
   );
@@ -291,7 +292,7 @@ export default function DashboardPage() {
         <div className="md:col-span-4 space-y-6">
           <Card className="border-none bg-primary text-primary-foreground shadow-lg overflow-hidden relative">
              <div className="absolute top-0 right-0 p-4 opacity-10"><Zap className="h-24 w-24" /></div>
-             <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase">Progres Total</CardTitle></CardHeader>
+             <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase">Progres Hari Ini</CardTitle></CardHeader>
              <CardContent>
                <div className="text-6xl font-black mb-4">{activities?.length ? Math.round((todayLogs.length / activities.length) * 100) : 0}%</div>
                <Progress value={activities?.length ? (todayLogs.length / activities.length) * 100 : 0} className="bg-white/20 h-2" />
@@ -306,7 +307,7 @@ export default function DashboardPage() {
           </Card>
 
           <Card className="border-none bg-muted/50">
-            <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase flex items-center gap-2"><PenTool className="h-3 w-3" /> Catatan Belajar</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase flex items-center gap-2"><PenTool className="h-3 w-3" /> Insight Belajar</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {currentReflection ? (
                 <p className="text-sm italic font-serif leading-relaxed">"{currentReflection.content}"</p>
@@ -325,22 +326,26 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Grouped Activities List */}
+        {/* Grouped Activities List (Subject Hierarchy) */}
         <div className="md:col-span-8 space-y-6">
           {Object.entries(groupedActivities).map(([category, items]) => {
             const completedInCategory = items.filter(item => todayLogs.some(log => log.activityId === item.id)).length;
             const progress = (completedInCategory / items.length) * 100;
+            const totalMinutes = items.reduce((sum, act) => sum + (act.durationMinutes || 0), 0);
 
             return (
               <Card key={category} className="border-none shadow-sm overflow-hidden">
                 <CardHeader className="bg-muted/30 pb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <CardTitle className="text-lg font-black flex items-center gap-2">
-                      <BookOpen className="h-5 w-5 text-primary" /> {category}
+                    <CardTitle className="text-xl font-black flex items-center gap-2">
+                      <Layers className="h-5 w-5 text-primary" /> {category}
                     </CardTitle>
-                    <span className="text-xs font-bold text-muted-foreground uppercase">{completedInCategory} / {items.length} Materi</span>
+                    <div className="text-right">
+                      <span className="block text-xs font-bold text-muted-foreground uppercase">{completedInCategory} / {items.length} Materi</span>
+                      <span className="text-[10px] text-muted-foreground font-medium">{totalMinutes} menit total</span>
+                    </div>
                   </div>
-                  <Progress value={progress} className="h-1.5" />
+                  <Progress value={progress} className="h-2" />
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="divide-y divide-muted">
@@ -358,15 +363,17 @@ export default function DashboardPage() {
                               </button>
                               <div className="min-w-0">
                                 <p className={cn("font-bold truncate text-foreground", isCompleted && "line-through text-muted-foreground")}>{activity.title}</p>
-                                <div className="flex items-center gap-2 mt-1">
+                                <div className="flex items-center gap-3 mt-1">
                                   <span className={cn(
-                                    "text-[10px] uppercase font-black px-1.5 py-0.5 rounded",
+                                    "text-[9px] uppercase font-black px-1.5 py-0.5 rounded",
                                     activity.difficulty === 'Hard' ? "bg-red-100 text-red-700" :
                                     activity.difficulty === 'Easy' ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
                                   )}>
                                     {activity.difficulty || 'Medium'}
                                   </span>
-                                  <span className="text-[10px] text-muted-foreground font-bold">Bobot: {activity.difficulty === 'Hard' ? '3pt' : activity.difficulty === 'Easy' ? '1pt' : '2pt'}</span>
+                                  <span className="text-[10px] text-muted-foreground font-bold flex items-center gap-1">
+                                    <TimerIcon className="h-3 w-3" /> {activity.durationMinutes || 25}m
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -374,7 +381,7 @@ export default function DashboardPage() {
                             {!isCompleted && (
                               <div className="flex items-center gap-2">
                                 <div className={cn(
-                                  "text-sm font-bold font-mono tabular-nums px-2 py-0.5 rounded-md",
+                                  "text-xs font-bold font-mono tabular-nums px-2 py-0.5 rounded-md",
                                   isRunning ? "bg-primary text-primary-foreground animate-pulse" : "bg-muted text-muted-foreground"
                                 )}>
                                   {formatTime(currentTime)}
@@ -407,8 +414,8 @@ export default function DashboardPage() {
           {activities?.length === 0 && (
             <div className="p-12 text-center border-2 border-dashed rounded-xl opacity-50">
               <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="font-medium text-muted-foreground">Belum ada kategori materi. Buat rencana belajarmu sekarang!</p>
-              <Button asChild className="mt-4 rounded-full"><Link href="/activities">Buat Checklist Baru</Link></Button>
+              <p className="font-medium text-muted-foreground">Belum ada struktur materi belajar. Buat kategori subjek sekarang!</p>
+              <Button asChild className="mt-4 rounded-full"><Link href="/activities">Buat Subjek Baru</Link></Button>
             </div>
           )}
         </div>
