@@ -207,7 +207,29 @@ export default function StatsPage() {
                     outerRadius={100}
                     paddingAngle={5}
                     dataKey="value"
-                    label={({ name, percentage }) => `${name} (${percentage}%)`}
+                    label={({
+                      cx,
+                      cy,
+                      midAngle,
+                      innerRadius,
+                      outerRadius,
+                      name,
+                      percentage,
+                      minutes,
+                      x,
+                      y
+                    }) => (
+                      <text
+                        x={x}
+                        y={y}
+                        fill="hsl(var(--muted-foreground))"
+                        textAnchor={x > cx ? 'start' : 'end'}
+                        dominantBaseline="central"
+                        className="text-[9px] font-bold"
+                      >
+                        {`${name} (${percentage}%) ${minutes}m`}
+                      </text>
+                    )}
                   >
                     {distributionData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -271,6 +293,7 @@ export default function StatsPage() {
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
+        </BarChart>
         </Card>
       </div>
 
