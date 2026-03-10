@@ -33,7 +33,7 @@
     }
   },
   "auth": {
-    "providers": ["password", "anonymous"]
+    "providers": ["google.com"]
   },
   "firestore": {
     "structure": [

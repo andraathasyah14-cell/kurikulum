@@ -1,17 +1,27 @@
+
 'use client';
 
-import { useUser } from '@/firebase';
+import { useUser, useAuth } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { LogOut, User, Bell, Shield, Palette } from 'lucide-react';
+import { signOut } from 'firebase/auth';
 
 export default function SettingsPage() {
   const { user } = useUser();
+  const auth = useAuth();
+
+  if (!user) {
+    return (
+      <div className="container py-20 text-center">
+        <h2 className="text-2xl font-bold">Silakan masuk terlebih dahulu.</h2>
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-4xl px-4 py-8 md:px-6">
@@ -21,37 +31,27 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6">
-        {/* Profil Section */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" /> Profil Pengguna
             </CardTitle>
-            <CardDescription>Informasi dasar akun Anda.</CardDescription>
+            <CardDescription>Informasi dasar akun Google Anda.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
-                <AvatarImage src={user?.photoURL || ''} />
-                <AvatarFallback>{user?.displayName?.[0] || 'U'}</AvatarFallback>
+                <AvatarImage src={user.photoURL || ''} />
+                <AvatarFallback>{user.displayName?.[0] || 'U'}</AvatarFallback>
               </Avatar>
-              <Button variant="outline" size="sm">Ganti Foto</Button>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nama Lengkap</Label>
-                <Input id="name" defaultValue={user?.displayName || ''} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" defaultValue={user?.email || ''} disabled />
+              <div>
+                <p className="font-medium text-lg">{user.displayName}</p>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
               </div>
             </div>
-            <Button>Simpan Perubahan</Button>
           </CardContent>
         </Card>
 
-        {/* Notifikasi & Tampilan */}
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
@@ -61,19 +61,11 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label htmlFor="reminders" className="flex flex-col gap-1">
+                <Label htmlFor="reminders" className="flex flex-col gap-1 cursor-pointer">
                   <span>Pengingat Harian</span>
                   <span className="text-xs font-normal text-muted-foreground">Terima notifikasi untuk checklist Anda.</span>
                 </Label>
                 <Switch id="reminders" defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <Label htmlFor="updates" className="flex flex-col gap-1">
-                  <span>Update Mingguan</span>
-                  <span className="text-xs font-normal text-muted-foreground">Laporan progres mingguan via email.</span>
-                </Label>
-                <Switch id="updates" />
               </div>
             </CardContent>
           </Card>
@@ -86,36 +78,28 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label htmlFor="dark-mode" className="flex flex-col gap-1">
+                <Label htmlFor="dark-mode" className="flex flex-col gap-1 cursor-pointer">
                   <span>Mode Gelap</span>
-                  <span className="text-xs font-normal text-muted-foreground">Gunakan tema gelap untuk aplikasi.</span>
+                  <span className="text-xs font-normal text-muted-foreground">Gunakan tema gelap (segera).</span>
                 </Label>
-                <Switch id="dark-mode" />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <Label htmlFor="compact" className="flex flex-col gap-1">
-                  <span>Mode Ringkas</span>
-                  <span className="text-xs font-normal text-muted-foreground">Tampilkan lebih banyak item di layar.</span>
-                </Label>
-                <Switch id="compact" />
+                <Switch id="dark-mode" disabled />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Keamanan & Logout */}
         <Card className="border-destructive/20">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2 text-destructive">
-              <Shield className="h-5 w-5" /> Keamanan & Akun
+              <Shield className="h-5 w-5" /> Akun
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <Button variant="outline" className="justify-start gap-2">
-              Ganti Password
-            </Button>
-            <Button variant="destructive" className="justify-start gap-2">
+            <Button 
+              variant="destructive" 
+              className="justify-start gap-2"
+              onClick={() => signOut(auth)}
+            >
               <LogOut className="h-4 w-4" /> Keluar dari Aplikasi
             </Button>
           </CardContent>

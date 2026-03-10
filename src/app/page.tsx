@@ -1,3 +1,4 @@
+
 'use client';
 
 import { 
@@ -6,7 +7,8 @@ import {
   TrendingUp, 
   Activity as ActivityIcon,
   ArrowRight,
-  ListChecks
+  ListChecks,
+  LogIn
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -16,18 +18,21 @@ import {
   useUser, 
   useCollection, 
   useMemoFirebase, 
-  useFirestore 
+  useFirestore,
+  useAuth
 } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 import { cn } from '@/lib/utils';
 
 export default function DashboardPage() {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const db = useFirestore();
+  const auth = useAuth();
   const today = format(new Date(), 'yyyy-MM-dd');
 
   const activitiesQuery = useMemoFirebase(() => {
@@ -66,11 +71,35 @@ export default function DashboardPage() {
     }
   };
 
+  if (isUserLoading) {
+    return (
+      <div className="container flex items-center justify-center min-h-[70vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="container flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
+        <div className="mb-6 rounded-full bg-primary/10 p-8">
+          <ListChecks className="h-16 w-16 text-primary" />
+        </div>
+        <h1 className="font-headline text-4xl font-bold mb-4">Selamat Datang di TrackPro</h1>
+        <p className="text-xl text-muted-foreground max-w-lg mb-8">
+          Monitor progres belajar, habit, dan project Anda dalam satu tempat yang sederhana dan intuitif.
+        </p>
+        <Button size="lg" className="gap-2" onClick={() => initiateGoogleSignIn(auth)}>
+          <LogIn className="h-5 w-5" /> Mulai Sekarang dengan Google
+        </Button>
+      </div>
+    );
+  }
+
   const totalActivities = activities?.length || 0;
   const completedToday = todayLogs.length;
   const progressPercent = totalActivities > 0 ? (completedToday / totalActivities) * 100 : 0;
 
-  // Data mingguan dummy untuk dashboard jika logs belum banyak
   const statsData = [
     { name: 'Sen', value: 4 },
     { name: 'Sel', value: 3 },
@@ -85,7 +114,7 @@ export default function DashboardPage() {
     <div className="container px-4 py-8 md:px-6">
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-headline text-3xl font-bold">Halo, {user?.displayName || 'Sahabat Progres'}!</h1>
+          <h1 className="font-headline text-3xl font-bold">Halo, {user?.displayName?.split(' ')[0] || 'Sahabat Progres'}!</h1>
           <p className="text-muted-foreground">
             {format(new Date(), 'EEEE, d MMMM yyyy', { locale: idLocale })}. Waktunya fokus!
           </p>
@@ -105,11 +134,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        {/* Ringkasan Hari Ini */}
         <Card className="md:col-span-1 shadow-sm border-primary/10">
           <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-primary" /> Progres Hari Ini
+              <CheckCircle2 className="h-4 w-4 text-primary" /> Progres Harian
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -118,23 +146,14 @@ export default function DashboardPage() {
               <Progress value={progressPercent} className="h-2" />
               <p className="text-xs text-right text-muted-foreground font-medium">{Math.round(progressPercent)}%</p>
             </div>
-            <p className="mt-4 text-sm text-muted-foreground">
-              {progressPercent === 100 
-                ? 'Luar biasa! Target hari ini tercapai.' 
-                : `${totalActivities - completedToday} aktivitas lagi untuk diselesaikan.`}
-            </p>
           </CardContent>
         </Card>
 
-        {/* Visual Tracking Singkat */}
         <Card className="md:col-span-2 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" /> Performa Pekan Ini
             </CardTitle>
-            <Button variant="ghost" size="sm" asChild className="text-xs h-7">
-              <Link href="/stats">Lihat Detail <ArrowRight className="ml-1 h-3 w-3" /></Link>
-            </Button>
           </CardHeader>
           <CardContent className="h-[180px] w-full pt-0">
             <ResponsiveContainer width="100%" height="100%">
@@ -168,7 +187,6 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Checklist Cepat Hari Ini */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-headline font-bold flex items-center gap-2">
@@ -220,9 +238,6 @@ export default function DashboardPage() {
                       <h3 className={cn("font-medium text-sm truncate", isCompleted && "line-through text-muted-foreground")}>
                         {activity.title}
                       </h3>
-                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">
-                        {activity.category}
-                      </p>
                     </div>
                   </CardContent>
                 </Card>
