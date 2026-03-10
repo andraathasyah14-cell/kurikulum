@@ -1,9 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, LayoutDashboard, ListChecks, TrendingUp, User } from 'lucide-react';
+import { Menu, LayoutDashboard, ListChecks, TrendingUp, Settings, User } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -12,8 +11,9 @@ import { useUser } from '@/firebase';
 
 const navLinks = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/activities', label: 'Aktivitas', icon: ListChecks },
+  { href: '/activities', label: 'Checklist', icon: ListChecks },
   { href: '/stats', label: 'Statistik', icon: TrendingUp },
+  { href: '/settings', label: 'Pengaturan', icon: Settings },
 ];
 
 export function Header() {
@@ -54,7 +54,7 @@ export function Header() {
                <User className="h-5 w-5" />
              </Button>
           ) : (
-            <Button size="sm">Mulai Gratis</Button>
+            <Button size="sm">Mulai</Button>
           )}
           
           <Sheet>
