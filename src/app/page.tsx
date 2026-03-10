@@ -15,7 +15,6 @@ import {
   RotateCcw,
   Timer as TimerIcon,
   BookOpen,
-  ChevronRight,
   Layers
 } from 'lucide-react';
 import Link from 'next/link';
@@ -107,11 +106,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!user) return;
-    if (Object.keys(timers).length > 0 || runningTimers.size > 0) {
-      localStorage.setItem(`studypro_timers_${user.uid}`, JSON.stringify(timers));
-      localStorage.setItem(`studypro_running_${user.uid}`, JSON.stringify(Array.from(runningTimers)));
-      localStorage.setItem(`studypro_last_updated_${user.uid}`, Date.now().toString());
-    }
+    localStorage.setItem(`studypro_timers_${user.uid}`, JSON.stringify(timers));
+    localStorage.setItem(`studypro_running_${user.uid}`, JSON.stringify(Array.from(runningTimers)));
+    localStorage.setItem(`studypro_last_updated_${user.uid}`, Date.now().toString());
   }, [timers, runningTimers, user]);
 
   const handleToggleComplete = (activity: any) => {
