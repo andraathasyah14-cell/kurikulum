@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -323,14 +322,14 @@ export default function DashboardPage() {
           <Card className="border-none bg-muted/50">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-bold uppercase flex items-center gap-2">
-                <NotebookPen className="h-3 w-3" /> Target / Refleksi Singkat
+                <NotebookPen className="h-3 w-3" /> Target / Refleksi Harian
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <p className="text-[10px] uppercase font-black text-muted-foreground">Apa fokus utamamu hari ini?</p>
+                <p className="text-[10px] uppercase font-black text-muted-foreground">Apa fokusmu atau apa yang kurang hari ini?</p>
                 <Textarea 
-                  placeholder="Contoh: Menyelesaikan Noun Clause dan latihan soal..." 
+                  placeholder="Hari ini aku kurang fokus di... besok harus lebih..." 
                   className="min-h-[100px] bg-background border-none text-sm leading-relaxed"
                   value={shortNote}
                   onChange={(e) => setShortNote(e.target.value)}
@@ -338,7 +337,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex flex-col gap-2">
                 <Button size="sm" className="w-full rounded-full gap-2" onClick={handleSaveShortNote}>
-                  Simpan Target
+                  Simpan Refleksi
                 </Button>
                 <Button variant="ghost" size="sm" asChild className="w-full rounded-full gap-2 text-xs">
                   <Link href="/journal">
