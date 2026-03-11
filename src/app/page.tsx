@@ -103,6 +103,14 @@ export default function DashboardPage() {
     return new Set(completedActivityMap.keys());
   }, [completedActivityMap]);
 
+  // Fix for the 250% issue: Only count completed activities that still exist in the curriculum
+  const totalMasteryProgress = useMemo(() => {
+    if (!activities || activities.length === 0) return 0;
+    const currentActivityIds = new Set(activities.map(a => a.id));
+    const actuallyCompletedCount = Array.from(completedActivityIds).filter(id => currentActivityIds.has(id)).length;
+    return Math.round((actuallyCompletedCount / activities.length) * 100);
+  }, [activities, completedActivityIds]);
+
   // Grouping activities by category
   const groupedActivities = useMemo(() => {
     if (!activities) return {};
@@ -303,7 +311,7 @@ export default function DashboardPage() {
     </div>
   );
 
-  const totalMasteryProgress = activities?.length ? Math.round((completedActivityIds.size / activities.length) * 100) : 0;
+  const completedInCategoryCount = (items: any[]) => items.filter(item => completedActivityIds.has(item.id)).length;
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-6xl">
@@ -382,7 +390,7 @@ export default function DashboardPage() {
                <div className="text-6xl font-black mb-4">{totalMasteryProgress}%</div>
                <Progress value={totalMasteryProgress} className="bg-white/20 h-2" />
                <div className="mt-4 flex justify-between items-center">
-                  <p className="text-sm font-medium opacity-80">{completedActivityIds.size} / {activities?.length || 0} materi</p>
+                  <p className="text-sm font-medium opacity-80">{activities?.filter(a => completedActivityIds.has(a.id)).length || 0} / {activities?.length || 0} materi</p>
                   <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-full">
                     <Flame className="h-3 w-3 text-orange-400 fill-current" />
                     <span className="text-xs font-black">{currentStreak} Day Streak</span>
@@ -424,8 +432,8 @@ export default function DashboardPage() {
         {/* Grouped Activities List */}
         <div className="md:col-span-8 space-y-6">
           {Object.entries(groupedActivities).map(([category, items]) => {
-            const completedInCategory = items.filter(item => completedActivityIds.has(item.id)).length;
-            const progress = (completedInCategory / items.length) * 100;
+            const completedCount = completedInCategoryCount(items);
+            const progress = items.length > 0 ? (completedCount / items.length) * 100 : 0;
             const totalMinutes = items.reduce((sum, act) => sum + (act.durationMinutes || 0), 0);
 
             return (
@@ -437,7 +445,7 @@ export default function DashboardPage() {
                     </CardTitle>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <span className="block text-xs font-bold text-muted-foreground uppercase">{completedInCategory} / {items.length} Dikuasai</span>
+                        <span className="block text-xs font-bold text-muted-foreground uppercase">{completedCount} / {items.length} Dikuasai</span>
                         <span className="text-[10px] text-muted-foreground font-medium">{totalMinutes} menit total</span>
                       </div>
                       

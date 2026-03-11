@@ -13,11 +13,8 @@ export function CountdownBanner() {
   } | null>(null);
 
   useEffect(() => {
-    // Menetapkan target: 41 hari dari sekarang (untuk simulasi)
-    // Dalam penggunaan nyata, ini bisa berupa tanggal ujian tetap.
-    const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() + 41);
-    targetDate.setHours(0, 0, 0, 0);
+    // Target date: 21 April 2026
+    const targetDate = new Date('2026-04-21T00:00:00');
 
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
