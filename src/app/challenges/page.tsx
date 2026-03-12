@@ -22,7 +22,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser, useCollection, useMemoFirebase, useFirestore } from '@/firebase';
-import { query, collection, orderBy } from 'firebase/firestore';
+import { query, collection, orderBy, doc, serverTimestamp } from 'firebase/firestore';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { cn } from '@/lib/utils';
 import { format, endOfWeek, differenceInSeconds, startOfWeek } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
@@ -68,7 +69,6 @@ export default function ChallengesPage() {
   const db = useFirestore();
   const { toast } = useToast();
   const [timeLeft, setTimeLeft] = useState('');
-  const [joinedChallenges, setJoinedChallenges] = useState<Set<string>>(new Set());
   const [selectedChallengeId, setSelectedChallengeId] = useState('sprint');
   const currentWeek = format(new Date(), 'I');
 
@@ -93,7 +93,23 @@ export default function ChallengesPage() {
     return query(collection(db, 'users', user.uid, 'logs'));
   }, [db, user]);
 
+  const activeChallengesQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'users', user.uid, 'activeChallenges'));
+  }, [db, user]);
+
   const { data: logs } = useCollection(logsQuery);
+  const { data: activeChallenges } = useCollection(activeChallengesQuery);
+
+  const joinedChallenges = useMemo(() => {
+    if (!activeChallenges) return new Set<string>();
+    return new Set(activeChallenges.map(c => c.id));
+  }, [activeChallenges]);
+
+  const claimedChallenges = useMemo(() => {
+    if (!activeChallenges) return new Set<string>();
+    return new Set(activeChallenges.filter(c => c.status === 'claimed').map(c => c.id));
+  }, [activeChallenges]);
 
   const stats = useMemo(() => {
     if (!logs) return { count: 0, hours: 0 };
@@ -136,7 +152,14 @@ export default function ChallengesPage() {
   }, [user, stats, currentWeek, selectedChallengeId]);
 
   const handleJoinChallenge = (id: string, title: string) => {
-    setJoinedChallenges(prev => new Set(prev).add(id));
+    if (!user || !db) return;
+    
+    setDocumentNonBlocking(doc(db, 'users', user.uid, 'activeChallenges', id), {
+      id,
+      joinedAt: serverTimestamp(),
+      status: 'joined'
+    }, { merge: true });
+
     setSelectedChallengeId(id);
     toast({
       title: "Sprint Dimulai!",
@@ -144,7 +167,14 @@ export default function ChallengesPage() {
     });
   };
 
-  const handleClaimBadge = (title: string) => {
+  const handleClaimBadge = (id: string, title: string) => {
+    if (!user || !db) return;
+
+    setDocumentNonBlocking(doc(db, 'users', user.uid, 'activeChallenges', id), {
+      status: 'claimed',
+      claimedAt: serverTimestamp()
+    }, { merge: true });
+
     toast({
       title: "Badge Diklaim! 🏆",
       description: `Badge "${title}" telah ditambahkan ke profil Anda.`,
@@ -180,6 +210,7 @@ export default function ChallengesPage() {
           const progressValue = challenge.id === 'marathon' ? stats.hours : stats.count;
           const progress = Math.min(100, (progressValue / challenge.target) * 100);
           const isJoined = joinedChallenges.has(challenge.id);
+          const isClaimed = claimedChallenges.has(challenge.id);
           const isSelected = selectedChallengeId === challenge.id;
           
           return (
@@ -220,15 +251,21 @@ export default function ChallengesPage() {
                   <Button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      progress === 100 ? handleClaimBadge(challenge.title) : handleJoinChallenge(challenge.id, challenge.title);
+                      if (progress === 100) {
+                        handleClaimBadge(challenge.id, challenge.title);
+                      } else if (!isJoined) {
+                        handleJoinChallenge(challenge.id, challenge.title);
+                      }
                     }}
-                    disabled={isJoined && progress < 100}
+                    disabled={(isJoined && progress < 100) || isClaimed}
                     className={cn(
                       "rounded-full px-10 h-14 font-black uppercase text-xs tracking-widest shadow-lg transition-all",
-                      progress === 100 ? "bg-green-600 hover:bg-green-700" : (isJoined ? "bg-muted text-muted-foreground" : "bg-primary")
+                      isClaimed ? "bg-muted text-muted-foreground" : 
+                      progress === 100 ? "bg-green-600 hover:bg-green-700" : 
+                      (isJoined ? "bg-muted text-muted-foreground" : "bg-primary")
                     )}
                   >
-                    {progress === 100 ? "Claim Badge" : (isJoined ? "Joined" : "Join Sprint")}
+                    {isClaimed ? "Badge Claimed" : progress === 100 ? "Claim Badge" : (isJoined ? "Joined" : "Join Sprint")}
                   </Button>
                 </div>
               </CardContent>
@@ -288,7 +325,6 @@ export default function ChallengesPage() {
                   </div>
                 </div>
                 
-                {/* Visual Progress Bar for each player */}
                 <div className="px-12">
                   <div className={cn(
                     "h-1.5 w-full rounded-full overflow-hidden",
