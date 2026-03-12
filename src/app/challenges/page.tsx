@@ -14,7 +14,8 @@ import {
   ArrowRight,
   Clock,
   RefreshCw,
-  User as UserIcon
+  User as UserIcon,
+  ChevronRight
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -68,6 +69,7 @@ export default function ChallengesPage() {
   const { toast } = useToast();
   const [timeLeft, setTimeLeft] = useState('');
   const [joinedChallenges, setJoinedChallenges] = useState<Set<string>>(new Set());
+  const [selectedChallengeId, setSelectedChallengeId] = useState('sprint');
   const currentWeek = format(new Date(), 'I');
 
   useEffect(() => {
@@ -102,12 +104,17 @@ export default function ChallengesPage() {
   }, [logs]);
 
   const challengeLeaderboard = useMemo(() => {
-    const weekSeed = parseInt(currentWeek);
-    const bots = Array.from({ length: 10 }).map((_, i) => {
+    const currentChallenge = CHALLENGES.find(c => c.id === selectedChallengeId);
+    if (!currentChallenge) return [];
+
+    const weekSeed = parseInt(currentWeek) + (selectedChallengeId === 'sprint' ? 100 : selectedChallengeId === 'marathon' ? 200 : 300);
+    
+    const bots = Array.from({ length: 12 }).map((_, i) => {
       const seed = weekSeed + i;
-      const progressBase = 40 + (pseudoRandom(seed) * 55);
+      // Progres bot disesuaikan agar kompetitif tapi realistis
+      const progressBase = 30 + (pseudoRandom(seed) * 65);
       return {
-        id: `bot-challenge-${i}`,
+        id: `bot-challenge-${selectedChallengeId}-${i}`,
         name: `Scholar_${Math.floor(pseudoRandom(seed * 2) * 900) + 100}`,
         progress: Math.floor(progressBase),
         avatar: `https://picsum.photos/seed/challenge${seed}/100`
@@ -115,7 +122,9 @@ export default function ChallengesPage() {
     });
 
     if (user) {
-      const userProgress = Math.min(99, Math.round(((stats.count / 30) + (stats.hours / 100)) / 2 * 100));
+      const progressValue = selectedChallengeId === 'marathon' ? stats.hours : stats.count;
+      const userProgress = Math.min(100, Math.round((progressValue / currentChallenge.target) * 100));
+      
       bots.push({
         id: user.uid,
         name: user.displayName || 'Anda',
@@ -125,10 +134,11 @@ export default function ChallengesPage() {
     }
 
     return bots.sort((a, b) => b.progress - a.progress);
-  }, [user, stats, currentWeek]);
+  }, [user, stats, currentWeek, selectedChallengeId]);
 
   const handleJoinChallenge = (id: string, title: string) => {
     setJoinedChallenges(prev => new Set(prev).add(id));
+    setSelectedChallengeId(id);
     toast({
       title: "Sprint Dimulai!",
       description: `Anda telah bergabung dalam tantangan "${title}".`,
@@ -142,6 +152,8 @@ export default function ChallengesPage() {
     });
   };
 
+  const activeChallenge = CHALLENGES.find(c => c.id === selectedChallengeId);
+
   return (
     <div className="container px-4 py-8 md:px-6 max-w-4xl pb-32">
       <div className="mb-12 text-center relative">
@@ -149,7 +161,7 @@ export default function ChallengesPage() {
           <Clock className="h-3 w-3" /> Musim {format(new Date(), 'MMMM', { locale: idLocale })}
         </div>
         <h1 className="font-headline text-5xl font-black tracking-tight mb-2">Weekly Sprint</h1>
-        <p className="text-muted-foreground font-medium mb-6">Selesaikan tantangan sebelum musim berakhir untuk mendapatkan Badge Langka.</p>
+        <p className="text-muted-foreground font-medium mb-6">Pilih tantangan dan bersaing dengan scholar lainnya.</p>
         
         <div className="flex items-center justify-center gap-8">
           <div className="text-center">
@@ -169,9 +181,17 @@ export default function ChallengesPage() {
           const progressValue = challenge.id === 'marathon' ? stats.hours : stats.count;
           const progress = Math.min(100, (progressValue / challenge.target) * 100);
           const isJoined = joinedChallenges.has(challenge.id);
+          const isSelected = selectedChallengeId === challenge.id;
           
           return (
-            <Card key={challenge.id} className="border-none shadow-2xl rounded-[40px] overflow-hidden group hover:scale-[1.01] transition-transform duration-500">
+            <Card 
+              key={challenge.id} 
+              onClick={() => setSelectedChallengeId(challenge.id)}
+              className={cn(
+                "border-none shadow-2xl rounded-[40px] overflow-hidden group hover:scale-[1.01] transition-all duration-500 cursor-pointer",
+                isSelected ? "ring-4 ring-primary ring-offset-4" : "opacity-80 hover:opacity-100"
+              )}
+            >
               <CardContent className="p-8">
                 <div className="flex flex-col md:flex-row items-center gap-8">
                   <div className={cn("p-6 rounded-[28px] transition-transform duration-500 group-hover:rotate-12", challenge.color)}>
@@ -199,7 +219,10 @@ export default function ChallengesPage() {
                     </div>
                   </div>
                   <Button 
-                    onClick={() => progress === 100 ? handleClaimBadge(challenge.title) : handleJoinChallenge(challenge.id, challenge.title)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      progress === 100 ? handleClaimBadge(challenge.title) : handleJoinChallenge(challenge.id, challenge.title);
+                    }}
                     disabled={isJoined && progress < 100}
                     className={cn(
                       "rounded-full px-10 h-14 font-black uppercase text-xs tracking-widest shadow-lg transition-all",
@@ -215,13 +238,13 @@ export default function ChallengesPage() {
         })}
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-8 animate-in fade-in duration-700">
         <div className="flex items-center justify-between px-4">
           <div>
             <h2 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-3">
-              <RefreshCw className="h-6 w-6 text-primary animate-spin-slow" /> Peringkat Sprint Live
+              <RefreshCw className="h-6 w-6 text-primary animate-spin-slow" /> Peringkat: {activeChallenge?.title}
             </h2>
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Data diperbarui setiap 10 menit</p>
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Peringkat khusus untuk kategori yang Anda pilih di atas</p>
           </div>
           <Trophy className="h-8 w-8 text-yellow-500 opacity-20" />
         </div>
@@ -262,9 +285,9 @@ export default function ChallengesPage() {
                     <p className={cn(
                       "text-[8px] font-black uppercase opacity-60",
                       isUser ? "text-primary-foreground" : "text-muted-foreground"
-                    )}>Completion</p>
+                    )}>Progress Challenge</p>
                   </div>
-                  <ArrowRight className={cn("h-5 w-5", isUser ? "text-white" : "text-muted-foreground/30")} />
+                  <ChevronRight className={cn("h-5 w-5 opacity-20", isUser && "opacity-100")} />
                 </div>
               </div>
             );
@@ -274,9 +297,9 @@ export default function ChallengesPage() {
 
       <div className="mt-16 p-10 border-4 border-dashed rounded-[48px] bg-muted/20 text-center">
         <Zap className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse" />
-        <p className="font-bold text-lg mb-2">Ingat: Tantangan ini bersifat mingguan!</p>
+        <p className="font-bold text-lg mb-2">Kompetisi bersifat dinamis!</p>
         <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
-          Setiap hari Senin pukul 00:00, seluruh progres sprint akan diatur ulang ke nol dan bot akan mendapatkan profil baru. Pastikan Anda menyelesaikan target Anda sebelum waktu habis.
+          Peringkat di atas adalah pesaing Anda khusus untuk tantangan **{activeChallenge?.title}**. Klik kartu tantangan lain di atas untuk melihat siapa pesaing Anda di kategori tersebut.
         </p>
       </div>
     </div>
