@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -9,22 +8,26 @@ import { useUser, useCollection, useMemoFirebase, useFirestore } from '@/firebas
 import { query, collection } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 
-// Helper to generate deterministic-ish random values for bots
+// Cultural Mapping for Realism (Matches Dashboard Feed)
+const REGIONS = [
+  { location: 'Jakarta', names: ['Budi', 'Siti', 'Fajar', 'Lestari', 'Andi', 'Dewi', 'Rian', 'Maya', 'Joko', 'Putri'] },
+  { location: 'Tokyo', names: ['Yuki', 'Kenji', 'Sakura', 'Hiroshi', 'Aiko', 'Takumi', 'Haruki', 'Hina'] },
+  { location: 'Delhi', names: ['Arjun', 'Priya', 'Rohan', 'Ananya', 'Vihaan', 'Isha', 'Aarav', 'Saisha'] },
+  { location: 'Cairo', names: ['Ahmed', 'Omar', 'Layla', 'Fatimah', 'Zaid', 'Amira', 'Mustafa', 'Nour'] },
+  { location: 'London', names: ['James', 'Oliver', 'Emma', 'Charlotte', 'William', 'Sophie', 'Harry', 'Isla'] },
+  { location: 'New York', names: ['Michael', 'David', 'Sarah', 'Emily', 'Jackson', 'Chloe', 'Noah', 'Ava'] },
+  { location: 'Seoul', names: ['Min-jun', 'Seo-yeon', 'Ji-hoon', 'Ha-eun', 'Kwang-ho', 'Ji-won', 'Ji-soo'] },
+  { location: 'Berlin', names: ['Lukas', 'Max', 'Mia', 'Hanna', 'Leon', 'Sophie', 'Felix', 'Emma'] },
+  { location: 'Moscow', names: ['Ivan', 'Dmitry', 'Elena', 'Natasha', 'Sergei', 'Yulia', 'Artem', 'Anna'] },
+  { location: 'Paris', names: ['Lucas', 'Isabella', 'Thiago', 'Maria', 'Pierre', 'Camille', 'Enzo', 'Lea'] },
+];
+
+const BOT_SURNAMES = ['Scholar', 'Pro', 'Learner', 'Focus', 'Ace', 'Genius', 'Master', 'Champion'];
+
 const pseudoRandom = (seed: number) => {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
 };
-
-const BOT_NAMES = [
-  'Alex', 'Mira', 'Daniel', 'Hana', 'Kevin', 'Siti', 'Budi', 'Rina', 'Rian', 'Maya',
-  'Fajar', 'Lestari', 'Andi', 'Dewi', 'Joko', 'Putri', 'Eko', 'Sari', 'Guntur', 'Intan',
-  'Bambang', 'Wati', 'Tono', 'Yanti', 'Heri', 'Ani', 'Dedi', 'Yuni', 'Agus', 'Ina'
-];
-
-const BOT_SURNAMES = [
-  'Pro', 'Learner', 'Study', 'Focus', 'Grind', 'Master', 'Ace', 'Genius', 'Champ', 'Smart',
-  'Active', 'Daily', 'Expert', 'Scholar', 'Warrior', 'Ninja', 'Titan', 'Hero', 'Student'
-];
 
 const generateBots = (count: number, currentHour: number) => {
   const bots = [];
@@ -32,25 +35,27 @@ const generateBots = (count: number, currentHour: number) => {
 
   for (let i = 0; i < count; i++) {
     const seed = i + 1;
-    const nameIndex = Math.floor(pseudoRandom(seed * 1.5) * BOT_NAMES.length);
-    const surnameIndex = Math.floor(pseudoRandom(seed * 2.5) * BOT_SURNAMES.length);
-    const username = `${BOT_NAMES[nameIndex]}_${BOT_SURNAMES[surnameIndex]}${pseudoRandom(seed) > 0.8 ? i : ''}`;
+    const region = REGIONS[Math.floor(pseudoRandom(seed * 1.5) * REGIONS.length)];
+    const name = region.names[Math.floor(pseudoRandom(seed * 2.5) * region.names.length)];
+    const surname = BOT_SURNAMES[Math.floor(pseudoRandom(seed * 3.5) * BOT_SURNAMES.length)];
     
-    const archetypeRoll = pseudoRandom(seed * 3.5);
+    const username = `${name}_${surname}${pseudoRandom(seed) > 0.8 ? i : ''}`;
+    
+    const archetypeRoll = pseudoRandom(seed * 4.5);
     let totalActivities = 0;
     let currentStreak = 0;
 
-    const learningSpeed = pseudoRandom(seed * 4.5) * 0.5; 
+    const learningSpeed = pseudoRandom(seed * 5.5) * 0.5; 
     const baselineActivities = Math.floor(growthFactor * learningSpeed);
 
     if (archetypeRoll > 0.92) { 
-      totalActivities = baselineActivities + Math.floor(2 + pseudoRandom(seed) * 4);
-      currentStreak = growthFactor > 0 ? 1 : 0;
+      totalActivities = baselineActivities + Math.floor(15 + pseudoRandom(seed) * 20);
+      currentStreak = Math.floor(3 + pseudoRandom(seed) * 5);
     } else if (archetypeRoll > 0.6) { 
-      totalActivities = baselineActivities + Math.floor(pseudoRandom(seed) * 2);
-      currentStreak = 0;
+      totalActivities = baselineActivities + Math.floor(5 + pseudoRandom(seed) * 10);
+      currentStreak = Math.floor(1 + pseudoRandom(seed) * 3);
     } else { 
-      totalActivities = baselineActivities > 2 ? 1 : 0; 
+      totalActivities = baselineActivities > 5 ? baselineActivities : 2; 
       currentStreak = 0;
     }
 
@@ -63,7 +68,8 @@ const generateBots = (count: number, currentHour: number) => {
       totalActivities,
       currentStreak,
       isBot: true,
-      photoURL: `https://picsum.photos/seed/bot${i}/100`,
+      photoURL: `https://picsum.photos/seed/bot${i}${name}/100`,
+      location: region.location
     });
   }
   return bots;
@@ -83,12 +89,12 @@ export default function RankingPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const activitiesQuery = useMemoFirebase(() => {
+  const logsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(collection(db, 'users', user.uid, 'logs'));
   }, [db, user]);
 
-  const { data: logs } = useCollection(activitiesQuery);
+  const { data: logs } = useCollection(logsQuery);
 
   const userStats = useMemo(() => {
     if (!logs) return { level: 1, totalActivities: 0, currentStreak: 0 };
@@ -110,7 +116,8 @@ export default function RankingPage() {
       level: userStats.level,
       totalActivities: userStats.totalActivities,
       currentStreak: userStats.currentStreak,
-      isBot: false
+      isBot: false,
+      location: 'Local'
     } : null;
 
     const allEntries = [...bots];
@@ -133,56 +140,58 @@ export default function RankingPage() {
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-4xl pb-32">
-      <div className="mb-10 text-center relative">
-        <div className="inline-flex p-3 rounded-full bg-primary/10 mb-4 animate-bounce">
-          <Trophy className="h-10 w-10 text-primary" />
+      <div className="mb-12 text-center relative">
+        <div className="inline-flex p-4 rounded-[28px] bg-primary/10 mb-6 animate-bounce">
+          <Trophy className="h-12 w-12 text-primary" />
         </div>
-        <h1 className="font-headline text-4xl font-black tracking-tight">Leaderboard Global</h1>
-        <div className="flex items-center justify-center gap-2 mt-2">
-          <p className="text-muted-foreground font-medium uppercase text-[10px] tracking-widest bg-muted px-2 py-0.5 rounded">
-            Musim Baru: Dimulai dari Nol!
+        <h1 className="font-headline text-5xl font-black tracking-tight mb-2">Global Scholar</h1>
+        <div className="flex items-center justify-center gap-3 mt-4">
+          <p className="text-muted-foreground font-black uppercase text-[10px] tracking-widest bg-muted px-3 py-1 rounded-full">
+            Musim Musim {new Intl.DateTimeFormat('id-ID', { month: 'long' }).format(new Date())}
           </p>
-          <div className="flex items-center gap-1 text-[10px] font-black text-primary animate-pulse">
-            <RefreshCw className="h-3 w-3" /> LIVE UPDATE
+          <div className="flex items-center gap-2 text-[10px] font-black text-primary animate-pulse bg-primary/5 px-3 py-1 rounded-full border border-primary/20">
+            <RefreshCw className="h-3 w-3" /> LIVE COMPETITION
           </div>
         </div>
         
         <button 
           onClick={() => setShowInfo(!showInfo)}
-          className="absolute top-0 right-0 p-2 text-muted-foreground hover:text-primary transition-colors"
+          className="absolute top-0 right-0 p-3 text-muted-foreground hover:text-primary transition-colors bg-muted/20 rounded-full"
         >
-          <Info className="h-5 w-5" />
+          <Info className="h-6 w-6" />
         </button>
 
         {showInfo && (
-          <div className="mt-4 p-4 bg-muted/50 rounded-2xl text-xs text-left leading-relaxed animate-in fade-in slide-in-from-top-2">
-            <p className="font-bold mb-1">Sistem Kompetisi Real-Time:</p>
-            Leaderboard ini menunjukkan progres belajar real-time Anda dibandingkan dengan 200 pejuang lainnya. Bot di sini memiliki jadwal belajar mereka sendiri dan poin mereka akan terus bertambah seiring berjalannya waktu setiap jamnya. Jangan sampai disalip!
+          <div className="mt-8 p-6 bg-primary/5 border border-primary/10 rounded-[32px] text-xs text-left leading-relaxed animate-in fade-in slide-in-from-top-4 shadow-xl">
+            <p className="font-black uppercase text-primary mb-2 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" /> Sistem Kompetisi Real-Time
+            </p>
+            Leaderboard ini memetakan progres Anda dibandingkan 200 pejuang dari berbagai belahan dunia. Nama dan lokasi disesuaikan secara regional untuk simulasi yang akurat. Para kompetitor ini (AI) memiliki jadwal belajar mereka sendiri—beberapa belajar di pagi hari (Tokyo), beberapa di malam hari (Jakarta). Konsistensi adalah kunci untuk mempertahankan peringkat Anda!
           </div>
         )}
       </div>
 
       {userRank !== null && (
-        <div className="sticky top-20 z-30 mb-8">
-          <Card className="bg-primary text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="bg-white/20 h-10 w-10 rounded-full flex items-center justify-center font-black text-lg">
+        <div className="sticky top-20 z-30 mb-10">
+          <Card className="bg-primary text-primary-foreground border-none shadow-[0_10px_40px_rgba(var(--primary),0.3)] rounded-[32px] overflow-hidden">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div className="bg-white/20 h-14 w-14 rounded-2xl flex items-center justify-center font-black text-2xl backdrop-blur-sm border border-white/20">
                   #{userRank}
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase opacity-80">Posisi Anda</p>
-                  <p className="font-bold">Ungguli {leaderboard.length - userRank} pesaing</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Peringkat Anda</p>
+                  <p className="text-xl font-bold leading-none mt-1">Mengungguli {leaderboard.length - userRank} Scholar</p>
                 </div>
               </div>
-              <div className="flex gap-4">
+              <div className="flex gap-6">
                 <div className="text-center">
-                  <p className="text-[10px] font-black opacity-80">LVL</p>
-                  <p className="font-bold">{userStats.level}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-70">LVL</p>
+                  <p className="text-xl font-black">{userStats.level}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[10px] font-black opacity-80">POIN</p>
-                  <p className="font-bold">{userStats.totalActivities}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-70">POIN</p>
+                  <p className="text-xl font-black">{userStats.totalActivities}</p>
                 </div>
               </div>
             </CardContent>
@@ -190,69 +199,67 @@ export default function RankingPage() {
         </div>
       )}
 
-      <div className="grid gap-2">
+      <div className="grid gap-4">
         {leaderboard.map((entry, index) => {
           const isTop3 = index < 3;
           const isUser = entry.id === user?.uid;
-          // Progress within level (assuming 10 points per level)
           const levelProgress = (entry.totalActivities % 10) * 10;
 
           return (
             <div 
               key={entry.id} 
               className={cn(
-                "flex flex-col gap-2 p-3 rounded-2xl transition-all",
-                isUser ? "bg-primary/10 ring-1 ring-primary/50 shadow-md" : "bg-card hover:bg-muted/50"
+                "flex flex-col gap-3 p-5 rounded-[32px] transition-all duration-300",
+                isUser ? "bg-primary/10 ring-2 ring-primary/30 shadow-xl scale-[1.02]" : "bg-card hover:bg-muted/50 border border-transparent hover:border-muted"
               )}
             >
-              <div className="flex items-center gap-3">
-                <div className="min-w-[40px] flex flex-col items-center justify-center">
-                  {index === 0 && entry.totalActivities > 0 ? <Crown className="h-5 w-5 text-yellow-500" /> :
-                   index === 1 && entry.totalActivities > 0 ? <Award className="h-5 w-5 text-slate-400" /> :
-                   index === 2 && entry.totalActivities > 0 ? <Award className="h-5 w-5 text-amber-700" /> : null}
+              <div className="flex items-center gap-4">
+                <div className="min-w-[48px] flex flex-col items-center justify-center">
+                  {index === 0 && entry.totalActivities > 0 ? <Crown className="h-6 w-6 text-yellow-500 fill-current drop-shadow" /> :
+                   index === 1 && entry.totalActivities > 0 ? <Award className="h-6 w-6 text-slate-400 fill-current" /> :
+                   index === 2 && entry.totalActivities > 0 ? <Award className="h-6 w-6 text-amber-700 fill-current" /> : null}
                   <span className={cn(
-                    "font-black text-lg",
-                    isTop3 && entry.totalActivities > 0 ? "text-primary" : "text-muted-foreground/30"
+                    "font-black text-2xl tracking-tighter",
+                    isTop3 && entry.totalActivities > 0 ? "text-primary" : "text-muted-foreground/20"
                   )}>{index + 1}</span>
                 </div>
 
                 <Avatar className={cn(
-                  "h-10 w-10 md:h-12 md:w-12 border-2",
-                  isTop3 && entry.totalActivities > 0 ? "border-primary" : "border-muted"
+                  "h-14 w-14 rounded-2xl border-4 transition-transform",
+                  isTop3 && entry.totalActivities > 0 ? "border-primary/20" : "border-muted"
                 )}>
                   <AvatarImage src={entry.photoURL} />
                   <AvatarFallback><User /></AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className={cn("font-bold text-sm md:text-base truncate", isUser && "text-primary")}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className={cn("font-black text-lg tracking-tight truncate", isUser && "text-primary")}>
                       {entry.username}
                     </h3>
-                    {entry.isBot && <span className="text-[7px] font-black uppercase px-1 bg-muted text-muted-foreground/60 rounded">AI</span>}
+                    {entry.isBot && <span className="text-[8px] font-black uppercase px-2 py-0.5 bg-muted text-muted-foreground/60 rounded-full">AI Agent</span>}
                   </div>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <span className="text-[9px] font-black text-muted-foreground flex items-center gap-0.5">
-                      <Zap className="h-2.5 w-2.5 text-amber-500 fill-current" /> {entry.totalActivities} Pts
+                  <div className="flex items-center gap-4">
+                    <span className="text-[10px] font-black text-muted-foreground flex items-center gap-1">
+                      <Zap className="h-3 w-3 text-amber-500 fill-current" /> {entry.totalActivities} Pts
                     </span>
-                    <span className="text-[9px] font-black text-muted-foreground flex items-center gap-0.5">
-                      <Flame className="h-2.5 w-2.5 text-orange-500 fill-current" /> {entry.currentStreak} Day
+                    <span className="text-[10px] font-black text-muted-foreground flex items-center gap-1">
+                      <Flame className="h-3 w-3 text-orange-500 fill-current" /> {entry.currentStreak} Day
                     </span>
-                    <span className="text-[9px] font-black text-muted-foreground">
+                    <span className="text-[10px] font-black text-primary/60 bg-primary/5 px-2 rounded-full border border-primary/10">
                       LVL {entry.level}
                     </span>
                   </div>
                 </div>
 
-                <div className="text-right">
-                   <p className="text-lg font-black">{entry.totalActivities}</p>
-                   <p className="text-[8px] font-black uppercase text-muted-foreground">Poin</p>
+                <div className="text-right hidden sm:block">
+                   <p className="text-2xl font-black leading-none">{entry.totalActivities}</p>
+                   <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mt-1">Scholar Score</p>
                 </div>
               </div>
 
-              {/* Progress Bar towards next level */}
-              <div className="px-10 md:px-14">
-                <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+              <div className="px-12 md:px-16">
+                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                   <div 
                     className={cn(
                       "h-full transition-all duration-1000",
@@ -261,16 +268,20 @@ export default function RankingPage() {
                     style={{ width: `${levelProgress || 5}%` }} 
                   />
                 </div>
+                <div className="flex justify-between mt-1">
+                   <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">{entry.location}</span>
+                   <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">{levelProgress}% Mastered</span>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
 
-      <div className="mt-12 p-8 rounded-3xl bg-muted/20 border border-dashed text-center">
-        <TrendingUp className="h-8 w-8 mx-auto mb-4 text-primary opacity-50" />
-        <p className="italic text-muted-foreground text-sm font-medium leading-relaxed">
-          "Semua dimulai dari nol. Perbedaan antara pemenang dan pecundang <br/>hanya terletak pada siapa yang terus melangkah hari ini."
+      <div className="mt-20 p-12 rounded-[60px] bg-muted/20 border-4 border-dashed text-center">
+        <TrendingUp className="h-12 w-12 mx-auto mb-6 text-primary opacity-30 animate-pulse" />
+        <p className="italic text-muted-foreground text-lg font-medium leading-relaxed max-w-2xl mx-auto">
+          "Papan peringkat bukan sekadar tentang siapa yang tercepat, <br className="hidden md:block"/>tapi tentang siapa yang paling konsisten menghadapi tantangan setiap hari."
         </p>
       </div>
     </div>
