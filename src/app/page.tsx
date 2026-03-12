@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -20,7 +19,8 @@ import {
   ArrowRight,
   RefreshCw,
   Quote,
-  Sparkles
+  Sparkles,
+  Trophy
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
