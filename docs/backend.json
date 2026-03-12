@@ -11,7 +11,7 @@
         "title": { "type": "string" },
         "category": { "type": "string", "enum": ["Kesehatan", "Kerja", "Belajar", "Lainnya"] },
         "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"], "default": "Medium" },
-        "durationMinutes": { "type": "number", "default": 25, "description": "Durasi target untuk menyelesaikan tugas dalam menit." },
+        "durationMinutes": { "type": "number", "default": 25 },
         "targetValue": { "type": "number" },
         "deadline": { "type": "string", "format": "date" },
         "createdAt": { "type": "string", "format": "date-time" }
@@ -35,17 +35,47 @@
     "Reflection": {
       "title": "Reflection",
       "type": "object",
-      "description": "Refleksi harian pengguna, terdiri dari catatan singkat dan jurnal detail.",
+      "description": "Refleksi harian pengguna.",
       "properties": {
         "id": { "type": "string" },
         "userId": { "type": "string" },
         "date": { "type": "string", "format": "date" },
-        "shortNote": { "type": "string", "description": "Catatan singkat atau target untuk Dashboard." },
-        "content": { "type": "string", "description": "Jurnal detail tentang aktivitas harian." },
+        "shortNote": { "type": "string" },
+        "content": { "type": "string" },
         "productivityRating": { "type": "number", "minimum": 1, "maximum": 5 },
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "date"]
+    },
+    "WatchlistEntry": {
+      "title": "WatchlistEntry",
+      "type": "object",
+      "description": "Entri film atau series yang ditonton pengguna.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "totalEpisodes": { "type": "number" },
+        "lastEpisode": { "type": "number" },
+        "status": { "type": "string", "enum": ["Watching", "Completed", "Paused"] },
+        "lastWatched": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "totalEpisodes", "lastEpisode", "status"]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "type": "object",
+      "description": "Data peringkat pengguna.",
+      "properties": {
+        "userId": { "type": "string" },
+        "username": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "level": { "type": "number" },
+        "totalActivities": { "type": "number" },
+        "currentStreak": { "type": "number" },
+        "isBot": { "type": "boolean", "default": false }
+      },
+      "required": ["username", "level", "totalActivities", "currentStreak"]
     }
   },
   "auth": {
@@ -75,6 +105,22 @@
           "entityName": "Reflection",
           "schema": { "$ref": "#/backend/entities/Reflection" },
           "description": "Catatan refleksi harian."
+        }
+      },
+      {
+        "path": "/users/{userId}/watchlist/{entryId}",
+        "definition": {
+          "entityName": "WatchlistEntry",
+          "schema": { "$ref": "#/backend/entities/WatchlistEntry" },
+          "description": "Watchlist film/series pengguna."
+        }
+      },
+      {
+        "path": "/leaderboard/{entryId}",
+        "definition": {
+          "entityName": "LeaderboardEntry",
+          "schema": { "$ref": "#/backend/entities/LeaderboardEntry" },
+          "description": "Entri leaderboard global."
         }
       }
     ]

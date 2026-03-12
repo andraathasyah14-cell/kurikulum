@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -18,7 +19,8 @@ import {
   NotebookPen,
   ArrowRight,
   RefreshCw,
-  Quote
+  Quote,
+  Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -51,6 +53,16 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+const MOTIVATIONAL_QUOTES = [
+  "Di luar sana banyak orang lain yang juga sedang belajar sekarang.",
+  "Jangan berhenti. Konsistensi kecil setiap hari akan menghasilkan perubahan besar.",
+  "Progress kecil tetap progress.",
+  "Hari ini adalah kesempatan untuk menjadi lebih baik dari kemarin.",
+  "Fokus pada proses, bukan hanya pada hasil akhir.",
+  "Setiap detik yang kamu gunakan untuk belajar adalah investasi masa depan.",
+  "Kelelahan hari ini adalah kekuatan hari esok."
+];
+
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
@@ -61,6 +73,11 @@ export default function DashboardPage() {
   const [shortNote, setShortNote] = useState('');
   const [timers, setTimers] = useState<Record<string, number>>({});
   const [runningTimers, setRunningTimers] = useState<Set<string>>(new Set());
+  const [randomQuote, setRandomQuote] = useState('');
+
+  useEffect(() => {
+    setRandomQuote(MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]);
+  }, []);
 
   const activitiesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -89,7 +106,6 @@ export default function DashboardPage() {
     }
   }, [currentReflection]);
 
-  // Map activity IDs to their log IDs for easy deletion
   const completedActivityMap = useMemo(() => {
     if (!logs) return new Map<string, string>();
     const map = new Map<string, string>();
@@ -103,7 +119,6 @@ export default function DashboardPage() {
     return new Set(completedActivityMap.keys());
   }, [completedActivityMap]);
 
-  // Fix for the 250% issue: Only count completed activities that still exist in the curriculum
   const totalMasteryProgress = useMemo(() => {
     if (!activities || activities.length === 0) return 0;
     const currentActivityIds = new Set(activities.map(a => a.id));
@@ -111,7 +126,6 @@ export default function DashboardPage() {
     return Math.round((actuallyCompletedCount / activities.length) * 100);
   }, [activities, completedActivityIds]);
 
-  // Grouping activities by category
   const groupedActivities = useMemo(() => {
     if (!activities) return {};
     return activities.reduce((acc, act) => {
@@ -157,14 +171,12 @@ export default function DashboardPage() {
     const isAlreadyCompleted = completedActivityIds.has(activity.id);
     
     if (isAlreadyCompleted) {
-      // RESET / UNCHECK
       const logId = completedActivityMap.get(activity.id);
       if (logId) {
         deleteDocumentNonBlocking(doc(db, 'users', user.uid, 'logs', logId));
         toast({ title: "Reset Berhasil", description: `Materi "${activity.title}" dikembalikan ke daftar belajar.` });
       }
     } else {
-      // COMPLETE / CHECK
       addDocumentNonBlocking(collection(db, 'users', user.uid, 'logs'), {
         activityId: activity.id,
         userId: user.uid,
@@ -227,15 +239,6 @@ export default function DashboardPage() {
     }, 1000);
     return () => clearInterval(interval);
   }, [runningTimers]);
-
-  useEffect(() => {
-    runningTimers.forEach(id => {
-      if (timers[id] === 0) {
-        const activity = activities?.find(a => a.id === id);
-        if (activity) handleToggleMastery(activity);
-      }
-    });
-  }, [timers, runningTimers, activities]);
 
   const startTimer = (id: string, initialMinutes: number) => {
     setTimers(prev => ({
@@ -315,7 +318,6 @@ export default function DashboardPage() {
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-6xl">
-      {/* Intro Quote for Authenticated Users */}
       <div className="mb-8 flex items-center justify-center text-center">
         <div className="bg-primary/5 px-6 py-4 rounded-3xl border border-primary/10 relative max-w-3xl">
           <Quote className="absolute -top-2 -left-2 h-8 w-8 text-primary/10 fill-current" />
@@ -328,6 +330,24 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <div className="mb-8 bg-gradient-to-r from-primary to-blue-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-8 opacity-10"><Sparkles className="h-32 w-32" /></div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
+              <Zap className="h-8 w-8 text-yellow-300 fill-current" />
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest opacity-80">Motivasi Hari Ini</p>
+              <h2 className="text-xl font-bold leading-tight">{randomQuote}</h2>
+            </div>
+          </div>
+          <Button variant="secondary" asChild className="rounded-full font-black uppercase text-xs">
+            <Link href="/ranking">Cek Leaderboard <Trophy className="ml-2 h-4 w-4" /></Link>
+          </Button>
+        </div>
+      </div>
+
       <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">
           <h1 className="font-headline text-4xl font-black tracking-tight text-foreground">Status Kurikulum</h1>
@@ -336,13 +356,12 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" asChild className="rounded-full shadow-sm font-bold uppercase tracking-tight text-xs"><Link href="/journal">Riwayat Jurnal</Link></Button>
+          <Button variant="outline" asChild className="rounded-full shadow-sm font-bold uppercase tracking-tight text-xs"><Link href="/watchlist">Watchlist</Link></Button>
           <Button asChild className="rounded-full shadow-md font-bold uppercase tracking-tight text-xs"><Link href="/activities">Kelola Materi</Link></Button>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-12">
-        {/* Heatmap Section */}
         <Card className="md:col-span-12 border-none bg-muted/20 shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
@@ -367,21 +386,9 @@ export default function DashboardPage() {
                 />
               ))}
             </div>
-            <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground uppercase font-bold">
-              <span>Aktivitas 90 Hari Terakhir</span>
-              <div className="flex gap-1 items-center">
-                <span>0</span>
-                <div className="h-2 w-2 bg-muted rounded-sm" />
-                <div className="h-2 w-2 bg-primary/30 rounded-sm" />
-                <div className="h-2 w-2 bg-primary/60 rounded-sm" />
-                <div className="h-2 w-2 bg-primary rounded-sm" />
-                <span>Banyak</span>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
-        {/* Sidebar Stats */}
         <div className="md:col-span-4 space-y-6">
           <Card className="border-none bg-primary text-primary-foreground shadow-lg overflow-hidden relative">
              <div className="absolute top-0 right-0 p-4 opacity-10"><Zap className="h-24 w-24" /></div>
@@ -406,35 +413,23 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <p className="text-[10px] uppercase font-black text-muted-foreground">Apa fokusmu atau apa yang kurang hari ini?</p>
-                <Textarea 
-                  placeholder="Hari ini aku kurang fokus di... besok harus lebih..." 
-                  className="min-h-[100px] bg-background border-none text-sm leading-relaxed"
-                  value={shortNote}
-                  onChange={(e) => setShortNote(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Button size="sm" className="w-full rounded-full gap-2 font-bold uppercase text-xs" onClick={handleSaveShortNote}>
-                  Simpan Refleksi
-                </Button>
-                <Button variant="ghost" size="sm" asChild className="w-full rounded-full gap-2 text-[10px] font-black uppercase">
-                  <Link href="/journal">
-                    Tulis Jurnal Detail <ArrowRight className="h-3 w-3" />
-                  </Link>
-                </Button>
-              </div>
+              <Textarea 
+                placeholder="Hari ini aku kurang fokus di... besok harus lebih..." 
+                className="min-h-[100px] bg-background border-none text-sm leading-relaxed"
+                value={shortNote}
+                onChange={(e) => setShortNote(e.target.value)}
+              />
+              <Button size="sm" className="w-full rounded-full gap-2 font-bold uppercase text-xs" onClick={handleSaveShortNote}>
+                Simpan Refleksi
+              </Button>
             </CardContent>
           </Card>
         </div>
 
-        {/* Grouped Activities List */}
         <div className="md:col-span-8 space-y-6">
           {Object.entries(groupedActivities).map(([category, items]) => {
             const completedCount = completedInCategoryCount(items);
             const progress = items.length > 0 ? (completedCount / items.length) * 100 : 0;
-            const totalMinutes = items.reduce((sum, act) => sum + (act.durationMinutes || 0), 0);
 
             return (
               <Card key={category} className="border-none shadow-sm overflow-hidden">
@@ -444,11 +439,7 @@ export default function DashboardPage() {
                       <Layers className="h-5 w-5 text-primary" /> {category}
                     </CardTitle>
                     <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <span className="block text-xs font-bold text-muted-foreground uppercase">{completedCount} / {items.length} Dikuasai</span>
-                        <span className="text-[10px] text-muted-foreground font-medium">{totalMinutes} menit total</span>
-                      </div>
-                      
+                      <span className="block text-xs font-bold text-muted-foreground uppercase">{completedCount} / {items.length} Dikuasai</span>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive">
@@ -459,7 +450,7 @@ export default function DashboardPage() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Reset Progres Kategori?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Ini akan menghapus seluruh status penguasaan materi dalam kategori "{category}". Anda harus mengulangi centang secara manual.
+                              Ini akan menghapus seluruh status penguasaan materi dalam kategori "{category}".
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -497,9 +488,7 @@ export default function DashboardPage() {
                                     "text-[9px] uppercase font-black px-1.5 py-0.5 rounded",
                                     activity.difficulty === 'Hard' ? "bg-red-100 text-red-700" :
                                     activity.difficulty === 'Easy' ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
-                                  )}>
-                                    {activity.difficulty || 'Medium'}
-                                  </span>
+                                  )}>{activity.difficulty || 'Medium'}</span>
                                   <span className="text-[10px] text-muted-foreground font-bold flex items-center gap-1">
                                     <TimerIcon className="h-3 w-3" /> {activity.durationMinutes || 25}m
                                   </span>
@@ -530,17 +519,6 @@ export default function DashboardPage() {
                                   </button>
                                 </div>
                               </div>
-                            )}
-
-                            {isCompleted && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 text-[10px] font-black uppercase text-muted-foreground hover:text-primary gap-1"
-                                onClick={() => handleToggleMastery(activity)}
-                              >
-                                <RefreshCw className="h-3 w-3" /> Pelajari Lagi
-                              </Button>
                             )}
                           </div>
                         </div>

@@ -22,6 +22,14 @@ service cloud.firestore {
       match /reflections/{reflectionId} {
         allow read, write: if isOwner(userId);
       }
+      match /watchlist/{entryId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    match /leaderboard/{entryId} {
+      allow read: if true;
+      allow write: if isSignedIn();
     }
   }
 }

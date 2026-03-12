@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, LayoutDashboard, BookOpen, TrendingUp, Settings, LogOut, Award, NotebookPen } from 'lucide-react';
+import { Menu, LayoutDashboard, BookOpen, TrendingUp, Settings, LogOut, Award, NotebookPen, Tv, Trophy } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -28,6 +28,8 @@ const navLinks = [
   { href: '/journal', label: 'Jurnal', icon: NotebookPen },
   { href: '/stats', label: 'Statistik', icon: TrendingUp },
   { href: '/review', label: 'Review', icon: Award },
+  { href: '/watchlist', label: 'Watchlist', icon: Tv },
+  { href: '/ranking', label: 'Ranking', icon: Trophy },
 ];
 
 export function Header() {
@@ -60,17 +62,17 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="hidden md:flex md:flex-1 items-center gap-1">
+        <nav className="hidden xl:flex xl:flex-1 items-center gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
-                'flex items-center gap-2 px-3 py-1.5 text-sm font-bold uppercase tracking-tight transition-colors rounded-full hover:bg-muted',
+                'flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold uppercase tracking-tight transition-colors rounded-full hover:bg-muted',
                 pathname === link.href ? 'text-primary bg-primary/5' : 'text-muted-foreground'
               )}
             >
-              <link.icon className="h-4 w-4" />
+              <link.icon className="h-3.5 w-3.5" />
               {link.label}
             </Link>
           ))}
@@ -101,7 +103,7 @@ export function Header() {
           
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden"><Menu className="h-6 w-6" /></Button>
+              <Button variant="ghost" size="icon" className="xl:hidden"><Menu className="h-6 w-6" /></Button>
             </SheetTrigger>
             <SheetContent side="left">
               <SheetHeader>
