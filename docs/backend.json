@@ -47,6 +47,20 @@
       },
       "required": ["userId", "title", "targetValue", "unit"]
     },
+    "Challenge": {
+      "title": "Challenge",
+      "type": "object",
+      "description": "Tantangan belajar kompetitif.",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "targetValue": { "type": "number" },
+        "unit": { "type": "string" },
+        "durationDays": { "type": "number" }
+      },
+      "required": ["title", "targetValue", "unit"]
+    },
     "Reflection": {
       "title": "Reflection",
       "type": "object",
