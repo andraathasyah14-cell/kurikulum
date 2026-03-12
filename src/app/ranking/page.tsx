@@ -28,8 +28,7 @@ const BOT_SURNAMES = [
 
 const generateBots = (count: number, currentHour: number) => {
   const bots = [];
-  // Reference start: the start of the current day
-  const growthFactor = Math.floor(currentHour % 24); // Simulates hourly growth within a day
+  const growthFactor = Math.floor(currentHour % 24); 
 
   for (let i = 0; i < count; i++) {
     const seed = i + 1;
@@ -41,18 +40,17 @@ const generateBots = (count: number, currentHour: number) => {
     let totalActivities = 0;
     let currentStreak = 0;
 
-    // Hourly growth logic
-    const learningSpeed = pseudoRandom(seed * 4.5) * 0.5; // How fast they learn per hour (0 - 0.5)
+    const learningSpeed = pseudoRandom(seed * 4.5) * 0.5; 
     const baselineActivities = Math.floor(growthFactor * learningSpeed);
 
-    if (archetypeRoll > 0.92) { // The Fast Starters (Top 8%)
+    if (archetypeRoll > 0.92) { 
       totalActivities = baselineActivities + Math.floor(2 + pseudoRandom(seed) * 4);
       currentStreak = growthFactor > 0 ? 1 : 0;
-    } else if (archetypeRoll > 0.6) { // The Average Starters (32%)
+    } else if (archetypeRoll > 0.6) { 
       totalActivities = baselineActivities + Math.floor(pseudoRandom(seed) * 2);
       currentStreak = 0;
-    } else { // The Just Started / 0 points (60%)
-      totalActivities = baselineActivities > 2 ? 1 : 0; // Only gain 1 point if many hours have passed
+    } else { 
+      totalActivities = baselineActivities > 2 ? 1 : 0; 
       currentStreak = 0;
     }
 
@@ -78,11 +76,10 @@ export default function RankingPage() {
   const [currentHour, setCurrentHour] = useState(0);
 
   useEffect(() => {
-    // Set initial hour and update every few minutes to keep it fresh
     setCurrentHour(new Date().getHours());
     const interval = setInterval(() => {
       setCurrentHour(new Date().getHours());
-    }, 1000 * 60 * 5); // Check every 5 mins
+    }, 1000 * 60 * 5); 
     return () => clearInterval(interval);
   }, []);
 
@@ -197,61 +194,74 @@ export default function RankingPage() {
         {leaderboard.map((entry, index) => {
           const isTop3 = index < 3;
           const isUser = entry.id === user?.uid;
+          // Progress within level (assuming 10 points per level)
+          const levelProgress = (entry.totalActivities % 10) * 10;
 
           return (
             <div 
               key={entry.id} 
               className={cn(
-                "flex items-center gap-3 p-3 rounded-2xl transition-all",
-                isUser ? "bg-primary/10 ring-1 ring-primary/50" : "bg-card hover:bg-muted/50",
-                isTop3 && entry.totalActivities > 0 && "py-4"
+                "flex flex-col gap-2 p-3 rounded-2xl transition-all",
+                isUser ? "bg-primary/10 ring-1 ring-primary/50 shadow-md" : "bg-card hover:bg-muted/50"
               )}
             >
-              <div className="min-w-[40px] flex flex-col items-center justify-center">
-                {index === 0 && entry.totalActivities > 0 ? <Crown className="h-5 w-5 text-yellow-500" /> :
-                 index === 1 && entry.totalActivities > 0 ? <Award className="h-5 w-5 text-slate-400" /> :
-                 index === 2 && entry.totalActivities > 0 ? <Award className="h-5 w-5 text-amber-700" /> : null}
-                <span className={cn(
-                  "font-black text-lg",
-                  isTop3 && entry.totalActivities > 0 ? "text-primary" : "text-muted-foreground/30"
-                )}>{index + 1}</span>
-              </div>
-
-              <Avatar className={cn(
-                "h-10 w-10 md:h-12 md:w-12 border-2",
-                isTop3 && entry.totalActivities > 0 ? "border-primary" : "border-muted"
-              )}>
-                <AvatarImage src={entry.photoURL} />
-                <AvatarFallback><User /></AvatarFallback>
-              </Avatar>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className={cn("font-bold text-sm md:text-base truncate", isUser && "text-primary")}>
-                    {entry.username}
-                  </h3>
-                  {entry.isBot && <span className="text-[7px] font-black uppercase px-1 bg-muted text-muted-foreground/60 rounded">AI</span>}
+              <div className="flex items-center gap-3">
+                <div className="min-w-[40px] flex flex-col items-center justify-center">
+                  {index === 0 && entry.totalActivities > 0 ? <Crown className="h-5 w-5 text-yellow-500" /> :
+                   index === 1 && entry.totalActivities > 0 ? <Award className="h-5 w-5 text-slate-400" /> :
+                   index === 2 && entry.totalActivities > 0 ? <Award className="h-5 w-5 text-amber-700" /> : null}
+                  <span className={cn(
+                    "font-black text-lg",
+                    isTop3 && entry.totalActivities > 0 ? "text-primary" : "text-muted-foreground/30"
+                  )}>{index + 1}</span>
                 </div>
-                <div className="flex items-center gap-3 mt-0.5">
-                  <span className="text-[9px] font-black text-muted-foreground flex items-center gap-0.5">
-                    <Zap className="h-2.5 w-2.5 text-amber-500 fill-current" /> {entry.totalActivities}
-                  </span>
-                  <span className="text-[9px] font-black text-muted-foreground flex items-center gap-0.5">
-                    <Flame className="h-2.5 w-2.5 text-orange-500 fill-current" /> {entry.currentStreak}
-                  </span>
-                  <span className="text-[9px] font-black text-muted-foreground">
-                    LVL {entry.level}
-                  </span>
-                </div>
-              </div>
 
-              {isUser && (
-                <div className="hidden md:block">
-                  <div className="bg-primary/5 px-3 py-1 rounded-full border border-primary/10">
-                    <span className="text-[10px] font-black text-primary italic uppercase tracking-tighter">Anda</span>
+                <Avatar className={cn(
+                  "h-10 w-10 md:h-12 md:w-12 border-2",
+                  isTop3 && entry.totalActivities > 0 ? "border-primary" : "border-muted"
+                )}>
+                  <AvatarImage src={entry.photoURL} />
+                  <AvatarFallback><User /></AvatarFallback>
+                </Avatar>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className={cn("font-bold text-sm md:text-base truncate", isUser && "text-primary")}>
+                      {entry.username}
+                    </h3>
+                    {entry.isBot && <span className="text-[7px] font-black uppercase px-1 bg-muted text-muted-foreground/60 rounded">AI</span>}
+                  </div>
+                  <div className="flex items-center gap-3 mt-0.5">
+                    <span className="text-[9px] font-black text-muted-foreground flex items-center gap-0.5">
+                      <Zap className="h-2.5 w-2.5 text-amber-500 fill-current" /> {entry.totalActivities} Pts
+                    </span>
+                    <span className="text-[9px] font-black text-muted-foreground flex items-center gap-0.5">
+                      <Flame className="h-2.5 w-2.5 text-orange-500 fill-current" /> {entry.currentStreak} Day
+                    </span>
+                    <span className="text-[9px] font-black text-muted-foreground">
+                      LVL {entry.level}
+                    </span>
                   </div>
                 </div>
-              )}
+
+                <div className="text-right">
+                   <p className="text-lg font-black">{entry.totalActivities}</p>
+                   <p className="text-[8px] font-black uppercase text-muted-foreground">Poin</p>
+                </div>
+              </div>
+
+              {/* Progress Bar towards next level */}
+              <div className="px-10 md:px-14">
+                <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className={cn(
+                      "h-full transition-all duration-1000",
+                      isUser ? "bg-primary" : "bg-primary/30"
+                    )} 
+                    style={{ width: `${levelProgress || 5}%` }} 
+                  />
+                </div>
+              </div>
             </div>
           );
         })}
