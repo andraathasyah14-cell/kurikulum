@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -21,7 +22,9 @@ import {
   Quote,
   Sparkles,
   Trophy,
-  Users
+  Users,
+  Target,
+  Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -80,9 +83,17 @@ export default function DashboardPage() {
   const [timers, setTimers] = useState<Record<string, number>>({});
   const [runningTimers, setRunningTimers] = useState<Set<string>>(new Set());
   const [randomQuote, setRandomQuote] = useState('');
+  const [realityCount, setRealityCount] = useState(0);
   const [companionActivities, setCompanionActivities] = useState<any[]>([]);
 
-  // Generate simulated AI Study Companion activities
+  // Reality Reminder logic
+  useEffect(() => {
+    setRealityCount(Math.floor(Math.random() * 500) + 800);
+  }, []);
+
+  // XP & Level Logic (Calculated from Activities & Watchlist)
+  // XP = (Completed Activities * 15) + (Total Study Minutes * 0.4) + (Episodes Watched * 10)
+
   useEffect(() => {
     const generateActivity = () => {
       const name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
@@ -106,14 +117,10 @@ export default function DashboardPage() {
       };
     };
 
-    // Initial activities
     setCompanionActivities(Array.from({ length: 4 }, () => generateActivity()));
-
-    // Interval to update activities
     const interval = setInterval(() => {
       setCompanionActivities(prev => [generateActivity(), ...prev.slice(0, 3)]);
     }, 8000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -131,6 +138,16 @@ export default function DashboardPage() {
     return query(collection(db, 'users', user.uid, 'logs'), orderBy('timestamp', 'desc'));
   }, [db, user]);
 
+  const watchlistQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'users', user.uid, 'watchlist'));
+  }, [db, user]);
+
+  const goalsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'users', user.uid, 'goals'));
+  }, [db, user]);
+
   const reflectionQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(collection(db, 'users', user.uid, 'reflections'), where('date', '==', today));
@@ -139,6 +156,8 @@ export default function DashboardPage() {
   const { data: activities } = useCollection(activitiesQuery);
   const { data: logs } = useCollection(logsQuery);
   const { data: reflections } = useCollection(reflectionQuery);
+  const { data: watchlist } = useCollection(watchlistQuery);
+  const { data: goals } = useCollection(goalsQuery);
 
   const currentReflection = reflections?.[0];
 
@@ -160,6 +179,26 @@ export default function DashboardPage() {
   const completedActivityIds = useMemo(() => {
     return new Set(completedActivityMap.keys());
   }, [completedActivityMap]);
+
+  // XP Calculation
+  const stats = useMemo(() => {
+    const activityCount = logs?.length || 0;
+    const watchlistEps = watchlist?.reduce((acc, entry) => acc + (entry.lastEpisode || 0), 0) || 0;
+    
+    // Sum duration of all completed activities
+    const activityMap = new Map(activities?.map(a => [a.id, a]) || []);
+    const studyMinutes = logs?.reduce((acc, log) => {
+      const activity = activityMap.get(log.activityId);
+      return acc + (activity?.durationMinutes || 0);
+    }, 0) || 0;
+
+    const totalXp = (activityCount * 15) + (studyMinutes * 0.4) + (watchlistEps * 10);
+    const level = Math.floor(totalXp / 1000) + 1;
+    const currentLevelXp = totalXp % 1000;
+    const xpProgress = (currentLevelXp / 1000) * 100;
+
+    return { totalXp, level, currentLevelXp, xpProgress, activityCount, studyMinutes };
+  }, [logs, watchlist, activities]);
 
   const totalMasteryProgress = useMemo(() => {
     if (!activities || activities.length === 0) return 0;
@@ -187,13 +226,10 @@ export default function DashboardPage() {
     if (savedTimers) {
       const parsedTimers = JSON.parse(savedTimers);
       const activeIds = savedRunning ? (JSON.parse(savedRunning) as string[]) : [];
-      
       if (activeIds.length > 0 && lastUpdated) {
         const elapsed = Math.floor((Date.now() - parseInt(lastUpdated)) / 1000);
         activeIds.forEach(id => {
-          if (parsedTimers[id] !== undefined) {
-            parsedTimers[id] = Math.max(0, parsedTimers[id] - elapsed);
-          }
+          if (parsedTimers[id] !== undefined) parsedTimers[id] = Math.max(0, parsedTimers[id] - elapsed);
         });
         setRunningTimers(new Set(activeIds));
       }
@@ -211,13 +247,9 @@ export default function DashboardPage() {
   const handleToggleMastery = (activity: any) => {
     if (!user || !db) return;
     const isAlreadyCompleted = completedActivityIds.has(activity.id);
-    
     if (isAlreadyCompleted) {
       const logId = completedActivityMap.get(activity.id);
-      if (logId) {
-        deleteDocumentNonBlocking(doc(db, 'users', user.uid, 'logs', logId));
-        toast({ title: "Reset Berhasil", description: `Materi "${activity.title}" dikembalikan ke daftar belajar.` });
-      }
+      if (logId) deleteDocumentNonBlocking(doc(db, 'users', user.uid, 'logs', logId));
     } else {
       addDocumentNonBlocking(collection(db, 'users', user.uid, 'logs'), {
         activityId: activity.id,
@@ -227,26 +259,11 @@ export default function DashboardPage() {
         timestamp: serverTimestamp(),
       });
       stopTimer(activity.id);
-      toast({ title: "Materi Dikuasai!", description: `Progres "${activity.title}" telah dicatat.` });
     }
-  };
-
-  const handleResetCategory = (items: any[]) => {
-    if (!user || !db) return;
-    items.forEach(item => {
-      const logId = completedActivityMap.get(item.id);
-      if (logId) {
-        deleteDocumentNonBlocking(doc(db, 'users', user.uid, 'logs', logId));
-      }
-    });
-    toast({ title: "Kategori Reset", description: "Seluruh progres dalam kategori ini telah dibersihkan." });
   };
 
   const handleSaveShortNote = () => {
-    if (!user || !db || !shortNote) {
-      toast({ variant: "destructive", title: "Error", description: "Tulis catatan singkat terlebih dahulu." });
-      return;
-    }
+    if (!user || !db || !shortNote) return;
     const refId = currentReflection?.id || `${user.uid}_${today}`;
     setDoc(doc(db, 'users', user.uid, 'reflections', refId), {
       userId: user.uid,
@@ -256,17 +273,6 @@ export default function DashboardPage() {
     }, { merge: true });
     toast({ title: "Tersimpan", description: "Target harian telah diperbarui." });
   };
-
-  const heatmapDays = useMemo(() => {
-    const end = new Date();
-    const start = subDays(end, 90);
-    const days = eachDayOfInterval({ start, end });
-    return days.map(day => {
-      const dateStr = format(day, 'yyyy-MM-dd');
-      const count = logs?.filter(log => log.date === dateStr).length || 0;
-      return { date: dateStr, count, rawDate: day };
-    });
-  }, [logs]);
 
   useEffect(() => {
     if (runningTimers.size === 0) return;
@@ -300,10 +306,7 @@ export default function DashboardPage() {
 
   const resetTimer = (id: string, initialMinutes: number) => {
     stopTimer(id);
-    setTimers(prev => ({
-      ...prev,
-      [id]: initialMinutes * 60
-    }));
+    setTimers(prev => ({ ...prev, [id]: initialMinutes * 60 }));
   };
 
   const formatTime = (seconds: number) => {
@@ -335,7 +338,6 @@ export default function DashboardPage() {
       <div className="mb-8 rounded-full bg-primary/10 p-8 animate-pulse">
         <BookOpen className="h-16 w-16 text-primary" />
       </div>
-      
       <div className="mb-8 space-y-2 max-w-2xl bg-muted/30 p-8 rounded-3xl border border-dashed shadow-sm">
         <Quote className="h-8 w-8 text-primary/40 mx-auto mb-4" />
         <p className="text-2xl font-black italic text-foreground leading-snug tracking-tight">
@@ -345,21 +347,15 @@ export default function DashboardPage() {
           (Satu-satunya kebijaksanaan sejati adalah mengetahui bahwa kamu tidak mengetahui apa-apa)
         </p>
       </div>
-
-      <p className="text-lg text-muted-foreground max-w-lg mb-10 font-medium">
-        Visualisasikan penguasaan kurikulum belajar Anda secara terstruktur dan terukur.
-      </p>
-      
       <Button size="lg" className="rounded-full px-10 py-7 text-lg font-black gap-3 shadow-2xl hover:scale-105 transition-transform" onClick={() => initiateGoogleSignIn(auth)}>
         <LogIn className="h-6 w-6" /> Mulai Kurikulum Sekarang
       </Button>
     </div>
   );
 
-  const completedInCategoryCount = (items: any[]) => items.filter(item => completedActivityIds.has(item.id)).length;
-
   return (
     <div className="container px-4 py-8 md:px-6 max-w-6xl">
+      {/* Socrates Opening */}
       <div className="mb-8 flex items-center justify-center text-center">
         <div className="bg-primary/5 px-6 py-4 rounded-3xl border border-primary/10 relative max-w-3xl">
           <Quote className="absolute -top-2 -left-2 h-8 w-8 text-primary/10 fill-current" />
@@ -372,101 +368,149 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="mb-8 bg-gradient-to-r from-primary to-blue-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-10"><Sparkles className="h-32 w-32" /></div>
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
-              <Zap className="h-8 w-8 text-yellow-300 fill-current" />
+      {/* Reality Reminder */}
+      <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-4">
+          <div className="bg-amber-500/10 p-2 rounded-full">
+            <Globe className="h-5 w-5 text-amber-600 animate-spin-slow" />
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase text-amber-700 tracking-tight">Real-Time Reality</p>
+            <p className="text-sm font-bold text-amber-900 leading-tight">
+              Saat ini ada <span className="text-amber-600">{realityCount}</span> orang di dunia yang sedang belajar topik yang sama. <span className="italic">Tetap lanjut!</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* XP & Level Hero */}
+      <div className="mb-10 grid gap-6 md:grid-cols-12">
+        <Card className="md:col-span-8 border-none bg-gradient-to-br from-indigo-600 via-primary to-blue-500 text-white shadow-2xl relative overflow-hidden p-8 rounded-[40px]">
+          <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><Trophy className="h-48 w-48" /></div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="bg-white/20 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border border-white/20 backdrop-blur-sm">
+                Level {stats.level} Scholar
+              </span>
+              <div className="flex items-center gap-1 bg-white/20 px-3 py-1.5 rounded-full border border-white/20">
+                <Flame className="h-4 w-4 text-orange-400 fill-current" />
+                <span className="text-xs font-black">{currentStreak} Day Streak</span>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-black uppercase tracking-widest opacity-80">Motivasi Hari Ini</p>
-              <h2 className="text-xl font-bold leading-tight">{randomQuote}</h2>
+            <h2 className="text-5xl md:text-6xl font-black mb-8 tracking-tighter">
+              {stats.currentLevelXp} <span className="text-2xl md:text-3xl opacity-60">/ 1000 XP</span>
+            </h2>
+            <div className="space-y-4 max-w-md">
+              <div className="flex justify-between text-xs font-black uppercase opacity-80">
+                <span>Next Level</span>
+                <span>{Math.round(stats.xpProgress)}%</span>
+              </div>
+              <div className="h-4 bg-white/20 rounded-full border border-white/10 p-1">
+                <div className="h-full bg-white rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(255,255,255,0.5)]" style={{ width: `${stats.xpProgress}%` }} />
+              </div>
             </div>
           </div>
-          <Button variant="secondary" asChild className="rounded-full font-black uppercase text-xs">
-            <Link href="/ranking">Cek Leaderboard <Trophy className="ml-2 h-4 w-4" /></Link>
-          </Button>
-        </div>
-      </div>
-
-      <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="space-y-1">
-          <h1 className="font-headline text-4xl font-black tracking-tight text-foreground">Status Kurikulum</h1>
-          <p className="text-muted-foreground flex items-center gap-2 font-medium">
-            <Calendar className="h-4 w-4" /> {format(new Date(), 'EEEE, d MMMM yyyy', { locale: idLocale })}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild className="rounded-full shadow-sm font-bold uppercase tracking-tight text-xs"><Link href="/watchlist">Watchlist</Link></Button>
-          <Button asChild className="rounded-full shadow-md font-bold uppercase tracking-tight text-xs"><Link href="/activities">Kelola Materi</Link></Button>
-        </div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-12">
-        <Card className="md:col-span-12 border-none bg-muted/20 shadow-none">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-              Konsistensi Belajar <TrendingUp className="h-3 w-3 text-primary" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-1">
-              {heatmapDays.map((d, i) => (
-                <button 
-                  key={i} 
-                  onClick={() => toast({ 
-                    title: format(d.rawDate, 'd MMMM yyyy', { locale: idLocale }), 
-                    description: `${d.count} materi dikuasai pada hari ini.` 
-                  })}
-                  className={cn(
-                    "h-3 w-3 rounded-sm transition-all hover:ring-2 hover:ring-primary/50 cursor-pointer",
-                    d.count === 0 ? "bg-muted" : 
-                    d.count < 3 ? "bg-primary/30" : 
-                    d.count < 6 ? "bg-primary/60" : "bg-primary"
-                  )}
-                />
-              ))}
-            </div>
-          </CardContent>
         </Card>
 
-        <div className="md:col-span-4 space-y-6">
-          <Card className="border-none bg-primary text-primary-foreground shadow-lg overflow-hidden relative">
-             <div className="absolute top-0 right-0 p-4 opacity-10"><Zap className="h-24 w-24" /></div>
-             <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase">Total Penguasaan</CardTitle></CardHeader>
-             <CardContent>
-               <div className="text-6xl font-black mb-4">{totalMasteryProgress}%</div>
-               <Progress value={totalMasteryProgress} className="bg-white/20 h-2" />
-               <div className="mt-4 flex justify-between items-center">
-                  <p className="text-sm font-medium opacity-80">{activities?.filter(a => completedActivityIds.has(a.id)).length || 0} / {activities?.length || 0} materi</p>
-                  <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-full">
-                    <Flame className="h-3 w-3 text-orange-400 fill-current" />
-                    <span className="text-xs font-black">{currentStreak} Day Streak</span>
+        <div className="md:col-span-4 space-y-4">
+          <Card className="border-none shadow-sm bg-muted/30 h-full p-6 rounded-[32px]">
+            <CardHeader className="p-0 mb-4"><CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2"><Target className="h-4 w-4 text-primary" /> Active Goals</CardTitle></CardHeader>
+            <CardContent className="p-0 space-y-4">
+              {goals?.map(goal => {
+                const progress = Math.min(100, (goal.currentValue / goal.targetValue) * 100);
+                return (
+                  <div key={goal.id} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs font-bold truncate">{goal.title}</p>
+                      <span className="text-[10px] font-black text-primary">{goal.currentValue} / {goal.targetValue} {goal.unit}</span>
+                    </div>
+                    <Progress value={progress} className="h-1.5" />
                   </div>
-               </div>
-             </CardContent>
+                );
+              })}
+              {goals?.length === 0 && (
+                <div className="text-center py-10 opacity-40">
+                  <Target className="h-12 w-12 mx-auto mb-2" />
+                  <p className="text-[10px] font-bold uppercase">Belum ada target</p>
+                </div>
+              )}
+              <Button asChild size="sm" variant="outline" className="w-full rounded-full text-[10px] font-black uppercase tracking-tighter">
+                <Link href="/goals">Atur Target Baru</Link>
+              </Button>
+            </CardContent>
           </Card>
+        </div>
+      </div>
 
-          {/* AI Study Companion - Live Social Feed */}
-          <Card className="border-none bg-muted/30 shadow-sm overflow-hidden">
-            <CardHeader className="pb-2 bg-primary/5 border-b">
-              <CardTitle className="text-xs font-bold uppercase flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" /> Aktivitas Komunitas
-              </CardTitle>
-            </CardHeader>
+      {/* Main Dashboard Content */}
+      <div className="grid gap-6 md:grid-cols-12">
+        <div className="md:col-span-8 space-y-6">
+          {Object.entries(groupedActivities).map(([category, items]) => (
+            <Card key={category} className="border-none shadow-sm overflow-hidden rounded-[24px]">
+              <CardHeader className="bg-muted/30 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-black flex items-center gap-2">
+                    <Layers className="h-5 w-5 text-primary" /> {category}
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-muted">
+                  {items.map(activity => {
+                    const isCompleted = completedActivityIds.has(activity.id);
+                    const isRunning = runningTimers.has(activity.id);
+                    const currentTime = timers[activity.id] !== undefined ? timers[activity.id] : (activity.durationMinutes || 25) * 60;
+                    return (
+                      <div key={activity.id} className={cn("group flex flex-col p-5 transition-colors", isCompleted ? "bg-green-50/30" : "hover:bg-muted/10")}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <button onClick={() => handleToggleMastery(activity)}>
+                              {isCompleted ? <CheckCircle2 className="h-6 w-6 text-green-600" /> : <Circle className="h-6 w-6 text-muted-foreground" />}
+                            </button>
+                            <div className="min-w-0">
+                              <p className={cn("font-bold truncate text-foreground", isCompleted && "line-through text-muted-foreground")}>{activity.title}</p>
+                              <div className="flex items-center gap-3 mt-1">
+                                <span className="text-[10px] text-muted-foreground font-bold flex items-center gap-1">
+                                  <TimerIcon className="h-3 w-3" /> {activity.durationMinutes || 25}m
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          {!isCompleted && (
+                            <div className="flex items-center gap-2">
+                              <div className={cn("text-xs font-black font-mono tabular-nums px-2.5 py-1 rounded-lg", isRunning ? "bg-primary text-primary-foreground animate-pulse" : "bg-muted text-muted-foreground")}>
+                                {formatTime(currentTime)}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {!isRunning ? (
+                                  <button onClick={() => startTimer(activity.id, activity.durationMinutes || 25)} className="p-2 rounded-full hover:bg-muted"><Play className="h-4 w-4 fill-current" /></button>
+                                ) : (
+                                  <button onClick={() => stopTimer(activity.id)} className="p-2 rounded-full hover:bg-muted text-primary"><Pause className="h-4 w-4 fill-current" /></button>
+                                )}
+                                <button onClick={() => resetTimer(activity.id, activity.durationMinutes || 25)} className="p-2 rounded-full hover:bg-muted text-muted-foreground"><RotateCcw className="h-4 w-4" /></button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="md:col-span-4 space-y-6">
+          <Card className="border-none bg-muted/30 shadow-sm overflow-hidden rounded-[24px]">
+            <CardHeader className="pb-2 bg-primary/5 border-b"><CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> Live Study Feed</CardTitle></CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-muted">
                 {companionActivities.map((act) => (
-                  <div key={act.id} className="flex items-start gap-3 p-3 animate-in fade-in slide-in-from-top-2 duration-500">
-                    <Avatar className="h-8 w-8 border">
-                      <AvatarImage src={act.avatar} />
-                      <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
+                  <div key={act.id} className="flex items-start gap-3 p-4 animate-in fade-in slide-in-from-top-2 duration-500">
+                    <Avatar className="h-8 w-8 border-2 border-white"><AvatarImage src={act.avatar} /><AvatarFallback>U</AvatarFallback></Avatar>
                     <div className="min-w-0">
-                      <p className="text-[11px] font-bold leading-tight">
-                        <span className="text-primary">{act.name}</span> {act.text}
-                      </p>
+                      <p className="text-[11px] font-bold leading-tight"><span className="text-primary">{act.name}</span> {act.text}</p>
                       <p className="text-[9px] text-muted-foreground font-medium mt-0.5">Baru saja</p>
                     </div>
                   </div>
@@ -475,129 +519,13 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-none bg-muted/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-bold uppercase flex items-center gap-2">
-                <NotebookPen className="h-3 w-3" /> Target / Refleksi Harian
-              </CardTitle>
-            </CardHeader>
+          <Card className="border-none bg-muted/50 rounded-[24px]">
+            <CardHeader className="pb-2"><CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2"><NotebookPen className="h-3 w-3" /> Target Harian</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <Textarea 
-                placeholder="Hari ini aku kurang fokus di... besok harus lebih..." 
-                className="min-h-[100px] bg-background border-none text-sm leading-relaxed"
-                value={shortNote}
-                onChange={(e) => setShortNote(e.target.value)}
-              />
-              <Button size="sm" className="w-full rounded-full gap-2 font-bold uppercase text-xs" onClick={handleSaveShortNote}>
-                Simpan Refleksi
-              </Button>
+              <Textarea placeholder="Tulis target spesifikmu hari ini..." className="min-h-[100px] bg-background border-none text-sm rounded-xl" value={shortNote} onChange={(e) => setShortNote(e.target.value)} />
+              <Button size="sm" className="w-full rounded-full font-black uppercase text-[10px]" onClick={handleSaveShortNote}>Simpan Target</Button>
             </CardContent>
           </Card>
-        </div>
-
-        <div className="md:col-span-8 space-y-6">
-          {Object.entries(groupedActivities).map(([category, items]) => {
-            const completedCount = completedInCategoryCount(items);
-            const progress = items.length > 0 ? (completedCount / items.length) * 100 : 0;
-
-            return (
-              <Card key={category} className="border-none shadow-sm overflow-hidden">
-                <CardHeader className="bg-muted/30 pb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <CardTitle className="text-xl font-black flex items-center gap-2">
-                      <Layers className="h-5 w-5 text-primary" /> {category}
-                    </CardTitle>
-                    <div className="flex items-center gap-3">
-                      <span className="block text-xs font-bold text-muted-foreground uppercase">{completedCount} / {items.length} Dikuasai</span>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive">
-                            <RefreshCw className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Reset Progres Kategori?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Ini akan menghapus seluruh status penguasaan materi dalam kategori "{category}".
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Batal</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleResetCategory(items)} className="bg-destructive hover:bg-destructive/90">Reset Semua</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                  <Progress value={progress} className="h-2" />
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="divide-y divide-muted">
-                    {items.map(activity => {
-                      const isCompleted = completedActivityIds.has(activity.id);
-                      const isRunning = runningTimers.has(activity.id);
-                      const currentTime = timers[activity.id] !== undefined ? timers[activity.id] : (activity.durationMinutes || 25) * 60;
-                      
-                      return (
-                        <div key={activity.id} className={cn("group flex flex-col p-4 transition-colors", isCompleted ? "bg-green-50/30" : "hover:bg-muted/30")}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4 flex-1 min-w-0">
-                              <button onClick={() => handleToggleMastery(activity)}>
-                                {isCompleted ? (
-                                  <CheckCircle2 className="h-6 w-6 text-green-600 hover:text-muted-foreground transition-colors" />
-                                ) : (
-                                  <Circle className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
-                                )}
-                              </button>
-                              <div className="min-w-0">
-                                <p className={cn("font-bold truncate text-foreground", isCompleted && "line-through text-muted-foreground")}>{activity.title}</p>
-                                <div className="flex items-center gap-3 mt-1">
-                                  <span className={cn(
-                                    "text-[9px] uppercase font-black px-1.5 py-0.5 rounded",
-                                    activity.difficulty === 'Hard' ? "bg-red-100 text-red-700" :
-                                    activity.difficulty === 'Easy' ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
-                                  )}>{activity.difficulty || 'Medium'}</span>
-                                  <span className="text-[10px] text-muted-foreground font-bold flex items-center gap-1">
-                                    <TimerIcon className="h-3 w-3" /> {activity.durationMinutes || 25}m
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {!isCompleted && (
-                              <div className="flex items-center gap-2">
-                                <div className={cn(
-                                  "text-xs font-bold font-mono tabular-nums px-2 py-0.5 rounded-md",
-                                  isRunning ? "bg-primary text-primary-foreground animate-pulse" : "bg-muted text-muted-foreground"
-                                )}>
-                                  {formatTime(currentTime)}
-                                </div>
-                                <div className="flex items-center gap-0.5">
-                                  {!isRunning ? (
-                                    <button onClick={() => startTimer(activity.id, activity.durationMinutes || 25)} className="p-1.5 rounded-full hover:bg-muted transition-colors">
-                                      <Play className="h-3.5 w-3.5 fill-current" />
-                                    </button>
-                                  ) : (
-                                    <button onClick={() => stopTimer(activity.id)} className="p-1.5 rounded-full hover:bg-muted text-primary transition-colors">
-                                      <Pause className="h-3.5 w-3.5 fill-current" />
-                                    </button>
-                                  )}
-                                  <button onClick={() => resetTimer(activity.id, activity.durationMinutes || 25)} className="p-1.5 rounded-full hover:bg-muted text-muted-foreground transition-colors">
-                                    <RotateCcw className="h-3.5 w-3.5" />
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
         </div>
       </div>
     </div>

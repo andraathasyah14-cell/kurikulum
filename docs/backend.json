@@ -32,6 +32,21 @@
       },
       "required": ["id", "activityId", "userId", "date"]
     },
+    "Goal": {
+      "title": "Goal",
+      "type": "object",
+      "description": "Target spesifik pengguna (misal: Belajar 20 jam).",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "targetValue": { "type": "number" },
+        "currentValue": { "type": "number", "default": 0 },
+        "unit": { "type": "string", "enum": ["Jam", "Materi", "Episode"] },
+        "deadline": { "type": "string", "format": "date" }
+      },
+      "required": ["userId", "title", "targetValue", "unit"]
+    },
     "Reflection": {
       "title": "Reflection",
       "type": "object",
@@ -97,6 +112,14 @@
           "entityName": "ActivityLog",
           "schema": { "$ref": "#/backend/entities/ActivityLog" },
           "description": "Log penyelesaian aktivitas."
+        }
+      },
+      {
+        "path": "/users/{userId}/goals/{goalId}",
+        "definition": {
+          "entityName": "Goal",
+          "schema": { "$ref": "#/backend/entities/Goal" },
+          "description": "Target belajar spesifik."
         }
       },
       {

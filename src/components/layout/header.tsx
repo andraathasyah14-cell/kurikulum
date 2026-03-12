@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, LayoutDashboard, BookOpen, TrendingUp, Settings, LogOut, Award, NotebookPen, Tv, Trophy } from 'lucide-react';
+import { Menu, LayoutDashboard, BookOpen, TrendingUp, Settings, LogOut, Award, NotebookPen, Tv, Trophy, Target } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -23,13 +23,13 @@ import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 
 const navLinks = [
-  { href: '/', label: 'Target', icon: LayoutDashboard },
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/activities', label: 'Kurikulum', icon: BookOpen },
+  { href: '/goals', label: 'Goals', icon: Target },
   { href: '/journal', label: 'Jurnal', icon: NotebookPen },
   { href: '/stats', label: 'Statistik', icon: TrendingUp },
-  { href: '/review', label: 'Review', icon: Award },
-  { href: '/watchlist', label: 'Watchlist', icon: Tv },
   { href: '/ranking', label: 'Ranking', icon: Trophy },
+  { href: '/watchlist', label: 'Watchlist', icon: Tv },
 ];
 
 export function Header() {
@@ -106,9 +106,7 @@ export function Header() {
               <Button variant="ghost" size="icon" className="xl:hidden"><Menu className="h-6 w-6" /></Button>
             </SheetTrigger>
             <SheetContent side="left">
-              <SheetHeader>
-                <SheetTitle className="text-left font-black tracking-tighter">NAVIGASI</SheetTitle>
-              </SheetHeader>
+              <SheetHeader><SheetTitle className="text-left font-black tracking-tighter">NAVIGASI</SheetTitle></SheetHeader>
               <Link href="/" className="mb-8 mt-4 flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <BookOpen className="h-5 w-5" />

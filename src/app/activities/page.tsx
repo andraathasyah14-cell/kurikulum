@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Plus, Trash2, BookOpen, Timer, Layers, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, BookOpen, Timer, Layers, ChevronDown, ChevronUp, Share2, Target, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -53,16 +54,25 @@ export default function ActivitiesPage() {
     return query(collection(db, 'users', user.uid, 'activities'), orderBy('createdAt', 'desc'));
   }, [db, user]);
 
-  const { data: activities } = useCollection(activitiesQuery);
+  const logsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'users', user.uid, 'logs'));
+  }, [db, user]);
 
-  // Get unique categories for selection
+  const { data: activities } = useCollection(activitiesQuery);
+  const { data: logs } = useCollection(logsQuery);
+
+  const completedActivityIds = useMemo(() => {
+    if (!logs) return new Set<string>();
+    return new Set(logs.map(l => l.activityId));
+  }, [logs]);
+
   const uniqueCategories = useMemo(() => {
     if (!activities) return [];
     const cats = activities.map(a => a.category).filter(Boolean);
     return Array.from(new Set(cats)).sort();
   }, [activities]);
 
-  // Grouping activities by category
   const groupedActivities = useMemo(() => {
     if (!activities) return {};
     return activities.reduce((acc, act) => {
@@ -87,7 +97,6 @@ export default function ActivitiesPage() {
       toast({ variant: "destructive", title: "Error", description: "Nama subjek dan materi harus diisi." });
       return;
     }
-
     addDocumentNonBlocking(collection(db, 'users', user.uid, 'activities'), {
       userId: user.uid,
       title: newActivity.title,
@@ -97,179 +106,141 @@ export default function ActivitiesPage() {
       deadline: newActivity.deadline || null,
       createdAt: serverTimestamp(),
     });
-
-    setNewActivity({ ...newActivity, title: '' }); // Keep category for easier batch adding
+    setNewActivity({ ...newActivity, title: '' });
     setIsOpen(false);
-    setIsAddingNewCategory(false);
-    toast({ title: "Berhasil", description: `Materi "${newActivity.title}" ditambahkan ke kurikulum ${newActivity.category}.` });
+    toast({ title: "Berhasil", description: `"${newActivity.title}" ditambahkan.` });
   };
 
   const handleDelete = (id: string) => {
     if (!user || !db) return;
     deleteDoc(doc(db, 'users', user.uid, 'activities', id));
-    toast({ title: "Dihapus", description: "Materi telah dihapus dari kurikulum." });
   };
 
   return (
-    <div className="container px-4 py-8 md:px-6 max-w-4xl">
-      <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="container px-4 py-8 md:px-6 max-w-5xl">
+      <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-headline text-4xl font-black tracking-tight">Struktur Kurikulum</h1>
-          <p className="text-muted-foreground text-sm font-medium">Definisikan subjek dan daftar materi yang ingin Anda kuasai.</p>
+          <h1 className="font-headline text-5xl font-black tracking-tight mb-2">Knowledge Graph</h1>
+          <p className="text-muted-foreground text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+            <Zap className="h-4 w-4 text-primary fill-current" /> Peta Penguasaan Kurikulum Anda
+          </p>
         </div>
-        <Dialog open={isOpen} onOpenChange={(open) => {
-          setIsOpen(open);
-          if (!open) setIsAddingNewCategory(false);
-        }}>
-          <DialogTrigger asChild>
-            <Button className="rounded-full shadow-lg gap-2 h-12 px-6">
-              <Plus className="h-5 w-5" /> Tambah Materi
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader><DialogTitle>Tambah Materi ke Kurikulum</DialogTitle></DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="category">Pilih Subjek / Kategori</Label>
-                
-                {!isAddingNewCategory && uniqueCategories.length > 0 ? (
-                  <div className="flex gap-2">
-                    <Select 
-                      value={newActivity.category} 
-                      onValueChange={(v) => setNewActivity({...newActivity, category: v})}
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Pilih subjek yang ada" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {uniqueCategories.map(cat => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button variant="outline" size="icon" onClick={() => {
-                      setIsAddingNewCategory(true);
-                      setNewActivity({...newActivity, category: ''});
-                    }}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
+        <div className="flex gap-2">
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button className="rounded-full shadow-lg gap-2 h-14 px-8 font-black uppercase text-xs tracking-widest">
+                <Plus className="h-5 w-5" /> Tambah Simpul Materi
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader><DialogTitle>Tambah Materi Baru</DialogTitle></DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label>Pilih Subjek / Kategori Root</Label>
+                  {!isAddingNewCategory && uniqueCategories.length > 0 ? (
                     <div className="flex gap-2">
-                      <Input 
-                        id="category" 
-                        placeholder="Masukkan nama subjek baru" 
-                        value={newActivity.category} 
-                        onChange={(e) => setNewActivity({...newActivity, category: e.target.value})}
-                        autoFocus
-                      />
-                      {uniqueCategories.length > 0 && (
-                        <Button variant="outline" size="icon" onClick={() => setIsAddingNewCategory(false)}>
-                          <Layers className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <Select value={newActivity.category} onValueChange={(v) => setNewActivity({...newActivity, category: v})}>
+                        <SelectTrigger className="flex-1"><SelectValue placeholder="Pilih subjek" /></SelectTrigger>
+                        <SelectContent>{uniqueCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                      </Select>
+                      <Button variant="outline" size="icon" onClick={() => setIsAddingNewCategory(true)}><Plus className="h-4 w-4" /></Button>
                     </div>
+                  ) : (
+                    <Input placeholder="Nama subjek baru" value={newActivity.category} onChange={(e) => setNewActivity({...newActivity, category: e.target.value})} />
+                  )}
+                </div>
+                <div className="grid gap-2">
+                  <Label>Nama Materi (Node)</Label>
+                  <Input placeholder="Contoh: Mekanisme Pasar" value={newActivity.title} onChange={(e) => setNewActivity({...newActivity, title: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Difficulty</Label>
+                    <Select value={newActivity.difficulty} onValueChange={(v) => setNewActivity({...newActivity, difficulty: v})}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="Easy">Easy</SelectItem><SelectItem value="Medium">Medium</SelectItem><SelectItem value="Hard">Hard</SelectItem></SelectContent>
+                    </Select>
                   </div>
-                )}
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="title">Nama Materi / Topik</Label>
-                <Input 
-                  id="title" 
-                  placeholder="Contoh: Noun Clause, Fotosintesis" 
-                  value={newActivity.title} 
-                  onChange={(e) => setNewActivity({...newActivity, title: e.target.value})} 
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>Tingkat Kesulitan</Label>
-                  <Select value={newActivity.difficulty} onValueChange={(v) => setNewActivity({...newActivity, difficulty: v})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Easy">Easy</SelectItem>
-                      <SelectItem value="Medium">Medium</SelectItem>
-                      <SelectItem value="Hard">Hard</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="duration">Target Waktu (Menit)</Label>
-                  <Input id="duration" type="number" value={newActivity.durationMinutes} onChange={(e) => setNewActivity({...newActivity, durationMinutes: e.target.value})} />
+                  <div className="grid gap-2">
+                    <Label>Waktu (Menit)</Label>
+                    <Input type="number" value={newActivity.durationMinutes} onChange={(e) => setNewActivity({...newActivity, durationMinutes: e.target.value})} />
+                  </div>
                 </div>
               </div>
-            </div>
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setIsOpen(false)}>Batal</Button>
-              <Button onClick={handleAddActivity}>Simpan ke Kurikulum</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter><Button onClick={handleAddActivity} className="w-full">Simpan ke Peta</Button></DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <div className="space-y-6">
+      {/* Visual Hierarchy / Knowledge Graph View */}
+      <div className="space-y-12">
         {Object.entries(groupedActivities).map(([category, items]) => {
-          const isExpanded = !expandedCategories.has(category); // Default expanded
+          const completedCount = items.filter(i => completedActivityIds.has(i.id)).length;
+          const progress = (completedCount / items.length) * 100;
           return (
-            <Card key={category} className="border-none shadow-sm overflow-hidden bg-card">
-              <CardHeader className="p-0 border-b">
-                <button 
-                  onClick={() => toggleCategory(category)}
-                  className="w-full flex items-center justify-between p-5 hover:bg-muted/30 transition-colors"
-                >
-                  <div className="flex items-center gap-3 text-left">
-                    <div className="bg-primary/10 p-2 rounded-lg">
-                      <Layers className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl font-black">{category}</CardTitle>
-                      <span className="text-xs font-bold text-muted-foreground uppercase">{items.length} Materi Terdaftar</span>
-                    </div>
+            <div key={category} className="relative">
+              {/* Root Node */}
+              <div className="flex items-center gap-6 mb-8 group">
+                <div className={cn(
+                  "h-16 w-16 rounded-[24px] flex items-center justify-center transition-all duration-500 shadow-xl",
+                  progress === 100 ? "bg-primary text-white" : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
+                )}>
+                  <Layers className="h-8 w-8" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-end gap-3 mb-1">
+                    <h2 className="text-3xl font-black tracking-tighter">{category}</h2>
+                    <span className="text-[10px] font-black uppercase text-primary mb-1">{Math.round(progress)}% Mastery</span>
                   </div>
-                  {isExpanded ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
-                </button>
-              </CardHeader>
-              {isExpanded && (
-                <CardContent className="p-0">
-                  <div className="divide-y divide-muted">
-                    {items.map((activity) => (
-                      <div key={activity.id} className="group flex items-center justify-between p-4 hover:bg-muted/10 transition-colors">
-                        <div className="flex items-center gap-4">
-                          <BookOpen className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-bold text-sm">{activity.title}</p>
-                            <div className="flex items-center gap-3 mt-1">
-                              <span className={cn(
-                                "text-[9px] uppercase font-black px-1.5 py-0.5 rounded",
-                                activity.difficulty === 'Hard' ? "bg-red-100 text-red-700" : 
-                                activity.difficulty === 'Easy' ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
-                              )}>{activity.difficulty || 'Medium'}</span>
-                              <span className="text-[10px] text-muted-foreground font-bold flex items-center gap-1">
-                                <Timer className="h-3 w-3" /> {activity.durationMinutes || 25} menit
-                              </span>
-                            </div>
+                  <div className="h-1.5 bg-muted rounded-full w-48 overflow-hidden">
+                    <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${progress}%` }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Child Nodes (Materials) */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pl-8 border-l-2 border-dashed border-muted ml-8">
+                {items.map((activity) => {
+                  const isDone = completedActivityIds.has(activity.id);
+                  return (
+                    <Card key={activity.id} className={cn(
+                      "relative border-none shadow-sm transition-all hover:-translate-y-1 hover:shadow-md",
+                      isDone ? "bg-primary/5 ring-1 ring-primary/20" : "bg-card"
+                    )}>
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className={cn("p-2 rounded-xl", isDone ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
+                            <BookOpen className="h-4 w-4" />
                           </div>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100" onClick={() => handleDelete(activity.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 text-destructive rounded-full hover:bg-destructive/10 transition-opacity" onClick={() => handleDelete(activity.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              )}
-            </Card>
+                        <h3 className={cn("font-bold text-sm mb-2", isDone && "text-primary")}>{activity.title}</h3>
+                        <div className="flex items-center gap-3">
+                          <span className={cn(
+                            "text-[8px] font-black uppercase px-2 py-0.5 rounded-full",
+                            activity.difficulty === 'Hard' ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
+                          )}>{activity.difficulty}</span>
+                          <span className="text-[10px] text-muted-foreground font-bold flex items-center gap-1">
+                            <Timer className="h-3 w-3" /> {activity.durationMinutes}m
+                          </span>
+                        </div>
+                        {isDone && <div className="absolute top-4 right-4"><Zap className="h-4 w-4 text-primary fill-current animate-pulse" /></div>}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
 
         {activities?.length === 0 && (
-          <div className="py-24 text-center border-2 border-dashed rounded-3xl opacity-50 bg-muted/20">
-             <Layers className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-             <p className="font-bold text-xl mb-1">Kurikulum Masih Kosong</p>
-             <p className="text-muted-foreground text-sm">Mulai definisikan subjek dan materi yang ingin Anda pelajari.</p>
+          <div className="py-24 text-center border-4 border-dashed rounded-[40px] opacity-20 bg-muted/20">
+             <Layers className="h-24 w-24 mx-auto mb-4 text-muted-foreground" />
+             <p className="font-black text-2xl uppercase tracking-tighter">Knowledge Graph Masih Kosong</p>
           </div>
         )}
       </div>

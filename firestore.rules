@@ -19,6 +19,9 @@ service cloud.firestore {
       match /logs/{logId} {
         allow read, write: if isOwner(userId);
       }
+      match /goals/{goalId} {
+        allow read, write: if isOwner(userId);
+      }
       match /reflections/{reflectionId} {
         allow read, write: if isOwner(userId);
       }
