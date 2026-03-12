@@ -18,12 +18,13 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/avatar';
 import { useUser, useCollection, useMemoFirebase, useFirestore } from '@/firebase';
 import { query, collection, orderBy } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { format, endOfWeek, differenceInSeconds, startOfWeek } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 
 const CHALLENGES = [
   { 
@@ -64,6 +65,7 @@ const pseudoRandom = (seed: number) => {
 export default function ChallengesPage() {
   const { user } = useUser();
   const db = useFirestore();
+  const { toast } = useToast();
   const [timeLeft, setTimeLeft] = useState('');
   const currentWeek = format(new Date(), 'I'); // ISO Week number
 
@@ -79,7 +81,7 @@ export default function ChallengesPage() {
       const minutes = Math.floor((diff % 3600) / 60);
       const seconds = diff % 60;
       
-      setTimeLeft(`${days}h ${hours}j ${minutes}m ${seconds}d`);
+      setTimeLeft(`${days}h ${hours}j ${minutes}m ${seconds}s`);
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -126,6 +128,20 @@ export default function ChallengesPage() {
 
     return bots.sort((a, b) => b.progress - a.progress);
   }, [user, stats, currentWeek]);
+
+  const handleJoinChallenge = (title: string) => {
+    toast({
+      title: "Sprint Dimulai!",
+      description: `Anda telah berkomitmen untuk tantangan "${title}". Semangat!`,
+    });
+  };
+
+  const handleClaimBadge = (title: string) => {
+    toast({
+      title: "Badge Diklaim! 🏆",
+      description: `Luar biasa! Badge "${title}" telah ditambahkan ke profil Anda.`,
+    });
+  };
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-4xl pb-32">
@@ -185,6 +201,7 @@ export default function ChallengesPage() {
                     </div>
                   </div>
                   <Button 
+                    onClick={() => progress === 100 ? handleClaimBadge(challenge.title) : handleJoinChallenge(challenge.title)}
                     className={cn(
                       "rounded-full px-10 h-14 font-black uppercase text-xs tracking-widest shadow-lg transition-all",
                       progress === 100 ? "bg-green-600 hover:bg-green-700" : "bg-primary"
