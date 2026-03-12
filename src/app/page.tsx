@@ -20,7 +20,8 @@ import {
   RefreshCw,
   Quote,
   Sparkles,
-  Trophy
+  Trophy,
+  Users
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const MOTIVATIONAL_QUOTES = [
   "Di luar sana banyak orang lain yang juga sedang belajar sekarang.",
@@ -62,6 +64,10 @@ const MOTIVATIONAL_QUOTES = [
   "Setiap detik yang kamu gunakan untuk belajar adalah investasi masa depan.",
   "Kelelahan hari ini adalah kekuatan hari esok."
 ];
+
+const BOT_NAMES = ['Alex', 'Mira', 'Daniel', 'Hana', 'Kevin', 'Siti', 'Budi', 'Rina', 'Rian', 'Maya', 'Fajar', 'Lestari', 'Andi', 'Dewi'];
+const BOT_SUBJECTS = ['Ekonomi', 'Matematika', 'Bahasa Inggris', 'Sejarah', 'Biologi', 'Fisika', 'Kimia', 'Sosiologi', 'Programming'];
+const BOT_WATCHLIST = ['Breaking Bad', 'Inception', 'Startup', 'The Crown', 'TED Talks', 'Interstellar'];
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -74,6 +80,42 @@ export default function DashboardPage() {
   const [timers, setTimers] = useState<Record<string, number>>({});
   const [runningTimers, setRunningTimers] = useState<Set<string>>(new Set());
   const [randomQuote, setRandomQuote] = useState('');
+  const [companionActivities, setCompanionActivities] = useState<any[]>([]);
+
+  // Generate simulated AI Study Companion activities
+  useEffect(() => {
+    const generateActivity = () => {
+      const name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+      const type = Math.random();
+      let text = '';
+      
+      if (type > 0.6) {
+        text = `sedang belajar ${BOT_SUBJECTS[Math.floor(Math.random() * BOT_SUBJECTS.length)]} (${Math.floor(Math.random() * 3) + 1} jam)`;
+      } else if (type > 0.3) {
+        text = `menyelesaikan ${Math.floor(Math.random() * 5) + 1} materi hari ini`;
+      } else {
+        text = `menonton ${Math.floor(Math.random() * 8) + 1} episode ${BOT_WATCHLIST[Math.floor(Math.random() * BOT_WATCHLIST.length)]}`;
+      }
+
+      return {
+        id: Math.random().toString(),
+        name,
+        text,
+        timestamp: new Date(),
+        avatar: `https://picsum.photos/seed/${name}/100`
+      };
+    };
+
+    // Initial activities
+    setCompanionActivities(Array.from({ length: 4 }, () => generateActivity()));
+
+    // Interval to update activities
+    const interval = setInterval(() => {
+      setCompanionActivities(prev => [generateActivity(), ...prev.slice(0, 3)]);
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     setRandomQuote(MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]);
@@ -404,6 +446,33 @@ export default function DashboardPage() {
                   </div>
                </div>
              </CardContent>
+          </Card>
+
+          {/* AI Study Companion - Live Social Feed */}
+          <Card className="border-none bg-muted/30 shadow-sm overflow-hidden">
+            <CardHeader className="pb-2 bg-primary/5 border-b">
+              <CardTitle className="text-xs font-bold uppercase flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" /> Aktivitas Komunitas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-muted">
+                {companionActivities.map((act) => (
+                  <div key={act.id} className="flex items-start gap-3 p-3 animate-in fade-in slide-in-from-top-2 duration-500">
+                    <Avatar className="h-8 w-8 border">
+                      <AvatarImage src={act.avatar} />
+                      <AvatarFallback>U</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-bold leading-tight">
+                        <span className="text-primary">{act.name}</span> {act.text}
+                      </p>
+                      <p className="text-[9px] text-muted-foreground font-medium mt-0.5">Baru saja</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
           </Card>
 
           <Card className="border-none bg-muted/50">
