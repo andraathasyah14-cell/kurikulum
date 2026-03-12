@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Target, Plus, Trash2, Calendar, Trophy, Flag } from 'lucide-react';
+import { Target, Plus, Trash2, Calendar, Trophy, Flag, Info, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -65,14 +65,6 @@ export default function GoalsPage() {
     toast({ title: "Target Dibuat", description: `Mari kejar target "${newGoal.title}"!` });
   };
 
-  const handleUpdateProgress = (goal: any, delta: number) => {
-    if (!user || !db) return;
-    const newVal = Math.max(0, goal.currentValue + delta);
-    setDoc(doc(db, 'users', user.uid, 'goals', goal.id), {
-      currentValue: newVal
-    }, { merge: true });
-  };
-
   const handleDelete = (id: string) => {
     if (!user || !db) return;
     deleteDoc(doc(db, 'users', user.uid, 'goals', id));
@@ -82,11 +74,18 @@ export default function GoalsPage() {
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-4xl">
+      <div className="mb-8 p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-start gap-3">
+        <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+        <p className="text-xs font-medium leading-relaxed">
+          <strong>Sistem Target Otomatis:</strong> Progres target Anda sekarang terhubung langsung dengan aktivitas di Kurikulum. Saat Anda membuat materi baru di halaman Kurikulum, hubungkan ke target yang diinginkan. Progres akan bertambah otomatis saat materi diselesaikan.
+        </p>
+      </div>
+
       <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-headline text-5xl font-black tracking-tight mb-2">Set Goals</h1>
+          <h1 className="font-headline text-5xl font-black tracking-tight mb-2">My Goals</h1>
           <p className="text-muted-foreground text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-primary" /> Ubah Target Menjadi Kebiasaan
+            <Trophy className="h-4 w-4 text-primary" /> Target Terintegrasi Kurikulum
           </p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -137,26 +136,25 @@ export default function GoalsPage() {
                       <div className="bg-primary/10 p-4 rounded-3xl">
                         <Flag className="h-8 w-8 text-primary" />
                       </div>
-                      <div>
-                        <h3 className="font-black text-2xl tracking-tighter">{goal.title}</h3>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                           <h3 className="font-black text-2xl tracking-tighter">{goal.title}</h3>
+                           <Button variant="ghost" size="icon" className="text-destructive opacity-20 hover:opacity-100" onClick={() => handleDelete(goal.id)}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
                         <p className="text-xs font-black uppercase text-muted-foreground tracking-widest">Target: {goal.targetValue} {goal.unit}</p>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs font-black uppercase text-primary">
-                        <span>Progress</span>
-                        <span>{goal.currentValue} / {goal.targetValue} {goal.unit} ({Math.round(progress)}%)</span>
+                        <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Automated Tracking</span>
+                        <span>{goal.currentValue?.toFixed(1) || 0} / {goal.targetValue} {goal.unit} ({Math.round(progress)}%)</span>
                       </div>
                       <Progress value={progress} className="h-4 rounded-full" />
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2 bg-muted p-2 rounded-2xl">
-                      <Button variant="ghost" size="icon" className="rounded-xl h-12 w-12 font-black text-xl" onClick={() => handleUpdateProgress(goal, -1)}>-</Button>
-                      <span className="font-black text-xl px-4">{goal.currentValue}</span>
-                      <Button variant="ghost" size="icon" className="rounded-xl h-12 w-12 font-black text-xl text-primary" onClick={() => handleUpdateProgress(goal, 1)}>+</Button>
-                    </div>
-                    <Button variant="ghost" size="sm" className="text-destructive font-bold uppercase text-[10px]" onClick={() => handleDelete(goal.id)}>Hapus Target</Button>
+                  <div className="bg-muted/50 p-4 rounded-2xl text-center min-w-[120px]">
+                    <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Status Progres</p>
+                    <p className="text-2xl font-black text-primary">{Math.round(progress)}%</p>
                   </div>
                 </div>
               </CardContent>

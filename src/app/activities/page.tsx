@@ -38,7 +38,6 @@ export default function ActivitiesPage() {
   const db = useFirestore();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [isAddingNewCategory, setIsAddingNewCategory] = useState(false);
   
   const [newActivity, setNewActivity] = useState({ 
@@ -46,7 +45,8 @@ export default function ActivitiesPage() {
     category: '', 
     difficulty: 'Medium',
     durationMinutes: '25',
-    deadline: ''
+    deadline: '',
+    goalId: 'none'
   });
 
   const activitiesQuery = useMemoFirebase(() => {
@@ -59,8 +59,14 @@ export default function ActivitiesPage() {
     return query(collection(db, 'users', user.uid, 'logs'));
   }, [db, user]);
 
+  const goalsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'users', user.uid, 'goals'));
+  }, [db, user]);
+
   const { data: activities } = useCollection(activitiesQuery);
   const { data: logs } = useCollection(logsQuery);
+  const { data: goals } = useCollection(goalsQuery);
 
   const completedActivityIds = useMemo(() => {
     if (!logs) return new Set<string>();
@@ -83,15 +89,6 @@ export default function ActivitiesPage() {
     }, {} as Record<string, any[]>);
   }, [activities]);
 
-  const toggleCategory = (category: string) => {
-    setExpandedCategories(prev => {
-      const next = new Set(prev);
-      if (next.has(category)) next.delete(category);
-      else next.add(category);
-      return next;
-    });
-  };
-
   const handleAddActivity = () => {
     if (!user || !db || !newActivity.title || !newActivity.category) {
       toast({ variant: "destructive", title: "Error", description: "Nama subjek dan materi harus diisi." });
@@ -104,11 +101,12 @@ export default function ActivitiesPage() {
       difficulty: newActivity.difficulty,
       durationMinutes: parseInt(newActivity.durationMinutes) || 25,
       deadline: newActivity.deadline || null,
+      goalId: newActivity.goalId === 'none' ? null : newActivity.goalId,
       createdAt: serverTimestamp(),
     });
-    setNewActivity({ ...newActivity, title: '' });
+    setNewActivity({ ...newActivity, title: '', goalId: 'none' });
     setIsOpen(false);
-    toast({ title: "Berhasil", description: `"${newActivity.title}" ditambahkan.` });
+    toast({ title: "Berhasil", description: `"${newActivity.title}" ditambahkan ke kurikulum.` });
   };
 
   const handleDelete = (id: string) => {
@@ -166,6 +164,19 @@ export default function ActivitiesPage() {
                     <Input type="number" value={newActivity.durationMinutes} onChange={(e) => setNewActivity({...newActivity, durationMinutes: e.target.value})} />
                   </div>
                 </div>
+                <div className="grid gap-2">
+                  <Label>Hubungkan ke Target (Goal)</Label>
+                  <Select value={newActivity.goalId} onValueChange={(v) => setNewActivity({...newActivity, goalId: v})}>
+                    <SelectTrigger><SelectValue placeholder="Pilih Goal (Opsional)" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Tidak ada (Materi Bebas)</SelectItem>
+                      {goals?.map(goal => (
+                        <SelectItem key={goal.id} value={goal.id}>{goal.title} ({goal.unit})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground italic leading-tight">Materi ini akan otomatis menambah progres pada target yang Anda pilih saat selesai.</p>
+                </div>
               </div>
               <DialogFooter><Button onClick={handleAddActivity} className="w-full">Simpan ke Peta</Button></DialogFooter>
             </DialogContent>
@@ -173,14 +184,12 @@ export default function ActivitiesPage() {
         </div>
       </div>
 
-      {/* Visual Hierarchy / Knowledge Graph View */}
       <div className="space-y-12">
         {Object.entries(groupedActivities).map(([category, items]) => {
           const completedCount = items.filter(i => completedActivityIds.has(i.id)).length;
           const progress = (completedCount / items.length) * 100;
           return (
             <div key={category} className="relative">
-              {/* Root Node */}
               <div className="flex items-center gap-6 mb-8 group">
                 <div className={cn(
                   "h-16 w-16 rounded-[24px] flex items-center justify-center transition-all duration-500 shadow-xl",
@@ -199,13 +208,13 @@ export default function ActivitiesPage() {
                 </div>
               </div>
 
-              {/* Child Nodes (Materials) */}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pl-8 border-l-2 border-dashed border-muted ml-8">
                 {items.map((activity) => {
                   const isDone = completedActivityIds.has(activity.id);
+                  const linkedGoal = goals?.find(g => g.id === activity.goalId);
                   return (
                     <Card key={activity.id} className={cn(
-                      "relative border-none shadow-sm transition-all hover:-translate-y-1 hover:shadow-md",
+                      "relative border-none shadow-sm transition-all hover:-translate-y-1 hover:shadow-md group",
                       isDone ? "bg-primary/5 ring-1 ring-primary/20" : "bg-card"
                     )}>
                       <CardContent className="p-5">
@@ -218,7 +227,7 @@ export default function ActivitiesPage() {
                           </Button>
                         </div>
                         <h3 className={cn("font-bold text-sm mb-2", isDone && "text-primary")}>{activity.title}</h3>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className={cn(
                             "text-[8px] font-black uppercase px-2 py-0.5 rounded-full",
                             activity.difficulty === 'Hard' ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
@@ -226,6 +235,11 @@ export default function ActivitiesPage() {
                           <span className="text-[10px] text-muted-foreground font-bold flex items-center gap-1">
                             <Timer className="h-3 w-3" /> {activity.durationMinutes}m
                           </span>
+                          {linkedGoal && (
+                            <span className="text-[8px] font-black uppercase bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <Target className="h-2 w-2" /> {linkedGoal.title}
+                            </span>
+                          )}
                         </div>
                         {isDone && <div className="absolute top-4 right-4"><Zap className="h-4 w-4 text-primary fill-current animate-pulse" /></div>}
                       </CardContent>
