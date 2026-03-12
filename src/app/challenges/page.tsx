@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -12,7 +13,8 @@ import {
   Award,
   ArrowRight,
   Clock,
-  RefreshCw
+  RefreshCw,
+  User as UserIcon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,7 +57,6 @@ const CHALLENGES = [
   }
 ];
 
-// Seeded random for deterministic bots based on current week
 const pseudoRandom = (seed: number) => {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
@@ -66,9 +67,9 @@ export default function ChallengesPage() {
   const db = useFirestore();
   const { toast } = useToast();
   const [timeLeft, setTimeLeft] = useState('');
-  const currentWeek = format(new Date(), 'I'); // ISO Week number
+  const [joinedChallenges, setJoinedChallenges] = useState<Set<string>>(new Set());
+  const currentWeek = format(new Date(), 'I');
 
-  // Season Countdown logic
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
@@ -100,12 +101,11 @@ export default function ChallengesPage() {
     };
   }, [logs]);
 
-  // Algorithmic Challenge Leaderboard (Changes every week)
   const challengeLeaderboard = useMemo(() => {
     const weekSeed = parseInt(currentWeek);
     const bots = Array.from({ length: 10 }).map((_, i) => {
       const seed = weekSeed + i;
-      const progressBase = 40 + (pseudoRandom(seed) * 55); // Bots stay between 40-95%
+      const progressBase = 40 + (pseudoRandom(seed) * 55);
       return {
         id: `bot-challenge-${i}`,
         name: `Scholar_${Math.floor(pseudoRandom(seed * 2) * 900) + 100}`,
@@ -115,7 +115,6 @@ export default function ChallengesPage() {
     });
 
     if (user) {
-      // Find average progress for current challenges
       const userProgress = Math.min(99, Math.round(((stats.count / 30) + (stats.hours / 100)) / 2 * 100));
       bots.push({
         id: user.uid,
@@ -128,23 +127,23 @@ export default function ChallengesPage() {
     return bots.sort((a, b) => b.progress - a.progress);
   }, [user, stats, currentWeek]);
 
-  const handleJoinChallenge = (title: string) => {
+  const handleJoinChallenge = (id: string, title: string) => {
+    setJoinedChallenges(prev => new Set(prev).add(id));
     toast({
       title: "Sprint Dimulai!",
-      description: `Anda telah berkomitmen untuk tantangan "${title}". Semangat!`,
+      description: `Anda telah bergabung dalam tantangan "${title}".`,
     });
   };
 
   const handleClaimBadge = (title: string) => {
     toast({
       title: "Badge Diklaim! 🏆",
-      description: `Luar biasa! Badge "${title}" telah ditambahkan ke profil Anda.`,
+      description: `Badge "${title}" telah ditambahkan ke profil Anda.`,
     });
   };
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-4xl pb-32">
-      {/* Season Header */}
       <div className="mb-12 text-center relative">
         <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
           <Clock className="h-3 w-3" /> Musim {format(new Date(), 'MMMM', { locale: idLocale })}
@@ -165,11 +164,11 @@ export default function ChallengesPage() {
         </div>
       </div>
 
-      {/* Challenges Grid */}
       <div className="grid gap-6 mb-16">
         {CHALLENGES.map(challenge => {
           const progressValue = challenge.id === 'marathon' ? stats.hours : stats.count;
           const progress = Math.min(100, (progressValue / challenge.target) * 100);
+          const isJoined = joinedChallenges.has(challenge.id);
           
           return (
             <Card key={challenge.id} className="border-none shadow-2xl rounded-[40px] overflow-hidden group hover:scale-[1.01] transition-transform duration-500">
@@ -200,13 +199,14 @@ export default function ChallengesPage() {
                     </div>
                   </div>
                   <Button 
-                    onClick={() => progress === 100 ? handleClaimBadge(challenge.title) : handleJoinChallenge(challenge.title)}
+                    onClick={() => progress === 100 ? handleClaimBadge(challenge.title) : handleJoinChallenge(challenge.id, challenge.title)}
+                    disabled={isJoined && progress < 100}
                     className={cn(
                       "rounded-full px-10 h-14 font-black uppercase text-xs tracking-widest shadow-lg transition-all",
-                      progress === 100 ? "bg-green-600 hover:bg-green-700" : "bg-primary"
+                      progress === 100 ? "bg-green-600 hover:bg-green-700" : (isJoined ? "bg-muted text-muted-foreground" : "bg-primary")
                     )}
                   >
-                    {progress === 100 ? "Claim Badge" : "Join Sprint"}
+                    {progress === 100 ? "Claim Badge" : (isJoined ? "Joined" : "Join Sprint")}
                   </Button>
                 </div>
               </CardContent>
@@ -215,7 +215,6 @@ export default function ChallengesPage() {
         })}
       </div>
 
-      {/* Dynamic Leaderboard */}
       <div className="space-y-8">
         <div className="flex items-center justify-between px-4">
           <div>
@@ -245,7 +244,7 @@ export default function ChallengesPage() {
                   )}>{i + 1}</span>
                   <Avatar className="h-12 w-12 border-2 border-white/20">
                     <AvatarImage src={entry.avatar} />
-                    <AvatarFallback><Users /></AvatarFallback>
+                    <AvatarFallback><UserIcon /></AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-black text-sm tracking-tight">{entry.name} {isUser && "(Anda)"}</p>
@@ -273,7 +272,6 @@ export default function ChallengesPage() {
         </div>
       </div>
 
-      {/* Disclaimer / Motivation */}
       <div className="mt-16 p-10 border-4 border-dashed rounded-[48px] bg-muted/20 text-center">
         <Zap className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse" />
         <p className="font-bold text-lg mb-2">Ingat: Tantangan ini bersifat mingguan!</p>

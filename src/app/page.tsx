@@ -74,12 +74,10 @@ export default function DashboardPage() {
   const [realityCount, setRealityCount] = useState(0);
   const [worldActivities, setWorldActivities] = useState<any[]>([]);
 
-  // Reality Reminder logic
   useEffect(() => {
     setRealityCount(Math.floor(Math.random() * 500) + 800);
   }, []);
 
-  // World Activity Feed logic
   useEffect(() => {
     const generateActivity = () => {
       const name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
@@ -167,7 +165,6 @@ export default function DashboardPage() {
     return new Set(completedActivityMap.keys());
   }, [completedActivityMap]);
 
-  // XP & Statistics Calculation
   const stats = useMemo(() => {
     const activityCount = logs?.length || 0;
     const watchlistEps = watchlist?.reduce((acc, entry) => acc + (entry.lastEpisode || 0), 0) || 0;
@@ -183,18 +180,15 @@ export default function DashboardPage() {
     const currentLevelXp = totalXp % 1000;
     const xpProgress = (currentLevelXp / 1000) * 100;
 
-    // Daily study average for projection
     const uniqueDates = Array.from(new Set(logs?.map(l => l.date) || []));
     const avgMinutesPerDay = uniqueDates.length > 0 ? studyMinutes / uniqueDates.length : 0;
 
     return { totalXp, level, currentLevelXp, xpProgress, activityCount, studyMinutes, avgMinutesPerDay };
   }, [logs, watchlist, activities]);
 
-  // Adaptive Recommendations
   const recommendations = useMemo(() => {
     if (!activities || !logs) return [];
     
-    // Find most studied categories
     const catCounts: Record<string, number> = {};
     const activityMap = new Map(activities.map(a => [a.id, a]));
     
@@ -208,9 +202,12 @@ export default function DashboardPage() {
     const topCategory = Object.entries(catCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
     if (!topCategory) return [];
 
-    // Suggest unfinished activities from top category
-    return activities.filter(a => a.category === topCategory && !completedActivityIds.has(a.id)).slice(0, 2);
-  }, [activities, logs, completedActivityIds]);
+    return activities.filter(a => 
+      a.category === topCategory && 
+      !completedActivityIds.has(a.id) && 
+      !runningTimers.has(a.id)
+    ).slice(0, 2);
+  }, [activities, logs, completedActivityIds, runningTimers]);
 
   const currentStreak = useMemo(() => {
     if (!logs || logs.length === 0) return 0;
@@ -311,7 +308,6 @@ export default function DashboardPage() {
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-6xl">
-      {/* Reality Reminder */}
       <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-4">
           <div className="bg-amber-500/10 p-2 rounded-full">
@@ -326,7 +322,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Hero: XP & Future Self Projection */}
       <div className="mb-10 grid gap-6 md:grid-cols-12">
         <Card className="md:col-span-8 border-none bg-gradient-to-br from-indigo-600 via-primary to-blue-500 text-white shadow-2xl relative overflow-hidden p-8 rounded-[40px]">
           <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><Trophy className="h-48 w-48" /></div>
@@ -355,7 +350,6 @@ export default function DashboardPage() {
           </div>
         </Card>
 
-        {/* Future Self Projection */}
         <Card className="md:col-span-4 border-none shadow-xl bg-card rounded-[40px] p-8 flex flex-col">
           <CardHeader className="p-0 mb-6">
             <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
@@ -378,10 +372,8 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Main Content: Adaptive Recs & World Feed */}
       <div className="grid gap-6 md:grid-cols-12">
         <div className="md:col-span-8 space-y-6">
-          {/* Adaptive Study Recommendation */}
           {recommendations.length > 0 && (
             <div className="bg-primary/5 border border-primary/10 rounded-[32px] p-6 mb-6">
               <div className="flex items-center gap-2 mb-4">
@@ -411,7 +403,6 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Curriculum Categories */}
           <div className="space-y-6">
             <h2 className="text-lg font-black uppercase tracking-widest flex items-center gap-2">
               <Layers className="h-5 w-5 text-primary" /> Knowledge Curriculum
@@ -447,7 +438,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Sidebar: World Activity Feed */}
         <div className="md:col-span-4 space-y-6">
           <Card className="border-none bg-muted/30 shadow-sm overflow-hidden rounded-[32px]">
             <CardHeader className="pb-2 bg-primary/5 border-b">
