@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Trophy, Zap, Flame, User, Award, Crown, TrendingUp, Info } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { Trophy, Zap, Flame, User, Award, Crown, TrendingUp, Info, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser, useCollection, useMemoFirebase, useFirestore } from '@/firebase';
@@ -26,30 +26,37 @@ const BOT_SURNAMES = [
   'Active', 'Daily', 'Expert', 'Scholar', 'Warrior', 'Ninja', 'Titan', 'Hero', 'Student'
 ];
 
-const generateBots = (count: number) => {
+const generateBots = (count: number, currentHour: number) => {
   const bots = [];
+  // Reference start: the start of the current day
+  const growthFactor = Math.floor(currentHour % 24); // Simulates hourly growth within a day
+
   for (let i = 0; i < count; i++) {
     const seed = i + 1;
     const nameIndex = Math.floor(pseudoRandom(seed * 1.5) * BOT_NAMES.length);
     const surnameIndex = Math.floor(pseudoRandom(seed * 2.5) * BOT_SURNAMES.length);
     const username = `${BOT_NAMES[nameIndex]}_${BOT_SURNAMES[surnameIndex]}${pseudoRandom(seed) > 0.8 ? i : ''}`;
     
-    // Archetype logic for "Day 1" Start - All near 0
     const archetypeRoll = pseudoRandom(seed * 3.5);
-    let totalActivities, currentStreak, level;
+    let totalActivities = 0;
+    let currentStreak = 0;
+
+    // Hourly growth logic
+    const learningSpeed = pseudoRandom(seed * 4.5) * 0.5; // How fast they learn per hour (0 - 0.5)
+    const baselineActivities = Math.floor(growthFactor * learningSpeed);
 
     if (archetypeRoll > 0.92) { // The Fast Starters (Top 8%)
-      totalActivities = Math.floor(3 + pseudoRandom(seed) * 5); // 3-8 activities
-      currentStreak = Math.floor(1 + pseudoRandom(seed) * 2);
+      totalActivities = baselineActivities + Math.floor(2 + pseudoRandom(seed) * 4);
+      currentStreak = growthFactor > 0 ? 1 : 0;
     } else if (archetypeRoll > 0.6) { // The Average Starters (32%)
-      totalActivities = Math.floor(1 + pseudoRandom(seed) * 3); // 1-4 activities
-      currentStreak = Math.floor(0 + pseudoRandom(seed) * 1);
+      totalActivities = baselineActivities + Math.floor(pseudoRandom(seed) * 2);
+      currentStreak = 0;
     } else { // The Just Started / 0 points (60%)
-      totalActivities = 0;
+      totalActivities = baselineActivities > 2 ? 1 : 0; // Only gain 1 point if many hours have passed
       currentStreak = 0;
     }
 
-    level = Math.floor(totalActivities / 10) + 1;
+    const level = Math.floor(totalActivities / 10) + 1;
 
     bots.push({
       id: `bot-${i}`,
@@ -68,6 +75,16 @@ export default function RankingPage() {
   const { user } = useUser();
   const db = useFirestore();
   const [showInfo, setShowInfo] = useState(false);
+  const [currentHour, setCurrentHour] = useState(0);
+
+  useEffect(() => {
+    // Set initial hour and update every few minutes to keep it fresh
+    setCurrentHour(new Date().getHours());
+    const interval = setInterval(() => {
+      setCurrentHour(new Date().getHours());
+    }, 1000 * 60 * 5); // Check every 5 mins
+    return () => clearInterval(interval);
+  }, []);
 
   const activitiesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -81,7 +98,6 @@ export default function RankingPage() {
     const total = logs.length;
     const level = Math.floor(total / 10) + 1;
     
-    // Simple streak calculation placeholder
     const uniqueDates = Array.from(new Set(logs.map(l => l.date))).sort().reverse();
     let streak = uniqueDates.length > 0 ? 1 : 0;
     
@@ -89,7 +105,7 @@ export default function RankingPage() {
   }, [logs]);
 
   const leaderboard = useMemo(() => {
-    const bots = generateBots(200);
+    const bots = generateBots(200, currentHour);
     const currentUserEntry = user ? {
       id: user.uid,
       username: user.displayName || 'Anda',
@@ -105,13 +121,12 @@ export default function RankingPage() {
       allEntries.push(currentUserEntry);
     }
 
-    // Sort by activities, then streak, then level
     return allEntries.sort((a, b) => {
       if (b.totalActivities !== a.totalActivities) return b.totalActivities - a.totalActivities;
       if (b.currentStreak !== a.currentStreak) return b.currentStreak - a.currentStreak;
       return b.level - a.level;
     });
-  }, [user, userStats]);
+  }, [user, userStats, currentHour]);
 
   const userRank = useMemo(() => {
     if (!user) return null;
@@ -126,9 +141,14 @@ export default function RankingPage() {
           <Trophy className="h-10 w-10 text-primary" />
         </div>
         <h1 className="font-headline text-4xl font-black tracking-tight">Leaderboard Global</h1>
-        <p className="text-muted-foreground font-medium mt-2 uppercase text-xs tracking-widest">
-          Musim Baru: Dimulai dari Nol!
-        </p>
+        <div className="flex items-center justify-center gap-2 mt-2">
+          <p className="text-muted-foreground font-medium uppercase text-[10px] tracking-widest bg-muted px-2 py-0.5 rounded">
+            Musim Baru: Dimulai dari Nol!
+          </p>
+          <div className="flex items-center gap-1 text-[10px] font-black text-primary animate-pulse">
+            <RefreshCw className="h-3 w-3" /> LIVE UPDATE
+          </div>
+        </div>
         
         <button 
           onClick={() => setShowInfo(!showInfo)}
@@ -139,8 +159,8 @@ export default function RankingPage() {
 
         {showInfo && (
           <div className="mt-4 p-4 bg-muted/50 rounded-2xl text-xs text-left leading-relaxed animate-in fade-in slide-in-from-top-2">
-            <p className="font-bold mb-1">Sistem Kompetisi:</p>
-            Leaderboard ini menunjukkan progres belajar real-time Anda dibandingkan dengan 200 pejuang lainnya. Musim baru saja dimulai, jadi manfaatkan momentum ini untuk memimpin di posisi puncak!
+            <p className="font-bold mb-1">Sistem Kompetisi Real-Time:</p>
+            Leaderboard ini menunjukkan progres belajar real-time Anda dibandingkan dengan 200 pejuang lainnya. Bot di sini memiliki jadwal belajar mereka sendiri dan poin mereka akan terus bertambah seiring berjalannya waktu setiap jamnya. Jangan sampai disalip!
           </div>
         )}
       </div>
@@ -184,7 +204,7 @@ export default function RankingPage() {
               className={cn(
                 "flex items-center gap-3 p-3 rounded-2xl transition-all",
                 isUser ? "bg-primary/10 ring-1 ring-primary/50" : "bg-card hover:bg-muted/50",
-                isTop3 && "py-4"
+                isTop3 && entry.totalActivities > 0 && "py-4"
               )}
             >
               <div className="min-w-[40px] flex flex-col items-center justify-center">
