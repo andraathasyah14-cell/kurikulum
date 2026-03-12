@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
-import { Plus, Tv, CheckCircle2, PlayCircle, PauseCircle, Trash2, Edit2, Save, X } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, Tv, CheckCircle2, PlayCircle, PauseCircle, Trash2, Edit2, Save, X, ListVideo, Film, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -50,6 +50,16 @@ export default function WatchlistPage() {
 
   const { data: watchlist, isLoading } = useCollection(watchlistQuery);
 
+  const stats = useMemo(() => {
+    if (!watchlist) return { total: 0, watching: 0, completed: 0, paused: 0 };
+    return {
+      total: watchlist.length,
+      watching: watchlist.filter(i => i.status === 'Watching').length,
+      completed: watchlist.filter(i => i.status === 'Completed').length,
+      paused: watchlist.filter(i => i.status === 'Paused').length,
+    };
+  }, [watchlist]);
+
   const handleAddEntry = () => {
     if (!user || !db || !newEntry.title) {
       toast({ variant: "destructive", title: "Error", description: "Judul harus diisi." });
@@ -60,7 +70,7 @@ export default function WatchlistPage() {
       userId: user.uid,
       title: newEntry.title,
       totalEpisodes: Number(newEntry.totalEpisodes),
-      lastEpisode: 0,
+      lastEpisode: newEntry.status === 'Completed' ? Number(newEntry.totalEpisodes) : 0,
       status: newEntry.status,
       lastWatched: serverTimestamp(),
     });
@@ -93,16 +103,16 @@ export default function WatchlistPage() {
   if (isLoading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
 
   return (
-    <div className="container px-4 py-8 md:px-6 max-w-4xl">
+    <div className="container px-4 py-8 md:px-6 max-w-4xl pb-24">
       <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-headline text-4xl font-black tracking-tight">Watchlist</h1>
-          <p className="text-muted-foreground font-medium">Lacak progres hiburan Anda di sela-sela belajar.</p>
+          <p className="text-muted-foreground font-medium">Lacak hiburan Anda sebagai penyeimbang belajar.</p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button className="rounded-full shadow-lg gap-2 h-12 px-6">
-              <Plus className="h-5 w-5" /> Tambah Film/Series
+            <Button className="rounded-full shadow-lg gap-2 h-12 px-6 font-bold uppercase text-xs tracking-widest">
+              <Plus className="h-5 w-5" /> Tambah Daftar
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
@@ -128,7 +138,7 @@ export default function WatchlistPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Status Awal</Label>
+                  <Label>Status</Label>
                   <Select value={newEntry.status} onValueChange={(v: any) => setNewEntry({ ...newEntry, status: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -142,49 +152,71 @@ export default function WatchlistPage() {
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setIsOpen(false)}>Batal</Button>
-              <Button onClick={handleAddEntry}>Simpan Daftar</Button>
+              <Button onClick={handleAddEntry}>Simpan</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="space-y-6">
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <StatCard icon={ListVideo} label="Total" value={stats.total} color="bg-blue-50 text-blue-600" />
+        <StatCard icon={PlayCircle} label="Watching" value={stats.watching} color="bg-primary/10 text-primary" />
+        <StatCard icon={CheckCircle} label="Completed" value={stats.completed} color="bg-green-50 text-green-600" />
+        <StatCard icon={PauseCircle} label="Paused" value={stats.paused} color="bg-amber-50 text-amber-600" />
+      </div>
+
+      <div className="space-y-4">
         {watchlist?.map((entry) => {
+          const isCompleted = entry.status === 'Completed';
           const progress = (entry.lastEpisode / entry.totalEpisodes) * 100;
           const isEditing = editingId === entry.id;
 
           return (
-            <Card key={entry.id} className="border-none shadow-sm overflow-hidden bg-card">
+            <Card key={entry.id} className={cn(
+              "border-none shadow-sm overflow-hidden transition-all",
+              isCompleted ? "bg-muted/30 opacity-80" : "bg-card"
+            )}>
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="flex-1 space-y-3">
                     <div className="flex items-center gap-3">
                       <div className={cn(
-                        "p-2 rounded-lg",
-                        entry.status === 'Completed' ? "bg-green-100 text-green-700" :
+                        "p-2 rounded-xl",
+                        isCompleted ? "bg-green-100 text-green-700" :
                         entry.status === 'Paused' ? "bg-amber-100 text-amber-700" : "bg-primary/10 text-primary"
                       )}>
-                        {entry.status === 'Completed' ? <CheckCircle2 className="h-5 w-5" /> :
+                        {isCompleted ? <CheckCircle2 className="h-5 w-5" /> :
                          entry.status === 'Paused' ? <PauseCircle className="h-5 w-5" /> : <PlayCircle className="h-5 w-5" />}
                       </div>
-                      <div>
-                        <h3 className="font-black text-xl leading-tight">{entry.title}</h3>
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-tight">
-                          {entry.status} • {entry.lastEpisode} / {entry.totalEpisodes} Episode
+                      <div className="min-w-0">
+                        <h3 className={cn("font-black text-xl leading-tight truncate", isCompleted && "text-muted-foreground")}>
+                          {entry.title}
+                        </h3>
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                          {entry.status} {!isCompleted && `• ${entry.lastEpisode}/${entry.totalEpisodes} Eps`}
                         </p>
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <Progress value={progress} className="h-2" />
-                      <div className="flex justify-between text-[10px] font-black uppercase text-muted-foreground">
-                        <span>Progress</span>
-                        <span>{Math.round(progress)}%</span>
+                    {!isCompleted && (
+                      <div className="space-y-1">
+                        <Progress value={progress} className="h-1.5" />
+                        <div className="flex justify-between text-[9px] font-black uppercase text-muted-foreground/60">
+                          <span>Progres Menonton</span>
+                          <span>{Math.round(progress)}%</span>
+                        </div>
                       </div>
-                    </div>
+                    )}
+                    
+                    {isCompleted && (
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-green-600 uppercase tracking-tight">
+                         <Film className="h-3 w-3" /> Laporan: {entry.totalEpisodes} Episode Selesai
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 justify-end">
                     {isEditing ? (
                       <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-full">
                         <Input
@@ -202,14 +234,16 @@ export default function WatchlistPage() {
                         </Button>
                       </div>
                     ) : (
-                      <Button variant="outline" size="sm" className="rounded-full gap-2 font-bold uppercase text-xs" onClick={() => {
-                        setEditingId(entry.id);
-                        setEditEpisode(entry.lastEpisode);
-                      }}>
-                        <Edit2 className="h-3.5 w-3.5" /> Update Eps
-                      </Button>
+                      !isCompleted && (
+                        <Button variant="outline" size="sm" className="rounded-full gap-2 font-bold uppercase text-[10px] h-9" onClick={() => {
+                          setEditingId(entry.id);
+                          setEditEpisode(entry.lastEpisode);
+                        }}>
+                          <Edit2 className="h-3 w-3" /> Update
+                        </Button>
+                      )
                     )}
-                    <Button variant="ghost" size="icon" className="text-destructive rounded-full hover:bg-destructive/10" onClick={() => handleDelete(entry.id)}>
+                    <Button variant="ghost" size="icon" className="text-destructive rounded-full hover:bg-destructive/10 h-9 w-9" onClick={() => handleDelete(entry.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -220,13 +254,27 @@ export default function WatchlistPage() {
         })}
 
         {watchlist?.length === 0 && (
-          <div className="py-24 text-center border-2 border-dashed rounded-3xl opacity-50 bg-muted/20">
+          <div className="py-24 text-center border-4 border-dashed rounded-[40px] opacity-20 bg-muted/20">
              <Tv className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-             <p className="font-bold text-xl mb-1">Watchlist Kosong</p>
-             <p className="text-muted-foreground text-sm">Tambahkan hiburan favorit Anda untuk menyegarkan pikiran.</p>
+             <p className="font-black text-xl uppercase tracking-tighter">Watchlist Kosong</p>
+             <p className="text-muted-foreground text-xs mt-2 uppercase font-bold">Hiburan adalah bagian dari produktivitas.</p>
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, color }: { icon: any, label: string, value: number, color: string }) {
+  return (
+    <Card className="border-none shadow-sm bg-card">
+      <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+        <div className={cn("p-2 rounded-xl mb-2", color)}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <p className="text-lg font-black">{value}</p>
+        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">{label}</p>
+      </CardContent>
+    </Card>
   );
 }
