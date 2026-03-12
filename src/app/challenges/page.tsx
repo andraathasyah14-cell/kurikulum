@@ -83,7 +83,7 @@ export default function ChallengesPage() {
       const minutes = Math.floor((diff % 3600) / 60);
       const seconds = diff % 60;
       
-      setTimeLeft(`${days}h ${hours}j ${minutes}m ${seconds}s`);
+      setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -111,7 +111,6 @@ export default function ChallengesPage() {
     
     const bots = Array.from({ length: 12 }).map((_, i) => {
       const seed = weekSeed + i;
-      // Progres bot disesuaikan agar kompetitif tapi realistis
       const progressBase = 30 + (pseudoRandom(seed) * 65);
       return {
         id: `bot-challenge-${selectedChallengeId}-${i}`,
@@ -249,45 +248,60 @@ export default function ChallengesPage() {
           <Trophy className="h-8 w-8 text-yellow-500 opacity-20" />
         </div>
 
-        <div className="grid gap-3">
+        <div className="grid gap-4">
           {challengeLeaderboard.map((entry, i) => {
             const isUser = entry.id === user?.uid;
             return (
               <div 
                 key={entry.id} 
                 className={cn(
-                  "flex items-center justify-between p-5 rounded-[28px] transition-all duration-300",
+                  "flex flex-col p-5 rounded-[28px] transition-all duration-300",
                   isUser ? "bg-primary text-primary-foreground shadow-xl scale-105" : "bg-card border border-muted hover:bg-muted/50"
                 )}
               >
-                <div className="flex items-center gap-5">
-                  <span className={cn(
-                    "font-black text-xl min-w-[30px] text-center",
-                    !isUser && "text-muted-foreground/30"
-                  )}>{i + 1}</span>
-                  <Avatar className="h-12 w-12 border-2 border-white/20">
-                    <AvatarImage src={entry.avatar} />
-                    <AvatarFallback><UserIcon /></AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-black text-sm tracking-tight">{entry.name} {isUser && "(Anda)"}</p>
-                    <p className={cn(
-                      "text-[9px] font-bold uppercase tracking-widest",
-                      isUser ? "text-primary-foreground/70" : "text-muted-foreground"
-                    )}>
-                      {entry.progress > 90 ? 'Elite Scholar' : entry.progress > 70 ? 'Rising Star' : 'Sprint Participant'}
-                    </p>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-5">
+                    <span className={cn(
+                      "font-black text-xl min-w-[30px] text-center",
+                      !isUser && "text-muted-foreground/30"
+                    )}>{i + 1}</span>
+                    <Avatar className="h-12 w-12 border-2 border-white/20">
+                      <AvatarImage src={entry.avatar} />
+                      <AvatarFallback><UserIcon /></AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-black text-sm tracking-tight">{entry.name} {isUser && "(Anda)"}</p>
+                      <p className={cn(
+                        "text-[9px] font-bold uppercase tracking-widest",
+                        isUser ? "text-primary-foreground/70" : "text-muted-foreground"
+                      )}>
+                        {entry.progress > 90 ? 'Elite Scholar' : entry.progress > 70 ? 'Rising Star' : 'Sprint Participant'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-6">
                   <div className="text-right">
                     <p className="text-lg font-black">{entry.progress}%</p>
                     <p className={cn(
                       "text-[8px] font-black uppercase opacity-60",
                       isUser ? "text-primary-foreground" : "text-muted-foreground"
-                    )}>Progress Challenge</p>
+                    )}>Progress</p>
                   </div>
-                  <ChevronRight className={cn("h-5 w-5 opacity-20", isUser && "opacity-100")} />
+                </div>
+                
+                {/* Visual Progress Bar for each player */}
+                <div className="px-12">
+                  <div className={cn(
+                    "h-1.5 w-full rounded-full overflow-hidden",
+                    isUser ? "bg-white/20" : "bg-muted"
+                  )}>
+                    <div 
+                      className={cn(
+                        "h-full transition-all duration-1000",
+                        isUser ? "bg-white" : "bg-primary"
+                      )} 
+                      style={{ width: `${entry.progress}%` }} 
+                    />
+                  </div>
                 </div>
               </div>
             );
