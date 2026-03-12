@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { Trophy, Zap, Flame, User, Award, Crown, TrendingUp, Info } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,24 +32,21 @@ const generateBots = (count: number) => {
     const seed = i + 1;
     const nameIndex = Math.floor(pseudoRandom(seed * 1.5) * BOT_NAMES.length);
     const surnameIndex = Math.floor(pseudoRandom(seed * 2.5) * BOT_SURNAMES.length);
-    const username = `${BOT_NAMES[nameIndex]}_${BOT_SURNAMES[surnameIndex]}${pseudoRandom(seed) > 0.7 ? i : ''}`;
+    const username = `${BOT_NAMES[nameIndex]}_${BOT_SURNAMES[surnameIndex]}${pseudoRandom(seed) > 0.8 ? i : ''}`;
     
-    // Archetype logic to make it not monotonic
+    // Archetype logic for "Day 1" Start - All near 0
     const archetypeRoll = pseudoRandom(seed * 3.5);
     let totalActivities, currentStreak, level;
 
-    if (archetypeRoll > 0.95) { // The Grinder (Top 5%)
-      totalActivities = Math.floor(500 + pseudoRandom(seed) * 1000);
-      currentStreak = Math.floor(30 + pseudoRandom(seed) * 60);
-    } else if (archetypeRoll > 0.7) { // The Consistent (25%)
-      totalActivities = Math.floor(150 + pseudoRandom(seed) * 350);
-      currentStreak = Math.floor(10 + pseudoRandom(seed) * 25);
-    } else if (archetypeRoll > 0.3) { // The Average (40%)
-      totalActivities = Math.floor(30 + pseudoRandom(seed) * 120);
-      currentStreak = Math.floor(2 + pseudoRandom(seed) * 8);
-    } else { // The Newbie / Casual (30%)
-      totalActivities = Math.floor(1 + pseudoRandom(seed) * 29);
-      currentStreak = Math.floor(0 + pseudoRandom(seed) * 3);
+    if (archetypeRoll > 0.92) { // The Fast Starters (Top 8%)
+      totalActivities = Math.floor(3 + pseudoRandom(seed) * 5); // 3-8 activities
+      currentStreak = Math.floor(1 + pseudoRandom(seed) * 2);
+    } else if (archetypeRoll > 0.6) { // The Average Starters (32%)
+      totalActivities = Math.floor(1 + pseudoRandom(seed) * 3); // 1-4 activities
+      currentStreak = Math.floor(0 + pseudoRandom(seed) * 1);
+    } else { // The Just Started / 0 points (60%)
+      totalActivities = 0;
+      currentStreak = 0;
     }
 
     level = Math.floor(totalActivities / 10) + 1;
@@ -84,12 +81,9 @@ export default function RankingPage() {
     const total = logs.length;
     const level = Math.floor(total / 10) + 1;
     
-    // Simple streak calculation from logs
+    // Simple streak calculation placeholder
     const uniqueDates = Array.from(new Set(logs.map(l => l.date))).sort().reverse();
-    let streak = 0;
-    if (uniqueDates.length > 0) {
-      streak = 1; // Basic placeholder for MVP
-    }
+    let streak = uniqueDates.length > 0 ? 1 : 0;
     
     return { level, totalActivities: total, currentStreak: streak };
   }, [logs]);
@@ -108,16 +102,21 @@ export default function RankingPage() {
 
     const allEntries = [...bots];
     if (currentUserEntry) {
-      // Find if user is already better than some bots
       allEntries.push(currentUserEntry);
     }
 
-    return allEntries.sort((a, b) => b.totalActivities - a.totalActivities);
+    // Sort by activities, then streak, then level
+    return allEntries.sort((a, b) => {
+      if (b.totalActivities !== a.totalActivities) return b.totalActivities - a.totalActivities;
+      if (b.currentStreak !== a.currentStreak) return b.currentStreak - a.currentStreak;
+      return b.level - a.level;
+    });
   }, [user, userStats]);
 
   const userRank = useMemo(() => {
     if (!user) return null;
-    return leaderboard.findIndex(entry => entry.id === user.uid) + 1;
+    const rank = leaderboard.findIndex(entry => entry.id === user.uid) + 1;
+    return rank > 0 ? rank : null;
   }, [leaderboard, user]);
 
   return (
@@ -127,8 +126,8 @@ export default function RankingPage() {
           <Trophy className="h-10 w-10 text-primary" />
         </div>
         <h1 className="font-headline text-4xl font-black tracking-tight">Leaderboard Global</h1>
-        <p className="text-muted-foreground font-medium mt-2">
-          Bersaing dengan {leaderboard.length} pejuang kurikulum lainnya!
+        <p className="text-muted-foreground font-medium mt-2 uppercase text-xs tracking-widest">
+          Musim Baru: Dimulai dari Nol!
         </p>
         
         <button 
@@ -140,13 +139,13 @@ export default function RankingPage() {
 
         {showInfo && (
           <div className="mt-4 p-4 bg-muted/50 rounded-2xl text-xs text-left leading-relaxed animate-in fade-in slide-in-from-top-2">
-            <p className="font-bold mb-1">Tentang Leaderboard:</p>
-            Sistem ini menggabungkan data Anda dengan simulasi progres dari ratusan pejuang kurikulum lainnya. Tujuannya adalah untuk memberikan atmosfer kompetisi yang nyata agar Anda tidak merasa sendirian dalam berjuang mencapai target belajar Anda.
+            <p className="font-bold mb-1">Sistem Kompetisi:</p>
+            Leaderboard ini menunjukkan progres belajar real-time Anda dibandingkan dengan 200 pejuang lainnya. Musim baru saja dimulai, jadi manfaatkan momentum ini untuk memimpin di posisi puncak!
           </div>
         )}
       </div>
 
-      {userRank && (
+      {userRank !== null && (
         <div className="sticky top-20 z-30 mb-8">
           <Card className="bg-primary text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden">
             <CardContent className="p-4 flex items-center justify-between">
@@ -165,8 +164,8 @@ export default function RankingPage() {
                   <p className="font-bold">{userStats.level}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[10px] font-black opacity-80">STREAK</p>
-                  <p className="font-bold">{userStats.currentStreak}</p>
+                  <p className="text-[10px] font-black opacity-80">POIN</p>
+                  <p className="font-bold">{userStats.totalActivities}</p>
                 </div>
               </div>
             </CardContent>
@@ -174,7 +173,7 @@ export default function RankingPage() {
         </div>
       )}
 
-      <div className="grid gap-3">
+      <div className="grid gap-2">
         {leaderboard.map((entry, index) => {
           const isTop3 = index < 3;
           const isUser = entry.id === user?.uid;
@@ -189,18 +188,18 @@ export default function RankingPage() {
               )}
             >
               <div className="min-w-[40px] flex flex-col items-center justify-center">
-                {index === 0 ? <Crown className="h-5 w-5 text-yellow-500" /> :
-                 index === 1 ? <Award className="h-5 w-5 text-slate-400" /> :
-                 index === 2 ? <Award className="h-5 w-5 text-amber-700" /> : null}
+                {index === 0 && entry.totalActivities > 0 ? <Crown className="h-5 w-5 text-yellow-500" /> :
+                 index === 1 && entry.totalActivities > 0 ? <Award className="h-5 w-5 text-slate-400" /> :
+                 index === 2 && entry.totalActivities > 0 ? <Award className="h-5 w-5 text-amber-700" /> : null}
                 <span className={cn(
                   "font-black text-lg",
-                  isTop3 ? "text-primary" : "text-muted-foreground/50"
+                  isTop3 && entry.totalActivities > 0 ? "text-primary" : "text-muted-foreground/30"
                 )}>{index + 1}</span>
               </div>
 
               <Avatar className={cn(
                 "h-10 w-10 md:h-12 md:w-12 border-2",
-                isTop3 ? "border-primary" : "border-muted"
+                isTop3 && entry.totalActivities > 0 ? "border-primary" : "border-muted"
               )}>
                 <AvatarImage src={entry.photoURL} />
                 <AvatarFallback><User /></AvatarFallback>
@@ -226,10 +225,10 @@ export default function RankingPage() {
                 </div>
               </div>
 
-              {isTop3 && (
+              {isUser && (
                 <div className="hidden md:block">
                   <div className="bg-primary/5 px-3 py-1 rounded-full border border-primary/10">
-                    <span className="text-[10px] font-black text-primary italic uppercase tracking-tighter">Elite Member</span>
+                    <span className="text-[10px] font-black text-primary italic uppercase tracking-tighter">Anda</span>
                   </div>
                 </div>
               )}
@@ -241,7 +240,7 @@ export default function RankingPage() {
       <div className="mt-12 p-8 rounded-3xl bg-muted/20 border border-dashed text-center">
         <TrendingUp className="h-8 w-8 mx-auto mb-4 text-primary opacity-50" />
         <p className="italic text-muted-foreground text-sm font-medium leading-relaxed">
-          "Peringkat hanyalah angka, tapi konsistensi adalah segalanya. <br/>Teruslah belajar, pesaing Anda tidak akan berhenti!"
+          "Semua dimulai dari nol. Perbedaan antara pemenang dan pecundang <br/>hanya terletak pada siapa yang terus melangkah hari ini."
         </p>
       </div>
     </div>
