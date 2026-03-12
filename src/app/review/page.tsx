@@ -1,10 +1,10 @@
-
 'use client';
 
+import { useMemo } from 'react';
 import { useUser, useCollection, useMemoFirebase, useFirestore } from '@/firebase';
-import { query, collection, orderBy, where } from 'firebase/firestore';
+import { query, collection, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { format, subDays, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { format, subDays, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { TrendingUp, CheckCircle2, AlertCircle, Award, Target, BookOpen } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
@@ -29,16 +29,19 @@ export default function WeeklyReviewPage() {
   const { data: logs } = useCollection(logsQuery);
   const { data: activities } = useCollection(activitiesQuery);
 
-  const lastWeekLogs = logs?.filter(log => {
-    const d = parseISO(log.date);
-    return isWithinInterval(d, { start, end });
-  }) || [];
-
-  function parseISO(s: string) { return new Date(s); }
+  // Filter logs to only include existing activities
+  const lastWeekLogs = useMemo(() => {
+    if (!logs || !activities) return [];
+    const currentActivityIds = new Set(activities.map(a => a.id));
+    return logs.filter(log => {
+      const d = parseISO(log.date);
+      return currentActivityIds.has(log.activityId) && isWithinInterval(d, { start, end });
+    });
+  }, [logs, activities, start, end]);
 
   const totalPossible = (activities?.length || 0) * 7;
   const completedCount = lastWeekLogs.length;
-  const successRate = totalPossible > 0 ? (completedCount / totalPossible) * 100 : 0;
+  const successRate = totalPossible > 0 ? Math.min(100, (completedCount / totalPossible) * 100) : 0;
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-4xl">
@@ -62,7 +65,7 @@ export default function WeeklyReviewPage() {
             <Progress value={successRate} className="bg-white/20 h-3" />
             <div className="flex justify-between text-xs font-bold uppercase">
               <span>{completedCount} Berhasil</span>
-              <span>{totalPossible - completedCount} Terlewat</span>
+              <span>{Math.max(0, totalPossible - completedCount)} Terlewat</span>
             </div>
           </CardContent>
         </Card>
@@ -73,7 +76,7 @@ export default function WeeklyReviewPage() {
               <CardTitle className="text-sm font-bold uppercase flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-600" /> Kekuatan</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm leading-relaxed">Anda sangat konsisten di kategori <span className="font-bold">Kerja</span>. Terus pertahankan ritme ini untuk menjaga momentum produktivitas Anda.</p>
+              <p className="text-sm leading-relaxed">Analisis log menunjukkan konsistensi Anda dalam menyelesaikan target harian. Terus pertahankan ritme ini untuk menjaga momentum produktivitas Anda.</p>
             </CardContent>
           </Card>
 
@@ -82,7 +85,7 @@ export default function WeeklyReviewPage() {
               <CardTitle className="text-sm font-bold uppercase flex items-center gap-2"><AlertCircle className="h-4 w-4 text-orange-600" /> Area Peningkatan</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm leading-relaxed">Tugas dengan tingkat <span className="font-bold">Hard</span> sering terlewat. Coba pecah tugas tersebut menjadi beberapa bagian kecil di pekan depan.</p>
+              <p className="text-sm leading-relaxed">Beberapa materi mungkin membutuhkan waktu lebih lama. Coba pecah materi yang sulit menjadi beberapa bagian kecil di pekan depan agar lebih mudah dikuasai.</p>
             </CardContent>
           </Card>
         </div>

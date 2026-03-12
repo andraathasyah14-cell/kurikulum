@@ -63,35 +63,42 @@ export default function StatsPage() {
   const { data: logs } = useCollection(logsQuery);
   const { data: activities } = useCollection(activitiesQuery);
 
+  // Filter logs to only include activities that currently exist in the curriculum
+  const filteredLogs = useMemo(() => {
+    if (!logs || !activities) return [];
+    const currentActivityIds = new Set(activities.map(a => a.id));
+    return logs.filter(log => currentActivityIds.has(log.activityId));
+  }, [logs, activities]);
+
   // 1. Weekly Data
   const weeklyData = useMemo(() => {
-    if (!logs) return [];
+    if (!filteredLogs) return [];
     const days = Array.from({ length: 7 }, (_, i) => subDays(new Date(), 6 - i));
 
     return days.map(day => {
       const dateStr = format(day, 'yyyy-MM-dd');
-      const count = logs.filter(log => log.date === dateStr).length;
+      const count = filteredLogs.filter(log => log.date === dateStr).length;
       return {
         name: format(day, 'EEE', { locale: idLocale }),
         fullDate: format(day, 'd MMM', { locale: idLocale }),
         count: count,
       };
     });
-  }, [logs]);
+  }, [filteredLogs]);
 
   // 2. Velocity & Acceleration
   const velocityMetrics = useMemo(() => {
-    if (!logs || logs.length === 0) return { global: 0, acceleration: 0, trend: 'stable' };
+    if (!filteredLogs || filteredLogs.length === 0) return { global: 0, acceleration: 0, trend: 'stable' };
     
-    const sortedLogs = [...logs].sort((a, b) => a.date.localeCompare(b.date));
+    const sortedLogs = [...filteredLogs].sort((a, b) => a.date.localeCompare(b.date));
     const firstLogDate = parseISO(sortedLogs[0].date);
     const today = new Date();
     const daysDiff = Math.max(1, differenceInDays(today, firstLogDate) + 1);
-    const globalVelocity = logs.length / daysDiff;
+    const globalVelocity = filteredLogs.length / daysDiff;
 
     const now = new Date();
-    const last7DaysCount = logs.filter(l => isWithinInterval(parseISO(l.date), { start: subDays(now, 7), end: now })).length;
-    const prev7DaysCount = logs.filter(l => isWithinInterval(parseISO(l.date), { start: subDays(now, 14), end: subDays(now, 8) })).length;
+    const last7DaysCount = filteredLogs.filter(l => isWithinInterval(parseISO(l.date), { start: subDays(now, 7), end: now })).length;
+    const prev7DaysCount = filteredLogs.filter(l => isWithinInterval(parseISO(l.date), { start: subDays(now, 14), end: subDays(now, 8) })).length;
     
     const v1 = last7DaysCount / 7;
     const v2 = prev7DaysCount / 7;
@@ -102,11 +109,11 @@ export default function StatsPage() {
       acceleration: acceleration.toFixed(2),
       trend: acceleration > 0 ? 'up' : acceleration < 0 ? 'down' : 'stable'
     };
-  }, [logs]);
+  }, [filteredLogs]);
 
   // 3. Distribution
   const distributionMetrics = useMemo(() => {
-    if (!logs || !activities) return { data: [], focusRatio: 0, gapIndex: 0 };
+    if (!filteredLogs || !activities) return { data: [], focusRatio: 0, gapIndex: 0 };
     
     const categoryStats: Record<string, { count: number, minutes: number }> = {};
     const activityMap = new Map(activities.map(a => [a.id, { 
@@ -114,7 +121,7 @@ export default function StatsPage() {
       minutes: a.durationMinutes || 0 
     }]));
 
-    logs.forEach(log => {
+    filteredLogs.forEach(log => {
       const info = activityMap.get(log.activityId);
       const category = info?.category || 'Lainnya';
       const minutes = info?.minutes || 0;
@@ -127,7 +134,7 @@ export default function StatsPage() {
     });
 
     const totalMinutes = Object.values(categoryStats).reduce((sum, s) => sum + s.minutes, 0);
-    const totalCount = logs.length;
+    const totalCount = filteredLogs.length;
 
     const data = Object.entries(categoryStats)
       .map(([name, stats]) => ({ 
@@ -144,25 +151,25 @@ export default function StatsPage() {
     const gapIndex = data.length > 1 ? Math.max(...data.map(d => d.count)) - Math.min(...data.map(d => d.count)) : 0;
 
     return { data, focusRatio, gapIndex };
-  }, [logs, activities]);
+  }, [filteredLogs, activities]);
 
   // 4. Prediction
   const predictionMetrics = useMemo(() => {
     const totalActivities = activities?.length || 0;
-    const totalCompleted = logs?.length || 0;
-    const remaining = totalActivities - totalCompleted;
+    const totalCompleted = filteredLogs?.length || 0;
+    const remaining = Math.max(0, totalActivities - totalCompleted);
     const abandonRate = totalActivities > 0 ? Math.round((remaining / totalActivities) * 100) : 0;
     
     const velocity = parseFloat(velocityMetrics.global);
     const predictedDays = (velocity > 0 && remaining > 0) ? Math.ceil(remaining / velocity) : null;
 
     return { abandonRate, remaining, predictedDays };
-  }, [activities, logs, velocityMetrics]);
+  }, [activities, filteredLogs, velocityMetrics]);
 
   // 5. Streak
   const currentStreak = useMemo(() => {
-    if (!logs || logs.length === 0) return 0;
-    const uniqueDates = Array.from(new Set(logs.map(l => l.date))).sort((a, b) => b.localeCompare(a));
+    if (!filteredLogs || filteredLogs.length === 0) return 0;
+    const uniqueDates = Array.from(new Set(filteredLogs.map(l => l.date))).sort((a, b) => b.localeCompare(a));
     let streak = 0;
     let checkDate = new Date();
     if (uniqueDates.length > 0 && differenceInDays(new Date(), parseISO(uniqueDates[0])) > 1) return 0;
@@ -174,7 +181,7 @@ export default function StatsPage() {
       } else break;
     }
     return streak;
-  }, [logs]);
+  }, [filteredLogs]);
 
   const InfoTooltip = ({ title, content, target }: { title: string, content: string, target?: string }) => (
     <Tooltip>
@@ -220,7 +227,7 @@ export default function StatsPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <span className="text-3xl font-black text-blue-900">{logs?.length || 0}</span>
+                <span className="text-3xl font-black text-blue-900">{filteredLogs?.length || 0}</span>
                 <CheckCircle2 className="h-8 w-8 text-blue-200" />
               </div>
             </CardContent>
