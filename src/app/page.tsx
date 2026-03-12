@@ -56,9 +56,21 @@ const MOTIVATIONAL_QUOTES = [
   "Kelelahan hari ini adalah kekuatan hari esok."
 ];
 
-const WORLD_LOCATIONS = ['Tokyo', 'Delhi', 'Brazil', 'London', 'New York', 'Jakarta', 'Seoul', 'Paris', 'Sydney', 'Cairo', 'Berlin', 'Moscow'];
-const BOT_NAMES = ['Alex', 'Mira', 'Daniel', 'Hana', 'Kevin', 'Siti', 'Budi', 'Rina', 'Rian', 'Maya', 'Fajar', 'Lestari', 'Andi', 'Dewi'];
 const BOT_SUBJECTS = ['Ekonomi', 'Matematika', 'Bahasa Inggris', 'Sejarah', 'Biologi', 'Fisika', 'Kimia', 'Sosiologi', 'Programming'];
+
+// Cultural Mapping for Realism
+const GLOBAL_PEERS = [
+  { location: 'Jakarta', names: ['Budi', 'Siti', 'Fajar', 'Lestari', 'Andi', 'Dewi', 'Rian', 'Maya'] },
+  { location: 'Tokyo', names: ['Yuki', 'Kenji', 'Sakura', 'Hiroshi', 'Aiko', 'Takumi'] },
+  { location: 'Delhi', names: ['Arjun', 'Priya', 'Rohan', 'Ananya', 'Vihaan', 'Isha'] },
+  { location: 'Cairo', names: ['Ahmed', 'Omar', 'Layla', 'Fatimah', 'Zaid', 'Amira'] },
+  { location: 'London', names: ['James', 'Oliver', 'Emma', 'Charlotte', 'William', 'Sophie'] },
+  { location: 'New York', names: ['Michael', 'David', 'Sarah', 'Emily', 'Jackson', 'Chloe'] },
+  { location: 'Seoul', names: ['Min-jun', 'Seo-yeon', 'Ji-hoon', 'Ha-eun', 'Kwang-ho', 'Ji-won'] },
+  { location: 'Berlin', names: ['Lukas', 'Max', 'Mia', 'Hanna', 'Leon', 'Sophie'] },
+  { location: 'Moscow', names: ['Ivan', 'Dmitry', 'Elena', 'Natasha', 'Sergei', 'Yulia'] },
+  { location: 'Paris', names: ['Lucas', 'Isabella', 'Thiago', 'Maria', 'Pierre', 'Camille'] },
+];
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -80,17 +92,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const generateActivity = () => {
-      const name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
-      const location = WORLD_LOCATIONS[Math.floor(Math.random() * WORLD_LOCATIONS.length)];
+      const region = GLOBAL_PEERS[Math.floor(Math.random() * GLOBAL_PEERS.length)];
+      const name = region.names[Math.floor(Math.random() * region.names.length)];
+      const location = region.location;
+      
       const type = Math.random();
       let text = '';
       
       if (type > 0.6) {
-        text = `from ${location} just completed 2 lessons in ${BOT_SUBJECTS[Math.floor(Math.random() * BOT_SUBJECTS.length)]}`;
+        text = `dari ${location} baru saja menyelesaikan 2 materi di ${BOT_SUBJECTS[Math.floor(Math.random() * BOT_SUBJECTS.length)]}`;
       } else if (type > 0.3) {
-        text = `from ${location} watched 3 study episodes`;
+        text = `dari ${location} menonton 3 episode kurikulum`;
       } else {
-        text = `from ${location} started a new topic: ${BOT_SUBJECTS[Math.floor(Math.random() * BOT_SUBJECTS.length)]}`;
+        text = `dari ${location} memulai topik baru: ${BOT_SUBJECTS[Math.floor(Math.random() * BOT_SUBJECTS.length)]}`;
       }
 
       return {
@@ -98,7 +112,7 @@ export default function DashboardPage() {
         name,
         text,
         timestamp: new Date(),
-        avatar: `https://picsum.photos/seed/${name}/100`
+        avatar: `https://picsum.photos/seed/${name}${location}/100`
       };
     };
 
@@ -454,7 +468,7 @@ export default function DashboardPage() {
                       <p className="text-[11px] font-bold leading-tight">
                         <span className="text-primary">{act.name}</span> <span className="text-muted-foreground">{act.text}</span>
                       </p>
-                      <p className="text-[9px] text-muted-foreground font-medium mt-0.5 uppercase tracking-tighter">Just now</p>
+                      <p className="text-[9px] text-muted-foreground font-medium mt-0.5 uppercase tracking-tighter">Baru saja</p>
                     </div>
                   </div>
                 ))}
