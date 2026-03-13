@@ -47,34 +47,22 @@
       },
       "required": ["userId", "title", "targetValue", "unit"]
     },
-    "Challenge": {
-      "title": "Challenge",
+    "Report": {
+      "title": "Report",
       "type": "object",
-      "description": "Tantangan belajar kompetitif.",
-      "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "description": { "type": "string" },
-        "targetValue": { "type": "number" },
-        "unit": { "type": "string" },
-        "durationDays": { "type": "number" }
-      },
-      "required": ["title", "targetValue", "unit"]
-    },
-    "Reflection": {
-      "title": "Reflection",
-      "type": "object",
-      "description": "Refleksi harian pengguna.",
+      "description": "Laporan error atau saran dari pengguna.",
       "properties": {
         "id": { "type": "string" },
         "userId": { "type": "string" },
-        "date": { "type": "string", "format": "date" },
-        "shortNote": { "type": "string" },
-        "content": { "type": "string" },
-        "productivityRating": { "type": "number", "minimum": 1, "maximum": 5 },
+        "userEmail": { "type": "string" },
+        "userName": { "type": "string" },
+        "type": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "targetEmail": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" }
       },
-      "required": ["userId", "date"]
+      "required": ["userId", "message", "type"]
     },
     "WatchlistEntry": {
       "title": "WatchlistEntry",
@@ -137,11 +125,11 @@
         }
       },
       {
-        "path": "/users/{userId}/reflections/{reflectionId}",
+        "path": "/users/{userId}/activeChallenges/{challengeId}",
         "definition": {
-          "entityName": "Reflection",
-          "schema": { "$ref": "#/backend/entities/Reflection" },
-          "description": "Catatan refleksi harian."
+          "entityName": "ChallengeStatus",
+          "schema": { "type": "object" },
+          "description": "Status partisipasi tantangan pengguna."
         }
       },
       {
@@ -150,6 +138,14 @@
           "entityName": "WatchlistEntry",
           "schema": { "$ref": "#/backend/entities/WatchlistEntry" },
           "description": "Watchlist film/series pengguna."
+        }
+      },
+      {
+        "path": "/reports/{reportId}",
+        "definition": {
+          "entityName": "Report",
+          "schema": { "$ref": "#/backend/entities/Report" },
+          "description": "Koleksi laporan saran dan error global."
         }
       },
       {
