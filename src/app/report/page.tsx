@@ -29,7 +29,6 @@ import { cn } from '@/lib/utils';
 
 export default function ReportPage() {
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     type: 'Saran',
     subject: '',
@@ -41,7 +40,7 @@ export default function ReportPage() {
       toast({ variant: "destructive", title: "Input Kurang", description: "Mohon isi subjek dan pesan Anda." });
       return;
     }
-    const phone = "6281234567890"; // Ganti dengan nomor WA Anda
+    const phone = "6281234567890"; // Ganti dengan nomor WA Anda jika perlu
     const text = `*STUDYPRO - ${formData.type.toUpperCase()}*%0A%0A*Subjek:* ${formData.subject}%0A*Pesan:* ${formData.message}`;
     window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
     toast({ title: "WhatsApp Terbuka", description: "Silakan kirim pesan di aplikasi WhatsApp Anda." });
@@ -52,7 +51,7 @@ export default function ReportPage() {
       toast({ variant: "destructive", title: "Input Kurang", description: "Mohon isi subjek dan pesan Anda." });
       return;
     }
-    const email = "support@studypro.com"; // Ganti dengan email Anda
+    const email = "andraathasyah14@gmail.com";
     const subject = `[StudyPro ${formData.type}] ${formData.subject}`;
     const body = formData.message;
     window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -151,7 +150,7 @@ export default function ReportPage() {
             <div className="space-y-4">
               <div>
                 <p className="text-xs font-black uppercase text-primary">Kapan dibalas?</p>
-                <p className="text-[11px] font-medium text-muted-foreground">Kami biasanya merespons dalam 1-2 hari kerja.</p>
+                <p className="text-[11px] font-medium text-muted-foreground">Kami biasanya merespons dalam 1-2 hari kerja ke email {formData.type === 'Saran' ? 'Anda' : 'pengirim'}.</p>
               </div>
               <div>
                 <p className="text-xs font-black uppercase text-primary">Laporan Bug?</p>
