@@ -1,4 +1,5 @@
-import { BookOpen } from 'lucide-react';
+
+import { BookOpen, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 
 export function Footer() {
@@ -15,7 +16,10 @@ export function Footer() {
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} StudyPro - Mastering your materials.
           </p>
-          <nav className="flex gap-4">
+          <nav className="flex gap-6 items-center">
+            <Link href="/report" className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline flex items-center gap-1.5">
+              <MessageSquare className="h-3 w-3" /> Saran & Kritik
+            </Link>
             <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary">Privasi</Link>
             <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary">Ketentuan</Link>
           </nav>

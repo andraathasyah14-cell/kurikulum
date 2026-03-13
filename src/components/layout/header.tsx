@@ -1,9 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, LayoutDashboard, BookOpen, TrendingUp, Settings, LogOut, Trophy, Target, NotebookPen, Tv, Zap } from 'lucide-react';
+import { Menu, LayoutDashboard, BookOpen, TrendingUp, Settings, LogOut, Trophy, Target, NotebookPen, Tv, Zap, MessageSquare } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -31,6 +30,7 @@ const navLinks = [
   { href: '/stats', label: 'Statistik', icon: TrendingUp },
   { href: '/ranking', label: 'Ranking', icon: Trophy },
   { href: '/watchlist', label: 'Watchlist', icon: Tv },
+  { href: '/report', label: 'Laporan', icon: MessageSquare },
 ];
 
 export function Header() {
