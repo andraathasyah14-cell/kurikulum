@@ -13,7 +13,8 @@ import {
   Info,
   CalendarDays,
   Clock,
-  NotebookPen
+  NotebookPen,
+  ChevronLeft
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
@@ -113,47 +114,50 @@ export default function CalendarPage() {
       </div>
 
       <div className="grid gap-12">
-        {/* Calendar Section - Kotak Kotak Rapi */}
-        <Card className="border-none shadow-2xl rounded-[40px] overflow-hidden bg-card border-t-8 border-primary">
-          <CardContent className="p-8 flex flex-col items-center">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              className="rounded-md border-none p-0 w-full"
-              modifiers={modifiers}
-              modifiersStyles={modifiersStyles}
-              locale={idLocale}
-              classNames={{
-                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full justify-center",
-                month: "space-y-4 w-full",
-                caption: "flex justify-center pt-1 relative items-center mb-6",
-                caption_label: "text-base font-black uppercase tracking-widest",
-                nav: "space-x-1 flex items-center",
-                nav_button: cn(
-                  buttonVariants({ variant: "outline" }),
-                  "h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100"
-                ),
-                nav_button_previous: "absolute left-1",
-                nav_button_next: "absolute right-1",
-                table: "w-full border-collapse space-y-1",
-                head_row: "grid grid-cols-7 w-full",
-                head_cell: "text-muted-foreground rounded-md font-black text-[0.7rem] uppercase text-center py-2",
-                row: "grid grid-cols-7 w-full mt-2",
-                cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20",
-                day: cn(
-                  buttonVariants({ variant: "ghost" }),
-                  "h-10 w-10 p-0 font-bold rounded-xl transition-all mx-auto"
-                ),
-                day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground shadow-lg scale-110",
-                day_today: "bg-muted text-foreground ring-2 ring-primary/20",
-                day_outside: "text-muted-foreground opacity-30",
-                day_disabled: "text-muted-foreground opacity-30",
-                day_hidden: "invisible",
-              }}
-            />
-          </CardContent>
-        </Card>
+        {/* Modern Boxy Calendar Section */}
+        <div className="flex justify-center">
+          <Card className="w-full max-w-[400px] border-none shadow-2xl rounded-[32px] overflow-hidden bg-card border-t-8 border-primary transition-all duration-500 hover:shadow-primary/10">
+            <CardContent className="p-8">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                className="p-0 w-full"
+                modifiers={modifiers}
+                modifiersStyles={modifiersStyles}
+                locale={idLocale}
+                classNames={{
+                  months: "w-full",
+                  month: "space-y-6 w-full",
+                  caption: "flex justify-between items-center mb-6 px-2",
+                  caption_label: "text-lg font-black uppercase tracking-widest text-foreground",
+                  nav: "flex items-center gap-1",
+                  nav_button: cn(
+                    buttonVariants({ variant: "outline" }),
+                    "h-10 w-10 bg-muted/50 border-none p-0 opacity-100 hover:bg-primary hover:text-white rounded-xl transition-all"
+                  ),
+                  table: "w-full border-collapse",
+                  head_row: "grid grid-cols-7 w-full mb-4",
+                  head_cell: "text-muted-foreground/50 rounded-md font-black text-[10px] uppercase text-center",
+                  row: "grid grid-cols-7 w-full gap-1 mt-1",
+                  cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20",
+                  day: cn(
+                    "h-12 w-full p-0 font-bold rounded-xl transition-all flex items-center justify-center hover:bg-muted cursor-pointer"
+                  ),
+                  day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground shadow-lg scale-105 z-10",
+                  day_today: "bg-muted text-foreground ring-2 ring-primary/20",
+                  day_outside: "text-muted-foreground opacity-20",
+                  day_disabled: "text-muted-foreground opacity-20",
+                  day_hidden: "invisible",
+                }}
+                components={{
+                  IconLeft: () => <ChevronLeft className="h-5 w-5" />,
+                  IconRight: () => <ChevronRight className="h-5 w-5" />
+                }}
+              />
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Daily Timeline View */}
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
