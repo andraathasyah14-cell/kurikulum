@@ -111,9 +111,9 @@ export default function CalendarPage() {
       </div>
 
       <div className="grid gap-12">
-        {/* Modern Boxy Calendar Section - 7 Columns with English Day Names */}
+        {/* Modern Boxy Calendar Section - Fixed Grid 7 Columns */}
         <div className="flex justify-center">
-          <div className="w-full max-w-[380px] bg-[#111827] rounded-[20px] p-6 shadow-[0_20px_40px_rgba(0,0,0,0.4)] text-white">
+          <div className="w-full max-w-[380px] bg-[#111827] rounded-[24px] p-6 shadow-[0_20px_40px_rgba(0,0,0,0.4)] text-white">
             <Calendar
               mode="single"
               selected={selectedDate}
