@@ -66,7 +66,6 @@ export default function ReportPage() {
       timestamp: serverTimestamp(),
     });
 
-    // Reset form
     setFormData({ ...formData, subject: '', message: '' });
     setIsSubmitting(false);
     

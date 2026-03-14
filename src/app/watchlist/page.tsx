@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -162,7 +163,6 @@ export default function WatchlistPage() {
         </Dialog>
       </div>
 
-      {/* Stats Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
         <StatCard icon={ListVideo} label="Total Koleksi" value={stats.total} color="bg-indigo-50 text-indigo-600" />
         <StatCard icon={PlayCircle} label="Sedang Ditonton" value={stats.watching} color="bg-primary/10 text-primary" />
