@@ -10,7 +10,8 @@ import {
   BookOpen,
   Trophy,
   Zap,
-  Info
+  Info,
+  CalendarDays
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
@@ -20,11 +21,12 @@ import {
   useMemoFirebase, 
   useFirestore 
 } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { buttonVariants } from '@/components/ui/button';
 
 export default function CalendarPage() {
   const { user } = useUser();
@@ -68,7 +70,7 @@ export default function CalendarPage() {
     return dayLogs.map(log => activityMap.get(log.activityId)).filter(Boolean);
   }, [dayLogs, activities]);
 
-  // Dots for calendar to show activity
+  // Modifiers for highlights
   const modifiers = {
     hasActivity: (date: Date) => {
       const dStr = format(date, 'yyyy-MM-dd');
@@ -95,32 +97,48 @@ export default function CalendarPage() {
       </div>
 
       <div className="space-y-8">
-        {/* Calendar Section - Full Width Tanggalan Style */}
+        {/* Calendar Section - Fixed Grid Layout */}
         <Card className="border-none shadow-2xl rounded-[40px] overflow-hidden bg-card border-t-8 border-primary">
-          <CardContent className="p-8">
+          <CardContent className="p-8 flex flex-col items-center">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
-              className="rounded-md border-none w-full"
+              className="rounded-md border-none w-full max-w-sm"
               modifiers={modifiers}
               modifiersStyles={modifiersStyles}
               locale={idLocale}
               classNames={{
-                months: "w-full",
-                month: "w-full space-y-4",
+                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full justify-center",
+                month: "space-y-4 w-full",
+                caption: "flex justify-center pt-1 relative items-center mb-4",
+                caption_label: "text-sm font-black uppercase tracking-widest",
+                nav: "space-x-1 flex items-center",
+                nav_button: cn(
+                  buttonVariants({ variant: "outline" }),
+                  "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+                ),
+                nav_button_previous: "absolute left-1",
+                nav_button_next: "absolute right-1",
                 table: "w-full border-collapse space-y-1",
-                head_cell: "text-muted-foreground rounded-md w-full font-black text-[0.8rem] uppercase",
-                cell: "h-12 w-full text-center text-sm p-0 relative",
+                head_row: "flex justify-between",
+                head_cell: "text-muted-foreground rounded-md w-9 font-black text-[0.7rem] uppercase text-center",
+                row: "flex w-full mt-2 justify-between",
+                cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
                 day: cn(
-                  "h-10 w-10 p-0 font-bold rounded-xl mx-auto flex items-center justify-center transition-all",
-                  "hover:bg-primary/10"
+                  buttonVariants({ variant: "ghost" }),
+                  "h-9 w-9 p-0 font-bold rounded-xl transition-all"
                 ),
                 day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground shadow-lg scale-110",
                 day_today: "bg-muted text-foreground ring-2 ring-primary/20",
+                day_outside: "text-muted-foreground opacity-50",
+                day_disabled: "text-muted-foreground opacity-50",
+                day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                day_hidden: "invisible",
               }}
             />
-            <div className="mt-8 p-5 bg-primary/5 rounded-[28px] flex items-center gap-4 border border-primary/10">
+            
+            <div className="mt-8 w-full p-5 bg-primary/5 rounded-[28px] flex items-center gap-4 border border-primary/10">
               <div className="bg-primary/10 p-2 rounded-xl">
                 <Info className="h-5 w-5 text-primary shrink-0" />
               </div>
@@ -131,14 +149,14 @@ export default function CalendarPage() {
           </CardContent>
         </Card>
 
-        {/* Details Section - Moved Below the Calendar */}
+        {/* Details Section */}
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="flex items-center justify-between px-6">
              <h2 className="text-2xl font-black uppercase tracking-tighter">
                Laporan: {selectedDate ? format(selectedDate, 'd MMMM yyyy', { locale: idLocale }) : 'Pilih Tanggal'}
              </h2>
              <div className="flex items-center gap-2">
-               <div className="h-2 w-2 rounded-full bg-primary animate-ping" />
+               <CalendarDays className="h-5 w-5 text-primary" />
                <Zap className="h-5 w-5 text-primary fill-current" />
              </div>
           </div>
@@ -207,4 +225,3 @@ export default function CalendarPage() {
     </div>
   );
 }
-
