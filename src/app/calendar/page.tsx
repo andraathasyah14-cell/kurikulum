@@ -111,7 +111,7 @@ export default function CalendarPage() {
       </div>
 
       <div className="grid gap-12">
-        {/* Modern Boxy Calendar Section - Fixed Grid 7 Columns */}
+        {/* Modern Boxy Calendar Section - ENFORCED 7 COLUMNS */}
         <div className="flex justify-center">
           <div className="w-full max-w-[380px] bg-[#111827] rounded-[24px] p-6 shadow-[0_20px_40px_rgba(0,0,0,0.4)] text-white">
             <Calendar
@@ -131,13 +131,13 @@ export default function CalendarPage() {
                 nav_button: cn(
                   "h-10 w-10 flex items-center justify-center bg-[#1f2937] hover:bg-[#374151] rounded-[10px] transition-colors border-none text-white opacity-100"
                 ),
-                table: "w-full border-collapse",
-                head_row: "grid grid-cols-7 w-full mb-2",
-                head_cell: "text-[12px] font-bold opacity-70 text-center pb-2",
-                row: "grid grid-cols-7 w-full mt-1",
-                cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20",
+                table: "w-full flex flex-col gap-1",
+                head_row: "flex w-full mb-2",
+                head_cell: "w-[calc(100%/7)] text-[12px] font-bold opacity-70 text-center pb-2",
+                row: "flex w-full",
+                cell: "relative p-0 text-center text-sm w-[calc(100%/7)] flex items-center justify-center h-11",
                 day: cn(
-                  "h-11 w-full p-0 font-medium rounded-[10px] transition-all flex items-center justify-center hover:bg-[#374151] cursor-pointer text-white"
+                  "h-10 w-10 p-0 font-medium rounded-[10px] transition-all flex items-center justify-center hover:bg-[#374151] cursor-pointer text-white"
                 ),
                 day_selected: "bg-[#3b82f6] text-white hover:bg-[#3b82f6] focus:bg-[#3b82f6] shadow-lg scale-105 z-10",
                 day_today: "ring-2 ring-[#3b82f6]/50",
