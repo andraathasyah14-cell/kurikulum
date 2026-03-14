@@ -7,13 +7,21 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
 import { LogOut, User, Bell, Shield, Palette } from 'lucide-react';
 import { signOut } from 'firebase/auth';
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 export default function SettingsPage() {
   const { user } = useUser();
   const auth = useAuth();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure theme is only toggled after mounting to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (!user) {
     return (
@@ -22,6 +30,8 @@ export default function SettingsPage() {
       </div>
     );
   }
+
+  if (!mounted) return null;
 
   return (
     <div className="container max-w-4xl px-4 py-8 md:px-6">
@@ -80,9 +90,13 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="dark-mode" className="flex flex-col gap-1 cursor-pointer">
                   <span>Mode Gelap</span>
-                  <span className="text-xs font-normal text-muted-foreground">Gunakan tema gelap (segera).</span>
+                  <span className="text-xs font-normal text-muted-foreground">Ganti tema aplikasi menjadi gelap.</span>
                 </Label>
-                <Switch id="dark-mode" disabled />
+                <Switch 
+                  id="dark-mode" 
+                  checked={theme === 'dark'} 
+                  onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')} 
+                />
               </div>
             </CardContent>
           </Card>
