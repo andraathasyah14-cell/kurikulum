@@ -5,16 +5,14 @@ import { useState, useMemo } from 'react';
 import { 
   Calendar as CalendarIcon, 
   ChevronRight,
+  ChevronLeft,
   BookOpen,
   Trophy,
   Zap,
-  CalendarDays,
   Clock,
-  NotebookPen,
-  ChevronLeft
+  NotebookPen
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
 import { 
   useUser, 
   useCollection, 
@@ -22,16 +20,33 @@ import {
   useFirestore 
 } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
-import { format, parseISO } from 'date-fns';
+import { 
+  format, 
+  startOfMonth, 
+  endOfMonth, 
+  startOfWeek, 
+  endOfWeek, 
+  eachDayOfInterval, 
+  isSameMonth, 
+  isSameDay, 
+  addMonths, 
+  subMonths,
+  parseISO
+} from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
-import { enUS } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+
+const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function CalendarPage() {
   const { user } = useUser();
   const db = useFirestore();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  
+  // States
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
+  // Firebase Queries
   const logsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(collection(db, 'users', user.uid, 'logs'), orderBy('timestamp', 'desc'));
@@ -57,20 +72,33 @@ export default function CalendarPage() {
   const { data: activities } = useCollection(activitiesQuery);
   const { data: reflections } = useCollection(reflectionsQuery);
 
-  const selectedDateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
+  // Calendar Helpers
+  const calendarDays = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(monthStart);
+    const startDate = startOfWeek(monthStart);
+    const endDate = endOfWeek(monthEnd);
+
+    return eachDayOfInterval({
+      start: startDate,
+      end: endDate,
+    });
+  }, [currentMonth]);
+
+  const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
 
   const dayLogs = useMemo(() => {
-    if (!logs || !selectedDateStr) return [];
+    if (!logs) return [];
     return logs.filter(log => log.date === selectedDateStr);
   }, [logs, selectedDateStr]);
 
   const dayStat = useMemo(() => {
-    if (!dailyStats || !selectedDateStr) return null;
+    if (!dailyStats) return null;
     return dailyStats.find(s => s.date === selectedDateStr);
   }, [dailyStats, selectedDateStr]);
 
   const dayReflection = useMemo(() => {
-    if (!reflections || !selectedDateStr) return null;
+    if (!reflections) return null;
     return reflections.find(r => r.date === selectedDateStr);
   }, [reflections, selectedDateStr]);
 
@@ -83,23 +111,13 @@ export default function CalendarPage() {
     })).filter(a => !!a.id);
   }, [dayLogs, activities]);
 
-  // Modifiers for highlights (underline for days with activity)
-  const modifiers = {
-    hasActivity: (date: Date) => {
-      const dStr = format(date, 'yyyy-MM-dd');
-      return logs?.some(log => log.date === dStr) || dailyStats?.some(s => s.date === dStr && s.questionsSolved > 0);
-    }
-  } as any;
-
-  const modifiersStyles = {
-    hasActivity: {
-      fontWeight: '900',
-      textDecoration: 'underline',
-      textDecorationThickness: '3px',
-      textUnderlineOffset: '4px',
-      color: 'hsl(var(--primary))'
-    }
+  const hasActivity = (date: Date) => {
+    const dStr = format(date, 'yyyy-MM-dd');
+    return logs?.some(log => log.date === dStr) || dailyStats?.some(s => s.date === dStr && s.questionsSolved > 0);
   };
+
+  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-4xl pb-32">
@@ -111,45 +129,74 @@ export default function CalendarPage() {
       </div>
 
       <div className="grid gap-12">
-        {/* Modern Boxy Calendar Section - ENFORCED 7 COLUMNS */}
+        {/* CUSTOM 7-COLUMN GRID CALENDAR */}
         <div className="flex justify-center">
-          <div className="w-full max-w-[380px] bg-[#111827] rounded-[24px] p-6 shadow-[0_20px_40px_rgba(0,0,0,0.4)] text-white">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              modifiers={modifiers}
-              modifiersStyles={modifiersStyles}
-              locale={enUS}
-              className="p-0 w-full"
-              classNames={{
-                months: "w-full",
-                month: "space-y-4 w-full",
-                caption: "flex justify-between items-center mb-6 px-1",
-                caption_label: "text-lg font-bold",
-                nav: "flex items-center gap-2",
-                nav_button: cn(
-                  "h-10 w-10 flex items-center justify-center bg-[#1f2937] hover:bg-[#374151] rounded-[10px] transition-colors border-none text-white opacity-100"
-                ),
-                table: "w-full flex flex-col gap-1",
-                head_row: "flex w-full mb-2",
-                head_cell: "w-[calc(100%/7)] text-[12px] font-bold opacity-70 text-center pb-2",
-                row: "flex w-full",
-                cell: "relative p-0 text-center text-sm w-[calc(100%/7)] flex items-center justify-center h-11",
-                day: cn(
-                  "h-10 w-10 p-0 font-medium rounded-[10px] transition-all flex items-center justify-center hover:bg-[#374151] cursor-pointer text-white"
-                ),
-                day_selected: "bg-[#3b82f6] text-white hover:bg-[#3b82f6] focus:bg-[#3b82f6] shadow-lg scale-105 z-10",
-                day_today: "ring-2 ring-[#3b82f6]/50",
-                day_outside: "text-white/20",
-                day_disabled: "text-white/20",
-                day_hidden: "invisible",
-              }}
-              components={{
-                IconLeft: () => <ChevronLeft className="h-5 w-5" />,
-                IconRight: () => <ChevronRight className="h-5 w-5" />
-              }}
-            />
+          <div className="w-full max-w-[400px] bg-[#111827] rounded-[32px] p-8 shadow-[0_30px_60px_rgba(0,0,0,0.5)] text-white border border-white/5">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8">
+              <button 
+                onClick={prevMonth}
+                className="h-10 w-10 flex items-center justify-center bg-[#1f2937] hover:bg-[#374151] rounded-xl transition-colors"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <h2 className="text-lg font-black tracking-tight uppercase">
+                {format(currentMonth, 'MMMM yyyy')}
+              </h2>
+              <button 
+                onClick={nextMonth}
+                className="h-10 w-10 flex items-center justify-center bg-[#1f2937] hover:bg-[#374151] rounded-xl transition-colors"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Day Labels - FORCED 7 COLS */}
+            <div className="grid grid-cols-7 text-center mb-4">
+              {DAYS_OF_WEEK.map(day => (
+                <div key={day} className="text-[10px] font-black uppercase opacity-40 tracking-widest">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Date Cells - FORCED 7 COLS */}
+            <div className="grid grid-cols-7 gap-1">
+              {calendarDays.map((date, i) => {
+                const isCurrentMonth = isSameMonth(date, currentMonth);
+                const isSelected = isSameDay(date, selectedDate);
+                const isToday = isSameDay(date, new Date());
+                const active = hasActivity(date);
+
+                return (
+                  <div 
+                    key={date.toString()}
+                    onClick={() => setSelectedDate(date)}
+                    className={cn(
+                      "h-11 flex flex-col items-center justify-center rounded-xl cursor-pointer transition-all relative group",
+                      !isCurrentMonth && "opacity-10",
+                      isSelected ? "bg-primary text-white scale-110 shadow-lg z-10" : "hover:bg-white/5",
+                      isToday && !isSelected && "ring-2 ring-primary/30"
+                    )}
+                  >
+                    <span className={cn(
+                      "text-sm font-bold",
+                      isSelected ? "font-black" : ""
+                    )}>
+                      {format(date, 'd')}
+                    </span>
+                    
+                    {/* Activity Indicator */}
+                    {active && (
+                      <div className={cn(
+                        "absolute bottom-1.5 h-1 w-4 rounded-full",
+                        isSelected ? "bg-white/40" : "bg-primary"
+                      )} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -159,7 +206,7 @@ export default function CalendarPage() {
              <div>
                <p className="text-[10px] font-black uppercase text-primary tracking-widest mb-1">Daily Record</p>
                <h2 className="text-3xl font-black uppercase tracking-tighter">
-                 {selectedDate ? format(selectedDate, 'EEEE, d MMMM yyyy', { locale: idLocale }) : 'Pilih Tanggal'}
+                 {format(selectedDate, 'EEEE, d MMMM yyyy', { locale: idLocale })}
                </h2>
              </div>
              <div className="flex items-center gap-4">
@@ -175,7 +222,6 @@ export default function CalendarPage() {
           </div>
 
           <div className="relative pl-12 md:pl-20 py-4">
-            {/* Vertical Timeline Line */}
             <div className="absolute left-6 md:left-10 top-0 bottom-0 w-0.5 bg-muted border-l-2 border-dashed border-muted-foreground/20" />
 
             {completedActivities.length > 0 ? (
@@ -184,7 +230,6 @@ export default function CalendarPage() {
                   const time = act.timestamp ? format(act.timestamp.toDate(), 'HH:mm') : '--:--';
                   return (
                     <div key={`${act.id}-${i}`} className="relative">
-                      {/* Timeline Dot */}
                       <div className="absolute -left-12 md:-left-[60px] top-1/2 -translate-y-1/2 flex flex-col items-center">
                         <div className="bg-white border-2 border-primary h-4 w-4 rounded-full z-10 shadow-[0_0_10px_rgba(var(--primary),0.3)]" />
                         <span className="text-[10px] font-black text-primary mt-1 bg-white px-1">{time}</span>
@@ -221,7 +266,6 @@ export default function CalendarPage() {
               </div>
             )}
 
-            {/* Daily Reflection Section */}
             {dayReflection && (
               <div className="mt-12 relative pt-8 border-t border-dashed">
                 <div className="absolute -left-12 md:-left-[64px] top-8 bg-amber-500 p-2 rounded-full shadow-lg z-10 text-white">
@@ -251,12 +295,6 @@ export default function CalendarPage() {
               </div>
             )}
           </div>
-        </div>
-
-        <div className="p-10 border-4 border-dashed rounded-[48px] bg-muted/20 flex flex-col items-center text-center gap-4">
-           <p className="text-[11px] font-bold leading-relaxed text-muted-foreground max-w-md uppercase tracking-widest">
-             Gunakan halaman ini untuk refleksi mingguan. Klik tanggal lain untuk melihat bagaimana Anda berkembang setiap harinya.
-           </p>
         </div>
       </div>
     </div>
