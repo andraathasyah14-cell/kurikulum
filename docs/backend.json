@@ -32,6 +32,18 @@
       },
       "required": ["id", "activityId", "userId", "date"]
     },
+    "DailyStats": {
+      "title": "DailyStats",
+      "type": "object",
+      "description": "Statistik harian seperti jumlah soal yang dikerjakan.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "questionsSolved": { "type": "number", "default": 0 }
+      },
+      "required": ["userId", "date"]
+    },
     "Goal": {
       "title": "Goal",
       "type": "object",
@@ -114,6 +126,14 @@
           "entityName": "ActivityLog",
           "schema": { "$ref": "#/backend/entities/ActivityLog" },
           "description": "Log penyelesaian aktivitas."
+        }
+      },
+      {
+        "path": "/users/{userId}/dailyStats/{dateStr}",
+        "definition": {
+          "entityName": "DailyStats",
+          "schema": { "$ref": "#/backend/entities/DailyStats" },
+          "description": "Statistik harian seperti jumlah soal."
         }
       },
       {

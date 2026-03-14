@@ -26,7 +26,11 @@ import {
   TrendingDown,
   History,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  FileText,
+  Plus,
+  Minus,
+  Save
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -93,6 +97,7 @@ export default function DashboardPage() {
   const [realityCount, setRealityCount] = useState(0);
   const [worldActivities, setWorldActivities] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [questionsSolved, setQuestionsSolved] = useState(0);
 
   useEffect(() => {
     setRealityCount(Math.floor(Math.random() * 500) + 800);
@@ -137,10 +142,38 @@ export default function DashboardPage() {
     return query(collection(db, 'users', user.uid, 'goals'));
   }, [db, user]);
 
+  const dailyStatsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'users', user.uid, 'dailyStats'));
+  }, [db, user]);
+
   const { data: activities } = useCollection(activitiesQuery);
   const { data: logs } = useCollection(logsQuery);
   const { data: watchlist } = useCollection(watchlistQuery);
   const { data: goals } = useCollection(goalsQuery);
+  const { data: dailyStats } = useCollection(dailyStatsQuery);
+
+  const todayStat = useMemo(() => {
+    if (!dailyStats) return null;
+    return dailyStats.find(s => s.date === today);
+  }, [dailyStats, today]);
+
+  useEffect(() => {
+    if (todayStat) setQuestionsSolved(todayStat.questionsSolved || 0);
+  }, [todayStat]);
+
+  const handleUpdateQuestions = (delta: number) => {
+    if (!user || !db) return;
+    const newVal = Math.max(0, questionsSolved + delta);
+    setQuestionsSolved(newVal);
+    
+    setDoc(doc(db, 'users', user.uid, 'dailyStats', today), {
+      userId: user.uid,
+      date: today,
+      questionsSolved: newVal,
+      timestamp: serverTimestamp()
+    }, { merge: true });
+  };
 
   const completedActivityMap = useMemo(() => {
     if (!logs) return new Map<string, string>();
@@ -165,14 +198,14 @@ export default function DashboardPage() {
       const activity = activityMap.get(log.activityId);
       return acc + (activity?.durationMinutes || 0);
     }, 0) || 0;
-    const totalXp = (activityCount * 15) + (studyMinutes * 0.4) + (watchlistEps * 10);
+    const totalXp = (activityCount * 15) + (studyMinutes * 0.4) + (watchlistEps * 10) + (questionsSolved * 5);
     const level = Math.floor(totalXp / 1000) + 1;
     const currentLevelXp = totalXp % 1000;
     const xpProgress = (currentLevelXp / 1000) * 100;
     const uniqueDates = Array.from(new Set(logs?.map(l => l.date) || []));
     const avgMinutesPerDay = uniqueDates.length > 0 ? studyMinutes / uniqueDates.length : 0;
     return { totalXp, level, currentLevelXp, xpProgress, activityCount, studyMinutes, avgMinutesPerDay };
-  }, [logs, watchlist, activities]);
+  }, [logs, watchlist, activities, questionsSolved]);
 
   const filteredActivities = useMemo(() => {
     if (!activities) return [];
@@ -312,22 +345,33 @@ export default function DashboardPage() {
           </div>
         </Card>
 
-        <Card className="md:col-span-4 border-none shadow-xl bg-card rounded-[40px] p-8 flex flex-col">
-          <CardHeader className="p-0 mb-6"><CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> Future Self Projection</CardTitle></CardHeader>
-          <div className="flex-1 space-y-6">
-            <p className="text-xs font-medium text-muted-foreground leading-relaxed">Jika kamu mempertahankan ritme <span className="text-primary font-black">{Math.round(stats.avgMinutesPerDay)} menit/hari</span> ini:</p>
-            <div className="space-y-4">
-              <ProjectionRow label="1 Bulan" value={`${Math.round((stats.avgMinutesPerDay * 30) / 60)} Jam`} />
-              <ProjectionRow label="6 Bulan" value={`${Math.round((stats.avgMinutesPerDay * 180) / 60)} Jam`} />
-              <ProjectionRow label="1 Tahun" value={`${Math.round((stats.avgMinutesPerDay * 365) / 60)} Jam`} />
-            </div>
+        <Card className="md:col-span-4 border-none shadow-xl bg-card rounded-[40px] p-8 flex flex-col justify-between">
+          <CardHeader className="p-0 mb-4"><CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-primary"><FileText className="h-4 w-4" /> Latihan Soal Hari Ini</CardTitle></CardHeader>
+          <div className="text-center">
+             <p className="text-5xl font-black text-foreground mb-4 tabular-nums">{questionsSolved}</p>
+             <div className="flex items-center justify-center gap-4">
+                <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-2" onClick={() => handleUpdateQuestions(-1)}><Minus className="h-6 w-6" /></Button>
+                <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-2" onClick={() => handleUpdateQuestions(1)}><Plus className="h-6 w-6" /></Button>
+             </div>
+             <p className="text-[10px] font-bold uppercase text-muted-foreground mt-4 tracking-widest">Klik +/- Untuk Update Poin</p>
           </div>
-          <p className="mt-6 text-[10px] italic text-muted-foreground opacity-60">*Usaha kecil yang konsisten akan menghasilkan akumulasi besar.</p>
         </Card>
       </div>
 
       <div className="grid gap-6 md:grid-cols-12">
         <div className="md:col-span-8 space-y-8">
+          <Card className="border-none shadow-xl bg-card rounded-[40px] p-8 flex flex-col">
+            <CardHeader className="p-0 mb-6"><CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> Future Self Projection</CardTitle></CardHeader>
+            <div className="flex-1 space-y-6">
+              <p className="text-xs font-medium text-muted-foreground leading-relaxed">Jika kamu mempertahankan ritme <span className="text-primary font-black">{Math.round(stats.avgMinutesPerDay)} menit/hari</span> ini:</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <ProjectionRow label="1 Bulan" value={`${Math.round((stats.avgMinutesPerDay * 30) / 60)} Jam`} />
+                <ProjectionRow label="6 Bulan" value={`${Math.round((stats.avgMinutesPerDay * 180) / 60)} Jam`} />
+                <ProjectionRow label="1 Tahun" value={`${Math.round((stats.avgMinutesPerDay * 365) / 60)} Jam`} />
+              </div>
+            </div>
+          </Card>
+
           {recommendations.length > 0 && (
             <div className="bg-primary/5 border border-primary/10 rounded-[32px] p-6 mb-2">
               <div className="flex items-center gap-2 mb-4"><Sparkles className="h-5 w-5 text-primary" /><h3 className="text-sm font-black uppercase tracking-widest">Adaptive Recommendation</h3></div>
@@ -358,7 +402,6 @@ export default function DashboardPage() {
               </Button>
             </div>
 
-            {/* Subject Slider / Category Selector */}
             <div className="relative px-10">
               <Carousel className="w-full">
                 <CarouselContent className="-ml-2">
@@ -390,7 +433,6 @@ export default function DashboardPage() {
               </Carousel>
             </div>
 
-            {/* Scrollable Checklist */}
             <ScrollArea className="h-[500px] pr-4 rounded-[32px]">
               <div className="space-y-4">
                 {filteredActivities.map(activity => {

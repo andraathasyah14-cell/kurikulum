@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, LayoutDashboard, BookOpen, TrendingUp, Settings, LogOut, Trophy, Target, NotebookPen, Tv, Zap, MessageSquare } from 'lucide-react';
+import { Menu, LayoutDashboard, BookOpen, TrendingUp, Settings, LogOut, Trophy, Target, NotebookPen, Tv, Zap, MessageSquare, Calendar } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -24,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 const navLinks = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/activities', label: 'Kurikulum', icon: BookOpen },
+  { href: '/calendar', label: 'Kalender', icon: Calendar },
   { href: '/challenges', label: 'Challenges', icon: Zap },
   { href: '/goals', label: 'Goals', icon: Target },
   { href: '/journal', label: 'Jurnal', icon: NotebookPen },
