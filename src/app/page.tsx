@@ -213,19 +213,6 @@ export default function DashboardPage() {
     return activities.filter(a => a.category === selectedCategory);
   }, [activities, selectedCategory]);
 
-  const recommendations = useMemo(() => {
-    if (!activities || !logs) return [];
-    const catCounts: Record<string, number> = {};
-    const activityMap = new Map(activities.map(a => [a.id, a]));
-    logs.forEach(l => {
-      const a = activityMap.get(l.activityId);
-      if (a) catCounts[a.category] = (catCounts[a.category] || 0) + 1;
-    });
-    const topCategory = Object.entries(catCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-    if (!topCategory) return [];
-    return activities.filter(a => a.category === topCategory && !completedActivityIds.has(a.id) && !runningTimers.has(a.id)).slice(0, 2);
-  }, [activities, logs, completedActivityIds, runningTimers]);
-
   const currentStreak = useMemo(() => {
     if (!logs || logs.length === 0) return 0;
     const uniqueDates = Array.from(new Set(logs.map(l => l.date))).sort((a, b) => b.localeCompare(a));
@@ -371,26 +358,6 @@ export default function DashboardPage() {
               </div>
             </div>
           </Card>
-
-          {recommendations.length > 0 && (
-            <div className="bg-primary/5 border border-primary/10 rounded-[32px] p-6 mb-2">
-              <div className="flex items-center gap-2 mb-4"><Sparkles className="h-5 w-5 text-primary" /><h3 className="text-sm font-black uppercase tracking-widest">Adaptive Recommendation</h3></div>
-              <p className="text-xs text-muted-foreground mb-4">Karena kamu aktif belajar <span className="font-bold text-primary">{recommendations[0].category}</span>, kami sarankan topik berikutnya:</p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {recommendations.map(rec => (
-                  <Card key={rec.id} className="border-none shadow-sm hover:shadow-md transition-shadow">
-                    <CardContent className="p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-primary/10 p-2 rounded-xl"><BookOpen className="h-4 w-4 text-primary" /></div>
-                        <span className="text-sm font-bold">{rec.title}</span>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => handleToggleMastery(rec)}><ArrowRight className="h-4 w-4" /></Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className="space-y-6">
             <div className="flex items-center justify-between">
