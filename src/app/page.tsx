@@ -24,13 +24,22 @@ import {
   Sparkles,
   ArrowRight,
   TrendingDown,
-  History
+  History,
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Carousel, 
+  CarouselContent, 
+  CarouselItem, 
+  CarouselNext, 
+  CarouselPrevious 
+} from '@/components/ui/carousel';
 import { 
   useUser, 
   useCollection, 
@@ -78,12 +87,12 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const today = format(new Date(), 'yyyy-MM-dd');
   
-  const [shortNote, setShortNote] = useState('');
   const [timers, setTimers] = useState<Record<string, number>>({});
   const [runningTimers, setRunningTimers] = useState<Set<string>>(new Set());
   const [randomQuote, setRandomQuote] = useState('');
   const [realityCount, setRealityCount] = useState(0);
   const [worldActivities, setWorldActivities] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   useEffect(() => {
     setRealityCount(Math.floor(Math.random() * 500) + 800);
@@ -142,6 +151,12 @@ export default function DashboardPage() {
 
   const completedActivityIds = useMemo(() => new Set(completedActivityMap.keys()), [completedActivityMap]);
 
+  const categories = useMemo(() => {
+    if (!activities) return [];
+    const cats = activities.map(a => a.category).filter(Boolean);
+    return Array.from(new Set(cats)).sort();
+  }, [activities]);
+
   const stats = useMemo(() => {
     const activityCount = logs?.length || 0;
     const watchlistEps = watchlist?.reduce((acc, entry) => acc + (entry.lastEpisode || 0), 0) || 0;
@@ -158,6 +173,12 @@ export default function DashboardPage() {
     const avgMinutesPerDay = uniqueDates.length > 0 ? studyMinutes / uniqueDates.length : 0;
     return { totalXp, level, currentLevelXp, xpProgress, activityCount, studyMinutes, avgMinutesPerDay };
   }, [logs, watchlist, activities]);
+
+  const filteredActivities = useMemo(() => {
+    if (!activities) return [];
+    if (!selectedCategory) return activities.slice(0, 15);
+    return activities.filter(a => a.category === selectedCategory);
+  }, [activities, selectedCategory]);
 
   const recommendations = useMemo(() => {
     if (!activities || !logs) return [];
@@ -196,7 +217,6 @@ export default function DashboardPage() {
       const logId = completedActivityMap.get(activity.id);
       if (logId) {
         deleteDocumentNonBlocking(doc(db, 'users', user.uid, 'logs', logId));
-        // Update Goal Progres Balik (Kurangi)
         if (activity.goalId) {
           const goalRef = doc(db, 'users', user.uid, 'goals', activity.goalId);
           const goalSnap = await getDoc(goalRef);
@@ -217,7 +237,6 @@ export default function DashboardPage() {
       });
       stopTimer(activity.id);
 
-      // Update Goal Progres Otomatis
       if (activity.goalId) {
         const goalRef = doc(db, 'users', user.uid, 'goals', activity.goalId);
         const goalSnap = await getDoc(goalRef);
@@ -308,9 +327,9 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-12">
-        <div className="md:col-span-8 space-y-6">
+        <div className="md:col-span-8 space-y-8">
           {recommendations.length > 0 && (
-            <div className="bg-primary/5 border border-primary/10 rounded-[32px] p-6 mb-6">
+            <div className="bg-primary/5 border border-primary/10 rounded-[32px] p-6 mb-2">
               <div className="flex items-center gap-2 mb-4"><Sparkles className="h-5 w-5 text-primary" /><h3 className="text-sm font-black uppercase tracking-widest">Adaptive Recommendation</h3></div>
               <p className="text-xs text-muted-foreground mb-4">Karena kamu aktif belajar <span className="font-bold text-primary">{recommendations[0].category}</span>, kami sarankan topik berikutnya:</p>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -330,38 +349,102 @@ export default function DashboardPage() {
           )}
 
           <div className="space-y-6">
-            <h2 className="text-lg font-black uppercase tracking-widest flex items-center gap-2"><Layers className="h-5 w-5 text-primary" /> Knowledge Curriculum</h2>
-            {activities?.slice(0, 10).map(activity => {
-              const isCompleted = completedActivityIds.has(activity.id);
-              const isRunning = runningTimers.has(activity.id);
-              const currentTime = timers[activity.id] !== undefined ? timers[activity.id] : (activity.durationMinutes || 25) * 60;
-              return (
-                <Card key={activity.id} className={cn("border-none shadow-sm transition-all rounded-[24px]", isCompleted && "opacity-60")}>
-                  <CardContent className="p-6 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <button onClick={() => handleToggleMastery(activity)}>
-                        {isCompleted ? <CheckCircle2 className="h-6 w-6 text-green-600" /> : <Circle className="h-6 w-6 text-muted-foreground" />}
-                      </button>
-                      <div>
-                        <p className={cn("font-bold", isCompleted && "line-through")}>{activity.title}</p>
-                        <div className="flex items-center gap-2">
-                          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{activity.category}</p>
-                          {activity.goalId && <span className="text-[8px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-full">Automated Goal Entry</span>}
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-black uppercase tracking-widest flex items-center gap-2">
+                <Layers className="h-5 w-5 text-primary" /> Knowledge Curriculum
+              </h2>
+              <Button variant="ghost" size="sm" asChild className="text-[10px] font-black uppercase tracking-widest">
+                <Link href="/activities">Lihat Peta Lengkap</Link>
+              </Button>
+            </div>
+
+            {/* Subject Slider / Category Selector */}
+            <div className="relative px-10">
+              <Carousel className="w-full">
+                <CarouselContent className="-ml-2">
+                  <CarouselItem className="pl-2 basis-auto">
+                    <Button 
+                      variant={selectedCategory === null ? "default" : "outline"} 
+                      size="sm" 
+                      className="rounded-full h-8 px-4 font-bold text-[10px] uppercase tracking-widest"
+                      onClick={() => setSelectedCategory(null)}
+                    >
+                      Semua
+                    </Button>
+                  </CarouselItem>
+                  {categories.map((cat) => (
+                    <CarouselItem key={cat} className="pl-2 basis-auto">
+                      <Button 
+                        variant={selectedCategory === cat ? "default" : "outline"} 
+                        size="sm" 
+                        className="rounded-full h-8 px-4 font-bold text-[10px] uppercase tracking-widest"
+                        onClick={() => setSelectedCategory(cat)}
+                      >
+                        {cat}
+                      </Button>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="-left-4 h-8 w-8" />
+                <CarouselNext className="-right-4 h-8 w-8" />
+              </Carousel>
+            </div>
+
+            {/* Scrollable Checklist */}
+            <ScrollArea className="h-[500px] pr-4 rounded-[32px]">
+              <div className="space-y-4">
+                {filteredActivities.map(activity => {
+                  const isCompleted = completedActivityIds.has(activity.id);
+                  const isRunning = runningTimers.has(activity.id);
+                  const currentTime = timers[activity.id] !== undefined ? timers[activity.id] : (activity.durationMinutes || 25) * 60;
+                  return (
+                    <Card key={activity.id} className={cn(
+                      "border-none shadow-sm transition-all rounded-[24px] cursor-pointer hover:bg-muted/50",
+                      isCompleted ? "opacity-50" : "bg-card"
+                    )} onClick={() => handleToggleMastery(activity)}>
+                      <CardContent className="p-5 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="shrink-0">
+                            {isCompleted ? (
+                              <div className="h-6 w-6 rounded-full bg-green-600 flex items-center justify-center">
+                                <CheckCircle2 className="h-4 w-4 text-white" />
+                              </div>
+                            ) : (
+                              <Circle className="h-6 w-6 text-muted-foreground opacity-50" />
+                            )}
+                          </div>
+                          <div>
+                            <p className={cn("font-bold text-sm", isCompleted && "line-through text-muted-foreground")}>{activity.title}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">{activity.category}</p>
+                              {activity.goalId && <span className="text-[8px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-full flex items-center gap-1"><Target className="h-2 w-2" /> Goal Linked</span>}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    {!isCompleted && (
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono font-bold text-xs bg-muted px-2 py-1 rounded-lg">{formatTime(currentTime)}</span>
-                        <Button variant="ghost" size="icon" onClick={() => isRunning ? stopTimer(activity.id) : startTimer(activity.id, activity.durationMinutes || 25)}>
-                          {isRunning ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+                        {!isCompleted && (
+                          <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                            <span className="font-mono font-black text-[10px] bg-muted px-2 py-1 rounded-lg tabular-nums">{formatTime(currentTime)}</span>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 rounded-full"
+                              onClick={() => isRunning ? stopTimer(activity.id) : startTimer(activity.id, activity.durationMinutes || 25)}
+                            >
+                              {isRunning ? <Pause className="h-4 w-4 fill-current text-primary" /> : <Play className="h-4 w-4 fill-current text-muted-foreground" />}
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+                {filteredActivities.length === 0 && (
+                  <div className="py-20 text-center border-2 border-dashed rounded-[32px] opacity-20">
+                    <p className="font-black text-sm uppercase tracking-widest">Tidak ada materi ditemukan</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
           </div>
         </div>
 
