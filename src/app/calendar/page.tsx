@@ -11,7 +11,9 @@ import {
   Trophy,
   Zap,
   Info,
-  CalendarDays
+  CalendarDays,
+  Clock,
+  NotebookPen
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
@@ -48,9 +50,15 @@ export default function CalendarPage() {
     return query(collection(db, 'users', user.uid, 'activities'));
   }, [db, user]);
 
+  const reflectionsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'users', user.uid, 'reflections'));
+  }, [db, user]);
+
   const { data: logs } = useCollection(logsQuery);
   const { data: dailyStats } = useCollection(dailyStatsQuery);
   const { data: activities } = useCollection(activitiesQuery);
+  const { data: reflections } = useCollection(reflectionsQuery);
 
   const selectedDateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
 
@@ -64,10 +72,18 @@ export default function CalendarPage() {
     return dailyStats.find(s => s.date === selectedDateStr);
   }, [dailyStats, selectedDateStr]);
 
+  const dayReflection = useMemo(() => {
+    if (!reflections || !selectedDateStr) return null;
+    return reflections.find(r => r.date === selectedDateStr);
+  }, [reflections, selectedDateStr]);
+
   const completedActivities = useMemo(() => {
     if (!dayLogs || !activities) return [];
     const activityMap = new Map(activities.map(a => [a.id, a]));
-    return dayLogs.map(log => activityMap.get(log.activityId)).filter(Boolean);
+    return dayLogs.map(log => ({
+      ...activityMap.get(log.activityId),
+      timestamp: log.timestamp
+    })).filter(a => !!a.id);
   }, [dayLogs, activities]);
 
   // Modifiers for highlights
@@ -88,138 +104,162 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="container px-4 py-8 md:px-6 max-w-3xl pb-32">
+    <div className="container px-4 py-8 md:px-6 max-w-4xl pb-32">
       <div className="mb-10 text-center">
         <h1 className="font-headline text-5xl font-black tracking-tight mb-2">Riwayat Belajar</h1>
         <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-2">
-          <CalendarIcon className="h-4 w-4 text-primary" /> Pantau Konsistensi Anda Pertanggal
+          <CalendarIcon className="h-4 w-4 text-primary" /> Pantau Konsistensi & Jurnal Aktivitas
         </p>
       </div>
 
-      <div className="space-y-8">
-        {/* Calendar Section - Fixed Grid Layout */}
+      <div className="grid gap-12">
+        {/* Calendar Section - Kotak Kotak Rapi */}
         <Card className="border-none shadow-2xl rounded-[40px] overflow-hidden bg-card border-t-8 border-primary">
           <CardContent className="p-8 flex flex-col items-center">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
-              className="rounded-md border-none w-full max-w-sm"
+              className="rounded-md border-none p-0 w-full"
               modifiers={modifiers}
               modifiersStyles={modifiersStyles}
               locale={idLocale}
               classNames={{
                 months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full justify-center",
                 month: "space-y-4 w-full",
-                caption: "flex justify-center pt-1 relative items-center mb-4",
-                caption_label: "text-sm font-black uppercase tracking-widest",
+                caption: "flex justify-center pt-1 relative items-center mb-6",
+                caption_label: "text-base font-black uppercase tracking-widest",
                 nav: "space-x-1 flex items-center",
                 nav_button: cn(
                   buttonVariants({ variant: "outline" }),
-                  "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+                  "h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100"
                 ),
                 nav_button_previous: "absolute left-1",
                 nav_button_next: "absolute right-1",
                 table: "w-full border-collapse space-y-1",
-                head_row: "flex justify-between",
-                head_cell: "text-muted-foreground rounded-md w-9 font-black text-[0.7rem] uppercase text-center",
-                row: "flex w-full mt-2 justify-between",
-                cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+                head_row: "grid grid-cols-7 w-full",
+                head_cell: "text-muted-foreground rounded-md font-black text-[0.7rem] uppercase text-center py-2",
+                row: "grid grid-cols-7 w-full mt-2",
+                cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20",
                 day: cn(
                   buttonVariants({ variant: "ghost" }),
-                  "h-9 w-9 p-0 font-bold rounded-xl transition-all"
+                  "h-10 w-10 p-0 font-bold rounded-xl transition-all mx-auto"
                 ),
                 day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground shadow-lg scale-110",
                 day_today: "bg-muted text-foreground ring-2 ring-primary/20",
-                day_outside: "text-muted-foreground opacity-50",
-                day_disabled: "text-muted-foreground opacity-50",
-                day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                day_outside: "text-muted-foreground opacity-30",
+                day_disabled: "text-muted-foreground opacity-30",
                 day_hidden: "invisible",
               }}
             />
-            
-            <div className="mt-8 w-full p-5 bg-primary/5 rounded-[28px] flex items-center gap-4 border border-primary/10">
-              <div className="bg-primary/10 p-2 rounded-xl">
-                <Info className="h-5 w-5 text-primary shrink-0" />
-              </div>
-              <p className="text-[11px] font-bold leading-relaxed text-muted-foreground">
-                Tanggal dengan <span className="text-primary font-black underline decoration-2">garis bawah</span> menunjukkan hari di mana Anda sangat produktif menguasai materi atau mengerjakan soal.
-              </p>
-            </div>
           </CardContent>
         </Card>
 
-        {/* Details Section */}
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <div className="flex items-center justify-between px-6">
-             <h2 className="text-2xl font-black uppercase tracking-tighter">
-               Laporan: {selectedDate ? format(selectedDate, 'd MMMM yyyy', { locale: idLocale }) : 'Pilih Tanggal'}
-             </h2>
-             <div className="flex items-center gap-2">
-               <CalendarDays className="h-5 w-5 text-primary" />
-               <Zap className="h-5 w-5 text-primary fill-current" />
+        {/* Daily Timeline View */}
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="flex flex-col md:flex-row md:items-end justify-between px-4 gap-4">
+             <div>
+               <p className="text-[10px] font-black uppercase text-primary tracking-widest mb-1">Daily Record</p>
+               <h2 className="text-3xl font-black uppercase tracking-tighter">
+                 {selectedDate ? format(selectedDate, 'EEEE, d MMMM yyyy', { locale: idLocale }) : 'Pilih Tanggal'}
+               </h2>
+             </div>
+             <div className="flex items-center gap-4">
+                <div className="bg-indigo-600 text-white px-4 py-2 rounded-2xl shadow-lg">
+                  <p className="text-[9px] font-black uppercase opacity-70">Soal</p>
+                  <p className="text-xl font-black">{dayStat?.questionsSolved || 0}</p>
+                </div>
+                <div className="bg-emerald-600 text-white px-4 py-2 rounded-2xl shadow-lg">
+                  <p className="text-[9px] font-black uppercase opacity-70">Materi</p>
+                  <p className="text-xl font-black">{completedActivities.length}</p>
+                </div>
              </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 px-2">
-            <Card className="border-none shadow-xl bg-indigo-600 text-white rounded-[32px] overflow-hidden">
-              <CardContent className="p-6 text-center relative">
-                <FileText className="h-16 w-16 absolute -bottom-4 -right-4 opacity-10 rotate-12" />
-                <p className="text-4xl font-black mb-1">{dayStat?.questionsSolved || 0}</p>
-                <p className="text-[10px] font-black uppercase opacity-80 tracking-widest">Soal Dikerjakan</p>
-              </CardContent>
-            </Card>
-            <Card className="border-none shadow-xl bg-emerald-600 text-white rounded-[32px] overflow-hidden">
-              <CardContent className="p-6 text-center relative">
-                <CheckCircle2 className="h-16 w-16 absolute -bottom-4 -right-4 opacity-10 -rotate-12" />
-                <p className="text-4xl font-black mb-1">{completedActivities.length}</p>
-                <p className="text-[10px] font-black uppercase opacity-80 tracking-widest">Materi Selesai</p>
-              </CardContent>
-            </Card>
-          </div>
+          <div className="relative pl-12 md:pl-20 py-4">
+            {/* Vertical Timeline Line */}
+            <div className="absolute left-6 md:left-10 top-0 bottom-0 w-0.5 bg-muted border-l-2 border-dashed border-muted-foreground/20" />
 
-          <Card className="border-none shadow-2xl rounded-[40px] overflow-hidden bg-card">
-            <CardHeader className="bg-muted/30 border-b p-8">
-              <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-3">
-                <BookOpen className="h-5 w-5 text-primary" /> Daftar Capaian Materi
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="max-h-[500px]">
-                {completedActivities.length > 0 ? (
-                  <div className="divide-y divide-muted">
-                    {completedActivities.map((act: any, i) => (
-                      <div key={`${act.id}-${i}`} className="p-6 flex items-center justify-between group hover:bg-primary/5 transition-all">
-                        <div className="flex items-center gap-5">
-                          <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
-                            <BookOpen className="h-6 w-6" />
-                          </div>
-                          <div>
-                            <p className="font-black text-base tracking-tight mb-0.5">{act.title}</p>
-                            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
-                              {act.category} <span className="h-1 w-1 rounded-full bg-muted-foreground" /> {act.durationMinutes} Menit
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                           <div className="hidden md:block bg-green-100 text-green-700 text-[8px] font-black uppercase px-3 py-1 rounded-full">Completed</div>
-                           <ChevronRight className="h-5 w-5 text-muted-foreground opacity-20 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                        </div>
+            {completedActivities.length > 0 ? (
+              <div className="space-y-10">
+                {completedActivities.map((act: any, i) => {
+                  const time = act.timestamp ? format(act.timestamp.toDate(), 'HH:mm') : '--:--';
+                  return (
+                    <div key={`${act.id}-${i}`} className="relative">
+                      {/* Timeline Dot */}
+                      <div className="absolute -left-12 md:-left-[60px] top-1/2 -translate-y-1/2 flex flex-col items-center">
+                        <div className="bg-white border-2 border-primary h-4 w-4 rounded-full z-10 shadow-[0_0_10px_rgba(var(--primary),0.3)]" />
+                        <span className="text-[10px] font-black text-primary mt-1 bg-white px-1">{time}</span>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-24 text-center">
-                    <div className="bg-muted/50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <Trophy className="h-10 w-10 text-muted-foreground/30" />
+
+                      <Card className="border-none shadow-md rounded-2xl overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1 bg-card group">
+                        <CardContent className="p-6 flex items-center justify-between">
+                          <div className="flex items-center gap-5">
+                            <div className="h-12 w-12 rounded-xl bg-primary/5 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                              <BookOpen className="h-6 w-6" />
+                            </div>
+                            <div>
+                              <p className="font-black text-lg tracking-tight mb-0.5">{act.title}</p>
+                              <div className="flex items-center gap-3">
+                                <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{act.category}</span>
+                                <span className="h-1 w-1 rounded-full bg-muted-foreground opacity-30" />
+                                <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                                  <Clock className="h-3 w-3" /> {act.durationMinutes}m
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <Zap className="h-5 w-5 text-primary opacity-20 group-hover:opacity-100 group-hover:fill-current transition-all" />
+                        </CardContent>
+                      </Card>
                     </div>
-                    <p className="font-black text-sm uppercase tracking-widest text-muted-foreground">Belum ada materi yang ditamatkan hari ini</p>
-                    <p className="text-[10px] font-medium text-muted-foreground/60 mt-2 uppercase">Klik tanggal lain atau mulai belajar sekarang!</p>
-                  </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-12 text-center opacity-40">
+                <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="font-black text-sm uppercase tracking-widest">Tidak ada aktivitas tersemat</p>
+              </div>
+            )}
+
+            {/* Daily Reflection Section */}
+            {dayReflection && (
+              <div className="mt-12 relative pt-8 border-t border-dashed">
+                <div className="absolute -left-12 md:-left-[64px] top-8 bg-amber-500 p-2 rounded-full shadow-lg z-10 text-white">
+                  <NotebookPen className="h-4 w-4" />
+                </div>
+                <Card className="border-none shadow-xl rounded-[32px] bg-amber-50 border border-amber-100 overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xs font-black uppercase tracking-widest text-amber-800 flex items-center gap-2">
+                      <NotebookPen className="h-4 w-4" /> Journal Insight
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-lg font-serif italic text-amber-900 leading-relaxed">
+                      "{dayReflection.content}"
+                    </p>
+                    <div className="flex items-center gap-1 mt-4">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Zap key={i} className={cn(
+                          "h-3 w-3",
+                          i < (dayReflection.productivityRating || 0) ? "text-amber-600 fill-current" : "text-amber-200"
+                        )} />
+                      ))}
+                      <span className="text-[10px] font-black uppercase text-amber-700 ml-2">Rating Produktivitas</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="p-10 border-4 border-dashed rounded-[48px] bg-muted/20 flex flex-col items-center text-center gap-4">
+           <Info className="h-8 w-8 text-primary opacity-30" />
+           <p className="text-[11px] font-bold leading-relaxed text-muted-foreground max-w-md uppercase tracking-widest">
+             Gunakan halaman ini untuk refleksi mingguan. Klik tanggal lain untuk melihat bagaimana Anda berkembang setiap harinya.
+           </p>
         </div>
       </div>
     </div>
