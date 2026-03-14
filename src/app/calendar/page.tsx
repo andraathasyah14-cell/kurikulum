@@ -24,8 +24,8 @@ import {
 import { collection, query, orderBy } from 'firebase/firestore';
 import { format, parseISO } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { buttonVariants } from '@/components/ui/button';
 
 export default function CalendarPage() {
   const { user } = useUser();
@@ -111,15 +111,16 @@ export default function CalendarPage() {
       </div>
 
       <div className="grid gap-12">
-        {/* Modern Boxy Calendar Section - Styled like requested HTML */}
+        {/* Modern Boxy Calendar Section - 7 Columns with English Day Names */}
         <div className="flex justify-center">
-          <div className="w-full max-w-[380px] bg-[#111827] rounded-[24px] p-6 shadow-[0_20px_40px_rgba(0,0,0,0.4)] text-white">
+          <div className="w-full max-w-[380px] bg-[#111827] rounded-[20px] p-6 shadow-[0_20px_40px_rgba(0,0,0,0.4)] text-white">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
               modifiers={modifiers}
               modifiersStyles={modifiersStyles}
+              locale={enUS}
               className="p-0 w-full"
               classNames={{
                 months: "w-full",
@@ -131,10 +132,10 @@ export default function CalendarPage() {
                   "h-10 w-10 flex items-center justify-center bg-[#1f2937] hover:bg-[#374151] rounded-[10px] transition-colors border-none text-white opacity-100"
                 ),
                 table: "w-full border-collapse",
-                head_row: "flex w-full mb-2",
-                head_cell: "text-xs font-bold opacity-70 w-[calc(100%/7)] text-center pb-2",
-                row: "flex w-full mt-1",
-                cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 w-[calc(100%/7)]",
+                head_row: "grid grid-cols-7 w-full mb-2",
+                head_cell: "text-[12px] font-bold opacity-70 text-center pb-2",
+                row: "grid grid-cols-7 w-full mt-1",
+                cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20",
                 day: cn(
                   "h-11 w-full p-0 font-medium rounded-[10px] transition-all flex items-center justify-center hover:bg-[#374151] cursor-pointer text-white"
                 ),
