@@ -78,98 +78,125 @@ export default function CalendarPage() {
 
   const modifiersStyles = {
     hasActivity: {
-      fontWeight: 'bold',
+      fontWeight: '900',
       textDecoration: 'underline',
+      textDecorationThickness: '2px',
       color: 'hsl(var(--primary))'
     }
   };
 
   return (
-    <div className="container px-4 py-8 md:px-6 max-w-5xl pb-32">
-      <div className="mb-10">
+    <div className="container px-4 py-8 md:px-6 max-w-3xl pb-32">
+      <div className="mb-10 text-center">
         <h1 className="font-headline text-5xl font-black tracking-tight mb-2">Riwayat Belajar</h1>
-        <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest flex items-center gap-2">
+        <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-2">
           <CalendarIcon className="h-4 w-4 text-primary" /> Pantau Konsistensi Anda Pertanggal
         </p>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-12">
-        <div className="md:col-span-5">
-          <Card className="border-none shadow-2xl rounded-[40px] overflow-hidden bg-card sticky top-24">
-            <CardContent className="p-6">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                className="rounded-md border-none w-full"
-                modifiers={modifiers}
-                modifiersStyles={modifiersStyles}
-                locale={idLocale}
-              />
-              <div className="mt-6 p-4 bg-primary/5 rounded-2xl flex items-center gap-3">
+      <div className="space-y-8">
+        {/* Calendar Section - Full Width Tanggalan Style */}
+        <Card className="border-none shadow-2xl rounded-[40px] overflow-hidden bg-card border-t-8 border-primary">
+          <CardContent className="p-8">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              className="rounded-md border-none w-full"
+              modifiers={modifiers}
+              modifiersStyles={modifiersStyles}
+              locale={idLocale}
+              classNames={{
+                months: "w-full",
+                month: "w-full space-y-4",
+                table: "w-full border-collapse space-y-1",
+                head_cell: "text-muted-foreground rounded-md w-full font-black text-[0.8rem] uppercase",
+                cell: "h-12 w-full text-center text-sm p-0 relative",
+                day: cn(
+                  "h-10 w-10 p-0 font-bold rounded-xl mx-auto flex items-center justify-center transition-all",
+                  "hover:bg-primary/10"
+                ),
+                day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground shadow-lg scale-110",
+                day_today: "bg-muted text-foreground ring-2 ring-primary/20",
+              }}
+            />
+            <div className="mt-8 p-5 bg-primary/5 rounded-[28px] flex items-center gap-4 border border-primary/10">
+              <div className="bg-primary/10 p-2 rounded-xl">
                 <Info className="h-5 w-5 text-primary shrink-0" />
-                <p className="text-[10px] font-medium leading-relaxed text-muted-foreground">
-                  Tanggal dengan <span className="text-primary font-bold">garis bawah</span> menunjukkan hari di mana Anda memiliki aktivitas belajar atau mengerjakan soal.
-                </p>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              <p className="text-[11px] font-bold leading-relaxed text-muted-foreground">
+                Tanggal dengan <span className="text-primary font-black underline decoration-2">garis bawah</span> menunjukkan hari di mana Anda sangat produktif menguasai materi atau mengerjakan soal.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="md:col-span-7 space-y-6">
-          <div className="flex items-center justify-between px-4">
-             <h2 className="text-xl font-black uppercase tracking-tighter">
-               Detail: {selectedDate ? format(selectedDate, 'd MMMM yyyy', { locale: idLocale }) : 'Pilih Tanggal'}
+        {/* Details Section - Moved Below the Calendar */}
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="flex items-center justify-between px-6">
+             <h2 className="text-2xl font-black uppercase tracking-tighter">
+               Laporan: {selectedDate ? format(selectedDate, 'd MMMM yyyy', { locale: idLocale }) : 'Pilih Tanggal'}
              </h2>
-             <Zap className="h-5 w-5 text-primary animate-pulse" />
+             <div className="flex items-center gap-2">
+               <div className="h-2 w-2 rounded-full bg-primary animate-ping" />
+               <Zap className="h-5 w-5 text-primary fill-current" />
+             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Card className="border-none shadow-lg bg-indigo-50/50 rounded-[28px]">
-              <CardContent className="p-6 text-center">
-                <FileText className="h-8 w-8 text-indigo-600 mx-auto mb-2" />
-                <p className="text-3xl font-black text-indigo-900">{dayStat?.questionsSolved || 0}</p>
-                <p className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">Soal Dikerjakan</p>
+          <div className="grid grid-cols-2 gap-4 px-2">
+            <Card className="border-none shadow-xl bg-indigo-600 text-white rounded-[32px] overflow-hidden">
+              <CardContent className="p-6 text-center relative">
+                <FileText className="h-16 w-16 absolute -bottom-4 -right-4 opacity-10 rotate-12" />
+                <p className="text-4xl font-black mb-1">{dayStat?.questionsSolved || 0}</p>
+                <p className="text-[10px] font-black uppercase opacity-80 tracking-widest">Soal Dikerjakan</p>
               </CardContent>
             </Card>
-            <Card className="border-none shadow-lg bg-emerald-50/50 rounded-[28px]">
-              <CardContent className="p-6 text-center">
-                <CheckCircle2 className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
-                <p className="text-3xl font-black text-emerald-900">{completedActivities.length}</p>
-                <p className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Materi Selesai</p>
+            <Card className="border-none shadow-xl bg-emerald-600 text-white rounded-[32px] overflow-hidden">
+              <CardContent className="p-6 text-center relative">
+                <CheckCircle2 className="h-16 w-16 absolute -bottom-4 -right-4 opacity-10 -rotate-12" />
+                <p className="text-4xl font-black mb-1">{completedActivities.length}</p>
+                <p className="text-[10px] font-black uppercase opacity-80 tracking-widest">Materi Selesai</p>
               </CardContent>
             </Card>
           </div>
 
-          <Card className="border-none shadow-xl rounded-[32px] overflow-hidden bg-card">
-            <CardHeader className="bg-primary/5 border-b p-6">
-              <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-primary" /> Daftar Materi Hari Ini
+          <Card className="border-none shadow-2xl rounded-[40px] overflow-hidden bg-card">
+            <CardHeader className="bg-muted/30 border-b p-8">
+              <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-3">
+                <BookOpen className="h-5 w-5 text-primary" /> Daftar Capaian Materi
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <ScrollArea className="h-[400px]">
+              <ScrollArea className="max-h-[500px]">
                 {completedActivities.length > 0 ? (
                   <div className="divide-y divide-muted">
                     {completedActivities.map((act: any, i) => (
-                      <div key={`${act.id}-${i}`} className="p-5 flex items-center justify-between group hover:bg-muted/30 transition-colors">
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                            <BookOpen className="h-5 w-5" />
+                      <div key={`${act.id}-${i}`} className="p-6 flex items-center justify-between group hover:bg-primary/5 transition-all">
+                        <div className="flex items-center gap-5">
+                          <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                            <BookOpen className="h-6 w-6" />
                           </div>
                           <div>
-                            <p className="font-bold text-sm tracking-tight">{act.title}</p>
-                            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{act.category}</p>
+                            <p className="font-black text-base tracking-tight mb-0.5">{act.title}</p>
+                            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
+                              {act.category} <span className="h-1 w-1 rounded-full bg-muted-foreground" /> {act.durationMinutes} Menit
+                            </p>
                           </div>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground opacity-20 group-hover:opacity-100 transition-opacity" />
+                        <div className="flex items-center gap-3">
+                           <div className="hidden md:block bg-green-100 text-green-700 text-[8px] font-black uppercase px-3 py-1 rounded-full">Completed</div>
+                           <ChevronRight className="h-5 w-5 text-muted-foreground opacity-20 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="py-24 text-center opacity-30">
-                    <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                    <p className="font-black text-sm uppercase tracking-widest">Tidak ada materi yang selesai</p>
+                  <div className="py-24 text-center">
+                    <div className="bg-muted/50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Trophy className="h-10 w-10 text-muted-foreground/30" />
+                    </div>
+                    <p className="font-black text-sm uppercase tracking-widest text-muted-foreground">Belum ada materi yang ditamatkan hari ini</p>
+                    <p className="text-[10px] font-medium text-muted-foreground/60 mt-2 uppercase">Klik tanggal lain atau mulai belajar sekarang!</p>
                   </div>
                 )}
               </ScrollArea>
@@ -180,3 +207,4 @@ export default function CalendarPage() {
     </div>
   );
 }
+
