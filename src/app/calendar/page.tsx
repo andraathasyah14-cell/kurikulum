@@ -4,13 +4,10 @@
 import { useState, useMemo } from 'react';
 import { 
   Calendar as CalendarIcon, 
-  CheckCircle2, 
-  FileText, 
   ChevronRight,
   BookOpen,
   Trophy,
   Zap,
-  Info,
   CalendarDays,
   Clock,
   NotebookPen,
@@ -25,10 +22,9 @@ import {
   useFirestore 
 } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
-import { format, isSameDay, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { buttonVariants } from '@/components/ui/button';
 
 export default function CalendarPage() {
@@ -87,7 +83,7 @@ export default function CalendarPage() {
     })).filter(a => !!a.id);
   }, [dayLogs, activities]);
 
-  // Modifiers for highlights
+  // Modifiers for highlights (underline for days with activity)
   const modifiers = {
     hasActivity: (date: Date) => {
       const dStr = format(date, 'yyyy-MM-dd');
@@ -99,7 +95,8 @@ export default function CalendarPage() {
     hasActivity: {
       fontWeight: '900',
       textDecoration: 'underline',
-      textDecorationThickness: '2px',
+      textDecorationThickness: '3px',
+      textUnderlineOffset: '4px',
       color: 'hsl(var(--primary))'
     }
   };
@@ -114,49 +111,45 @@ export default function CalendarPage() {
       </div>
 
       <div className="grid gap-12">
-        {/* Modern Boxy Calendar Section */}
+        {/* Modern Boxy Calendar Section - Styled like requested HTML */}
         <div className="flex justify-center">
-          <Card className="w-full max-w-[400px] border-none shadow-2xl rounded-[32px] overflow-hidden bg-card border-t-8 border-primary transition-all duration-500 hover:shadow-primary/10">
-            <CardContent className="p-8">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                className="p-0 w-full"
-                modifiers={modifiers}
-                modifiersStyles={modifiersStyles}
-                locale={idLocale}
-                classNames={{
-                  months: "w-full",
-                  month: "space-y-6 w-full",
-                  caption: "flex justify-between items-center mb-6 px-2",
-                  caption_label: "text-lg font-black uppercase tracking-widest text-foreground",
-                  nav: "flex items-center gap-1",
-                  nav_button: cn(
-                    buttonVariants({ variant: "outline" }),
-                    "h-10 w-10 bg-muted/50 border-none p-0 opacity-100 hover:bg-primary hover:text-white rounded-xl transition-all"
-                  ),
-                  table: "w-full border-collapse",
-                  head_row: "grid grid-cols-7 w-full mb-4",
-                  head_cell: "text-muted-foreground/50 rounded-md font-black text-[10px] uppercase text-center",
-                  row: "grid grid-cols-7 w-full gap-1 mt-1",
-                  cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20",
-                  day: cn(
-                    "h-12 w-full p-0 font-bold rounded-xl transition-all flex items-center justify-center hover:bg-muted cursor-pointer"
-                  ),
-                  day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground shadow-lg scale-105 z-10",
-                  day_today: "bg-muted text-foreground ring-2 ring-primary/20",
-                  day_outside: "text-muted-foreground opacity-20",
-                  day_disabled: "text-muted-foreground opacity-20",
-                  day_hidden: "invisible",
-                }}
-                components={{
-                  IconLeft: () => <ChevronLeft className="h-5 w-5" />,
-                  IconRight: () => <ChevronRight className="h-5 w-5" />
-                }}
-              />
-            </CardContent>
-          </Card>
+          <div className="w-full max-w-[380px] bg-[#111827] rounded-[24px] p-6 shadow-[0_20px_40px_rgba(0,0,0,0.4)] text-white">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              modifiers={modifiers}
+              modifiersStyles={modifiersStyles}
+              className="p-0 w-full"
+              classNames={{
+                months: "w-full",
+                month: "space-y-4 w-full",
+                caption: "flex justify-between items-center mb-6 px-1",
+                caption_label: "text-lg font-bold",
+                nav: "flex items-center gap-2",
+                nav_button: cn(
+                  "h-10 w-10 flex items-center justify-center bg-[#1f2937] hover:bg-[#374151] rounded-[10px] transition-colors border-none text-white opacity-100"
+                ),
+                table: "w-full border-collapse",
+                head_row: "flex w-full mb-2",
+                head_cell: "text-xs font-bold opacity-70 w-[calc(100%/7)] text-center pb-2",
+                row: "flex w-full mt-1",
+                cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 w-[calc(100%/7)]",
+                day: cn(
+                  "h-11 w-full p-0 font-medium rounded-[10px] transition-all flex items-center justify-center hover:bg-[#374151] cursor-pointer text-white"
+                ),
+                day_selected: "bg-[#3b82f6] text-white hover:bg-[#3b82f6] focus:bg-[#3b82f6] shadow-lg scale-105 z-10",
+                day_today: "ring-2 ring-[#3b82f6]/50",
+                day_outside: "text-white/20",
+                day_disabled: "text-white/20",
+                day_hidden: "invisible",
+              }}
+              components={{
+                IconLeft: () => <ChevronLeft className="h-5 w-5" />,
+                IconRight: () => <ChevronRight className="h-5 w-5" />
+              }}
+            />
+          </div>
         </div>
 
         {/* Daily Timeline View */}
@@ -260,7 +253,6 @@ export default function CalendarPage() {
         </div>
 
         <div className="p-10 border-4 border-dashed rounded-[48px] bg-muted/20 flex flex-col items-center text-center gap-4">
-           <Info className="h-8 w-8 text-primary opacity-30" />
            <p className="text-[11px] font-bold leading-relaxed text-muted-foreground max-w-md uppercase tracking-widest">
              Gunakan halaman ini untuk refleksi mingguan. Klik tanggal lain untuk melihat bagaimana Anda berkembang setiap harinya.
            </p>
