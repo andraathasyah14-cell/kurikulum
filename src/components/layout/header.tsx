@@ -3,37 +3,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, LayoutDashboard, BookOpen, TrendingUp, Settings, LogOut, Trophy, Target, NotebookPen, Tv, Zap, MessageSquare, Calendar } from 'lucide-react';
-
+import { BookOpen, Bell, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn } from '@/lib/utils';
 import { useUser, useAuth } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
-import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-
-const navLinks = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/activities', label: 'Kurikulum', icon: BookOpen },
-  { href: '/calendar', label: 'Kalender', icon: Calendar },
-  { href: '/challenges', label: 'Challenges', icon: Zap },
-  { href: '/goals', label: 'Goals', icon: Target },
-  { href: '/journal', label: 'Jurnal', icon: NotebookPen },
-  { href: '/stats', label: 'Statistik', icon: TrendingUp },
-  { href: '/ranking', label: 'Ranking', icon: Trophy },
-  { href: '/watchlist', label: 'Watchlist', icon: Tv },
-  { href: '/report', label: 'Laporan', icon: MessageSquare },
-];
 
 export function Header() {
   const pathname = usePathname();
@@ -46,93 +21,51 @@ export function Header() {
       toast({
         variant: 'destructive',
         title: 'Gagal Masuk',
-        description: error.code === 'auth/operation-not-allowed' 
-          ? 'Metode login Google belum diaktifkan.' 
-          : error.message,
+        description: error.message,
       });
     });
   };
 
+  // Get dynamic page title
+  const getPageTitle = () => {
+    if (pathname === '/') return 'DASHBOARD';
+    if (pathname === '/activities') return 'KURIKULUM';
+    if (pathname === '/calendar') return 'RIWAYAT';
+    if (pathname === '/ranking') return 'RANKING';
+    if (pathname === '/goals') return 'TARGET';
+    if (pathname === '/journal') return 'JURNAL';
+    if (pathname === '/stats') return 'STATISTIK';
+    if (pathname === '/watchlist') return 'WATCHLIST';
+    if (pathname === '/report') return 'LAPORAN';
+    if (pathname === '/settings') return 'PENGATURAN';
+    return 'STUDYPRO';
+  };
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center px-4 md:px-6">
-        <Link href="/" className="mr-6 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+    <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-muted">
+      <div className="flex h-16 items-center justify-between px-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
             <BookOpen className="h-5 w-5" />
           </div>
-          <span className="font-headline font-black text-xl tracking-tighter sm:inline-block">
-            STUDYPRO
+          <span className="font-black text-lg tracking-tighter uppercase">
+            {getPageTitle()}
           </span>
-        </Link>
+        </div>
 
-        <nav className="hidden xl:flex xl:flex-1 items-center gap-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                'flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold uppercase tracking-tight transition-colors rounded-full hover:bg-muted',
-                pathname === link.href ? 'text-primary bg-primary/5' : 'text-muted-foreground'
-              )}
-            >
-              <link.icon className="h-3.5 w-3.5" />
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex flex-1 items-center justify-end gap-2">
+        <div className="flex items-center gap-2">
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full overflow-hidden">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
-                    <AvatarFallback>{user.displayName?.[0] || 'U'}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild><Link href="/settings" className="cursor-pointer"><Settings className="mr-2 h-4 w-4" /> Pengaturan</Link></DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer" onClick={() => signOut(auth)}><LogOut className="mr-2 h-4 w-4" /> Keluar</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Link href="/settings">
+              <Avatar className="h-9 w-9 border-2 border-primary/20">
+                <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
+                <AvatarFallback className="font-black">{user.displayName?.[0] || 'U'}</AvatarFallback>
+              </Avatar>
+            </Link>
           ) : (
-            <Button size="sm" className="rounded-full px-6" onClick={handleLogin}>Masuk</Button>
+            <Button size="sm" className="rounded-full px-5 font-black text-[10px] uppercase h-9" onClick={handleLogin}>
+              MASUK
+            </Button>
           )}
-          
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="xl:hidden"><Menu className="h-6 w-6" /></Button>
-            </SheetTrigger>
-            <SheetContent side="left">
-              <SheetHeader><SheetTitle className="text-left font-black tracking-tighter">NAVIGASI</SheetTitle></SheetHeader>
-              <Link href="/" className="mb-8 mt-4 flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <BookOpen className="h-5 w-5" />
-                </div>
-                <span className="font-headline font-black text-xl tracking-tighter">STUDYPRO</span>
-              </Link>
-              <nav className="flex flex-col gap-2">
-                {navLinks.map((link) => (
-                  <Link 
-                    key={link.href} 
-                    href={link.href} 
-                    className={cn(
-                      'flex items-center gap-3 text-sm font-bold uppercase py-3 px-4 rounded-xl', 
-                      pathname === link.href ? 'text-primary bg-primary/5' : 'text-muted-foreground'
-                    )}
-                  >
-                    {link.icon && <link.icon className="h-5 w-5" />}
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-            </SheetContent>
-          </Sheet>
         </div>
       </div>
     </header>

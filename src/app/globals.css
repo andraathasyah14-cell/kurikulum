@@ -24,7 +24,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
-    --radius: 0.75rem;
+    --radius: 1.25rem;
   }
 
   .dark {
@@ -53,6 +53,7 @@
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground font-body;
@@ -60,4 +61,18 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline;
   }
+}
+
+/* Hide scrollbars but keep functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Android Ripple-like effect on buttons */
+.btn-android {
+  @apply relative overflow-hidden active:scale-95 transition-transform;
 }

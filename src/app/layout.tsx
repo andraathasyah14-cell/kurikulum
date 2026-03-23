@@ -3,9 +3,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
+import { BottomNav } from '@/components/layout/bottom-nav';
 import { FirebaseClientProvider } from '@/firebase';
-import { CountdownBanner } from '@/components/layout/countdown-banner';
 import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
@@ -33,7 +32,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased bg-background text-foreground pb-20 md:pb-24">
+      <body className="font-body antialiased bg-slate-950 flex justify-center overflow-x-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -41,13 +40,15 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
-            <div className="flex min-h-screen flex-col">
+            {/* Mobile Frame Container */}
+            <div className="relative flex min-h-screen w-full max-w-[480px] flex-col bg-background shadow-[0_0_50px_rgba(0,0,0,0.5)]">
               <Header />
-              <main className="flex-grow">{children}</main>
-              <Footer />
+              <main className="flex-grow pb-24">
+                {children}
+              </main>
+              <BottomNav />
+              <Toaster />
             </div>
-            <CountdownBanner />
-            <Toaster />
           </FirebaseClientProvider>
         </ThemeProvider>
       </body>

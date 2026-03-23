@@ -1,30 +1,9 @@
 
-import { BookOpen, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 
 export function Footer() {
-  return (
-    <footer className="border-t bg-card mt-auto">
-      <div className="container px-4 py-8 md:px-6">
-        <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-primary text-primary-foreground">
-              <BookOpen className="h-4 w-4" />
-            </div>
-            <span className="font-headline font-bold">StudyPro</span>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} StudyPro - Mastering your materials.
-          </p>
-          <nav className="flex gap-6 items-center">
-            <Link href="/report" className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline flex items-center gap-1.5">
-              <MessageSquare className="h-3 w-3" /> Saran & Kritik
-            </Link>
-            <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary">Privasi</Link>
-            <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary">Ketentuan</Link>
-          </nav>
-        </div>
-      </div>
-    </footer>
-  );
+  // Footer dinonaktifkan di mobile layout untuk digantikan BottomNav
+  // Tapi tetap disimpan isinya jika sewaktu-waktu dibutuhkan di dalam halaman
+  return null;
 }
