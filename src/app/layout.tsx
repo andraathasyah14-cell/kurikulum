@@ -32,7 +32,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased bg-slate-950 flex justify-center overflow-x-hidden">
+      <body className="font-body antialiased bg-background">
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -40,10 +40,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
-            {/* Mobile Frame Container */}
-            <div className="relative flex min-h-screen w-full max-w-[480px] flex-col bg-background shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+            <div className="relative flex min-h-screen w-full flex-col">
               <Header />
-              <main className="flex-grow pb-24">
+              <main className="flex-grow pb-24 md:pb-8">
                 {children}
               </main>
               <BottomNav />
