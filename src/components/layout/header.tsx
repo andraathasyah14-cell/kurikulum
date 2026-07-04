@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, LayoutDashboard, Calendar, Trophy, BarChart3, Settings } from 'lucide-react';
+import { BookOpen, LayoutDashboard, Calendar, Trophy, BarChart3, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUser, useAuth } from '@/firebase';
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 const desktopNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/activities', label: 'Kurikulum', icon: BookOpen },
+  { href: '/schedule', label: 'Jadwal', icon: Clock },
   { href: '/calendar', label: 'Riwayat', icon: Calendar },
   { href: '/ranking', label: 'Ranking', icon: Trophy },
   { href: '/stats', label: 'Statistik', icon: BarChart3 },
@@ -38,13 +39,10 @@ export function Header() {
   const getPageTitle = () => {
     if (pathname === '/') return 'DASHBOARD';
     if (pathname === '/activities') return 'KURIKULUM';
+    if (pathname === '/schedule') return 'JADWAL HARIAN';
     if (pathname === '/calendar') return 'RIWAYAT';
     if (pathname === '/ranking') return 'RANKING';
-    if (pathname === '/goals') return 'TARGET';
-    if (pathname === '/journal') return 'JURNAL';
     if (pathname === '/stats') return 'STATISTIK';
-    if (pathname === '/watchlist') return 'WATCHLIST';
-    if (pathname === '/report') return 'LAPORAN';
     if (pathname === '/settings') return 'PENGATURAN';
     return 'STUDYPRO';
   };
@@ -92,10 +90,6 @@ export function Header() {
         <div className="flex items-center gap-2">
           {user ? (
             <div className="flex items-center gap-3">
-              <div className="hidden md:block text-right">
-                <p className="text-[10px] font-black uppercase tracking-tight leading-none mb-0.5">{user.displayName}</p>
-                <p className="text-[8px] font-bold text-muted-foreground uppercase leading-none">Scholar Level 1</p>
-              </div>
               <Link href="/settings">
                 <Avatar className="h-9 w-9 border-2 border-primary/20 hover:scale-105 transition-transform">
                   <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />

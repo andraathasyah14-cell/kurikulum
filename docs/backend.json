@@ -32,6 +32,26 @@
       },
       "required": ["id", "activityId", "userId", "date"]
     },
+    "Schedule": {
+      "title": "Schedule",
+      "type": "object",
+      "description": "Jadwal harian, mingguan, atau bulanan pengguna.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "startTime": { "type": "string", "description": "Format HH:mm" },
+        "endTime": { "type": "string", "description": "Format HH:mm" },
+        "durationMinutes": { "type": "number" },
+        "recurrence": { "type": "string", "enum": ["once", "daily", "weekly", "monthly"] },
+        "daysOfWeek": { "type": "array", "items": { "type": "number" }, "description": "0-6 (Sun-Sat)" },
+        "dayOfMonth": { "type": "number" },
+        "specificDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "startTime", "endTime", "recurrence"]
+    },
     "DailyStats": {
       "title": "DailyStats",
       "type": "object",
@@ -76,21 +96,6 @@
       },
       "required": ["userId", "message", "type"]
     },
-    "WatchlistEntry": {
-      "title": "WatchlistEntry",
-      "type": "object",
-      "description": "Entri film atau series yang ditonton pengguna.",
-      "properties": {
-        "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "title": { "type": "string" },
-        "totalEpisodes": { "type": "number" },
-        "lastEpisode": { "type": "number" },
-        "status": { "type": "string", "enum": ["Watching", "Completed", "Paused"] },
-        "lastWatched": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "title", "totalEpisodes", "lastEpisode", "status"]
-    },
     "LeaderboardEntry": {
       "title": "LeaderboardEntry",
       "type": "object",
@@ -121,6 +126,14 @@
         }
       },
       {
+        "path": "/users/{userId}/schedules/{scheduleId}",
+        "definition": {
+          "entityName": "Schedule",
+          "schema": { "$ref": "#/backend/entities/Schedule" },
+          "description": "Data jadwal pengguna."
+        }
+      },
+      {
         "path": "/users/{userId}/logs/{logId}",
         "definition": {
           "entityName": "ActivityLog",
@@ -142,30 +155,6 @@
           "entityName": "Goal",
           "schema": { "$ref": "#/backend/entities/Goal" },
           "description": "Target belajar spesifik."
-        }
-      },
-      {
-        "path": "/users/{userId}/activeChallenges/{challengeId}",
-        "definition": {
-          "entityName": "ChallengeStatus",
-          "schema": { "type": "object" },
-          "description": "Status partisipasi tantangan pengguna."
-        }
-      },
-      {
-        "path": "/users/{userId}/watchlist/{entryId}",
-        "definition": {
-          "entityName": "WatchlistEntry",
-          "schema": { "$ref": "#/backend/entities/WatchlistEntry" },
-          "description": "Watchlist film/series pengguna."
-        }
-      },
-      {
-        "path": "/reports/{reportId}",
-        "definition": {
-          "entityName": "Report",
-          "schema": { "$ref": "#/backend/entities/Report" },
-          "description": "Koleksi laporan saran dan error global."
         }
       },
       {
