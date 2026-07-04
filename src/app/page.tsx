@@ -151,6 +151,17 @@ export default function DailyDashboardPage() {
     if (isAlreadyCompleted) {
       const log = dayLogs.find(l => l.activityId === activity.id);
       if (log) deleteDocumentNonBlocking(doc(db, 'users', user.uid, 'logs', log.id));
+      
+      // Update linked goal progress if exists
+      if (activity.goalId) {
+        const goalRef = doc(db, 'users', user.uid, 'goals', activity.goalId);
+        getDoc(goalRef).then((snap) => {
+          if (snap.exists()) {
+            const currentVal = snap.data().currentValue || 0;
+            updateDocumentNonBlocking(goalRef, { currentValue: Math.max(0, currentVal - 1) });
+          }
+        });
+      }
     } else {
       addDocumentNonBlocking(collection(db, 'users', user.uid, 'logs'), {
         activityId: activity.id,
@@ -158,7 +169,19 @@ export default function DailyDashboardPage() {
         date: selectedDateStr,
         timestamp: serverTimestamp(),
       });
-      toast({ title: "Materi Selesai!", description: `"${activity.title}" berhasil dicentang.` });
+
+      // Update linked goal progress if exists
+      if (activity.goalId) {
+        const goalRef = doc(db, 'users', user.uid, 'goals', activity.goalId);
+        getDoc(goalRef).then((snap) => {
+          if (snap.exists()) {
+            const currentVal = snap.data().currentValue || 0;
+            updateDocumentNonBlocking(goalRef, { currentValue: currentVal + 1 });
+          }
+        });
+      }
+
+      toast({ title: "Materi Selesai!", description: `"${activity.title}" berhasil dicentang dan target diperbarui.` });
     }
   };
 
@@ -205,6 +228,8 @@ export default function DailyDashboardPage() {
       </Button>
     </div>
   );
+
+  const totalXP = dayLogs.length * 15 + questionsSolved * 5 + (daySchedule.filter(s => s.status === 'completed').length * 10);
 
   return (
     <div className="container px-4 py-6 md:px-6 max-w-5xl pb-32">
@@ -256,7 +281,7 @@ export default function DailyDashboardPage() {
                   <div key={item.id} className="relative">
                     <div 
                       className={cn(
-                        "absolute -left-11 top-4 h-6 w-6 rounded-full bg-background border-2 flex items-center justify-center transition-all",
+                        "absolute -left-11 top-4 h-6 w-6 rounded-full bg-background border-2 flex items-center justify-center transition-all cursor-pointer z-10",
                         isCompleted ? "border-green-600 bg-green-50" : "border-primary bg-background"
                       )}
                       onClick={() => handleToggleScheduleStatus(item)}
@@ -337,7 +362,7 @@ export default function DailyDashboardPage() {
           <Card className="border-none shadow-xl bg-gradient-to-br from-indigo-600 to-blue-500 text-white rounded-[32px] p-8">
             <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-2">Pencapaian Hari Ini</p>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-5xl font-black">{dayLogs.length * 15 + questionsSolved * 5} <span className="text-xl opacity-60">XP</span></h2>
+              <h2 className="text-5xl font-black">{totalXP} <span className="text-xl opacity-60">XP</span></h2>
               <Trophy className="h-12 w-12 opacity-20" />
             </div>
             <div className="space-y-4">
