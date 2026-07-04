@@ -3,11 +3,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, BookOpen, Calendar, Trophy, User, Clock } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Calendar, Trophy, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/', label: 'Home', icon: LayoutDashboard },
+  { href: '/', label: 'Daily', icon: LayoutDashboard },
   { href: '/activities', label: 'Kurikulum', icon: BookOpen },
   { href: '/schedule', label: 'Jadwal', icon: Clock },
   { href: '/calendar', label: 'Riwayat', icon: Calendar },
