@@ -10,7 +10,9 @@ import {
   Trophy,
   Zap,
   Clock,
-  NotebookPen
+  NotebookPen,
+  CheckCircle2,
+  CalendarDays
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -31,7 +33,9 @@ import {
   isSameDay, 
   addMonths, 
   subMonths,
-  parseISO
+  parseISO,
+  getDay,
+  getDate
 } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -62,6 +66,11 @@ export default function CalendarPage() {
     return query(collection(db, 'users', user.uid, 'activities'));
   }, [db, user]);
 
+  const schedulesQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'users', user.uid, 'schedules'), orderBy('startTime', 'asc'));
+  }, [db, user]);
+
   const reflectionsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(collection(db, 'users', user.uid, 'reflections'));
@@ -70,6 +79,7 @@ export default function CalendarPage() {
   const { data: logs } = useCollection(logsQuery);
   const { data: dailyStats } = useCollection(dailyStatsQuery);
   const { data: activities } = useCollection(activitiesQuery);
+  const { data: schedules } = useCollection(schedulesQuery);
   const { data: reflections } = useCollection(reflectionsQuery);
 
   // Calendar Helpers
@@ -92,6 +102,19 @@ export default function CalendarPage() {
     return logs.filter(log => log.date === selectedDateStr);
   }, [logs, selectedDateStr]);
 
+  const daySchedule = useMemo(() => {
+    if (!schedules) return [];
+    const dayIdx = getDay(selectedDate);
+    const dayOfMonth = getDate(selectedDate);
+    return schedules.filter(item => {
+      if (item.recurrence === 'once') return item.specificDate === selectedDateStr;
+      if (item.recurrence === 'daily') return true;
+      if (item.recurrence === 'weekly') return item.daysOfWeek?.includes(dayIdx);
+      if (item.recurrence === 'monthly') return item.dayOfMonth === dayOfMonth;
+      return false;
+    });
+  }, [schedules, selectedDate, selectedDateStr]);
+
   const dayStat = useMemo(() => {
     if (!dailyStats) return null;
     return dailyStats.find(s => s.date === selectedDateStr);
@@ -108,12 +131,23 @@ export default function CalendarPage() {
     return dayLogs.map(log => ({
       ...activityMap.get(log.activityId),
       timestamp: log.timestamp
-    })).filter(a => !!a.id);
+    })).filter(a => !!a?.id);
   }, [dayLogs, activities]);
 
   const hasActivity = (date: Date) => {
     const dStr = format(date, 'yyyy-MM-dd');
-    return logs?.some(log => log.date === dStr) || dailyStats?.some(s => s.date === dStr && s.questionsSolved > 0);
+    const dayIdx = getDay(date);
+    const hasLog = logs?.some(log => log.date === dStr);
+    const hasDaily = dailyStats?.some(s => s.date === dStr && s.questionsSolved > 0);
+    // Simple check for schedules
+    const hasSched = schedules?.some(item => {
+      if (item.status !== 'completed') return false;
+      if (item.recurrence === 'once') return item.specificDate === dStr;
+      if (item.recurrence === 'daily') return true;
+      if (item.recurrence === 'weekly') return item.daysOfWeek?.includes(dayIdx);
+      return false;
+    });
+    return hasLog || hasDaily || hasSched;
   };
 
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
@@ -209,14 +243,18 @@ export default function CalendarPage() {
                  {format(selectedDate, 'EEEE, d MMMM yyyy', { locale: idLocale })}
                </h2>
              </div>
-             <div className="flex items-center gap-4">
-                <div className="bg-indigo-600 text-white px-4 py-2 rounded-2xl shadow-lg">
+             <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                <div className="bg-indigo-600 text-white px-4 py-2 rounded-2xl shadow-lg shrink-0">
                   <p className="text-[9px] font-black uppercase opacity-70">Soal</p>
                   <p className="text-xl font-black">{dayStat?.questionsSolved || 0}</p>
                 </div>
-                <div className="bg-emerald-600 text-white px-4 py-2 rounded-2xl shadow-lg">
+                <div className="bg-emerald-600 text-white px-4 py-2 rounded-2xl shadow-lg shrink-0">
                   <p className="text-[9px] font-black uppercase opacity-70">Materi</p>
                   <p className="text-xl font-black">{completedActivities.length}</p>
+                </div>
+                <div className="bg-primary text-white px-4 py-2 rounded-2xl shadow-lg shrink-0">
+                  <p className="text-[9px] font-black uppercase opacity-70">Jadwal</p>
+                  <p className="text-xl font-black">{daySchedule.filter(s => s.status === 'completed').length}</p>
                 </div>
              </div>
           </div>
@@ -224,47 +262,80 @@ export default function CalendarPage() {
           <div className="relative pl-12 md:pl-20 py-4">
             <div className="absolute left-6 md:left-10 top-0 bottom-0 w-0.5 bg-muted border-l-2 border-dashed border-muted-foreground/20" />
 
-            {completedActivities.length > 0 ? (
-              <div className="space-y-10">
-                {completedActivities.map((act: any, i) => {
-                  const time = act.timestamp ? format(act.timestamp.toDate(), 'HH:mm') : '--:--';
-                  return (
-                    <div key={`${act.id}-${i}`} className="relative">
-                      <div className="absolute -left-12 md:-left-[60px] top-1/2 -translate-y-1/2 flex flex-col items-center">
-                        <div className="bg-white border-2 border-primary h-4 w-4 rounded-full z-10 shadow-[0_0_10px_rgba(var(--primary),0.3)]" />
-                        <span className="text-[10px] font-black text-primary mt-1 bg-white px-1">{time}</span>
-                      </div>
+            {/* Combined Timeline Items */}
+            <div className="space-y-10">
+              {/* Completed Schedules First */}
+              {daySchedule.filter(s => s.status === 'completed').map((item: any, i) => (
+                <div key={`sched-${item.id}-${i}`} className="relative">
+                  <div className="absolute -left-12 md:-left-[60px] top-1/2 -translate-y-1/2 flex flex-col items-center">
+                    <div className="bg-green-500 h-4 w-4 rounded-full z-10 shadow-[0_0_10px_rgba(34,197,94,0.3)]" />
+                    <span className="text-[10px] font-black text-green-600 mt-1 bg-white px-1">{item.startTime}</span>
+                  </div>
 
-                      <Card className="border-none shadow-md rounded-2xl overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1 bg-card group">
-                        <CardContent className="p-6 flex items-center justify-between">
-                          <div className="flex items-center gap-5">
-                            <div className="h-12 w-12 rounded-xl bg-primary/5 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-                              <BookOpen className="h-6 w-6" />
-                            </div>
-                            <div>
-                              <p className="font-black text-lg tracking-tight mb-0.5">{act.title}</p>
-                              <div className="flex items-center gap-3">
-                                <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{act.category}</span>
-                                <span className="h-1 w-1 rounded-full bg-muted-foreground opacity-30" />
-                                <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
-                                  <Clock className="h-3 w-3" /> {act.durationMinutes}m
-                                </span>
-                              </div>
+                  <Card className="border-none shadow-md rounded-2xl overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1 bg-green-50/50 group border border-green-100">
+                    <CardContent className="p-6 flex items-center justify-between">
+                      <div className="flex items-center gap-5">
+                        <div className="h-12 w-12 rounded-xl bg-green-500 text-white flex items-center justify-center">
+                          <CheckCircle2 className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <p className="font-black text-lg tracking-tight mb-0.5">{item.title}</p>
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-black uppercase text-green-700 tracking-widest">Agenda Selesai</span>
+                            <span className="h-1 w-1 rounded-full bg-green-200" />
+                            <span className="text-[10px] font-bold text-green-700 flex items-center gap-1">
+                              <Clock className="h-3 w-3" /> {item.startTime} - {item.endTime}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <CalendarDays className="h-5 w-5 text-green-600 opacity-20" />
+                    </CardContent>
+                  </Card>
+                </div>
+              ))}
+
+              {/* Completed Mastery Items */}
+              {completedActivities.map((act: any, i) => {
+                const time = act.timestamp ? format(act.timestamp.toDate(), 'HH:mm') : '--:--';
+                return (
+                  <div key={`act-${act.id}-${i}`} className="relative">
+                    <div className="absolute -left-12 md:-left-[60px] top-1/2 -translate-y-1/2 flex flex-col items-center">
+                      <div className="bg-white border-2 border-primary h-4 w-4 rounded-full z-10 shadow-[0_0_10px_rgba(var(--primary),0.3)]" />
+                      <span className="text-[10px] font-black text-primary mt-1 bg-white px-1">{time}</span>
+                    </div>
+
+                    <Card className="border-none shadow-md rounded-2xl overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1 bg-card group">
+                      <CardContent className="p-6 flex items-center justify-between">
+                        <div className="flex items-center gap-5">
+                          <div className="h-12 w-12 rounded-xl bg-primary/5 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                            <BookOpen className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <p className="font-black text-lg tracking-tight mb-0.5">{act.title}</p>
+                            <div className="flex items-center gap-3">
+                              <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{act.category}</span>
+                              <span className="h-1 w-1 rounded-full bg-muted-foreground opacity-30" />
+                              <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" /> {act.durationMinutes}m
+                              </span>
                             </div>
                           </div>
-                          <Zap className="h-5 w-5 text-primary opacity-20 group-hover:opacity-100 group-hover:fill-current transition-all" />
-                        </CardContent>
-                      </Card>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="py-12 text-center opacity-40">
-                <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="font-black text-sm uppercase tracking-widest">Tidak ada aktivitas tersemat</p>
-              </div>
-            )}
+                        </div>
+                        <Zap className="h-5 w-5 text-primary opacity-20 group-hover:opacity-100 group-hover:fill-current transition-all" />
+                      </CardContent>
+                    </Card>
+                  </div>
+                );
+              })}
+
+              {completedActivities.length === 0 && daySchedule.filter(s => s.status === 'completed').length === 0 && (
+                <div className="py-12 text-center opacity-40">
+                  <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="font-black text-sm uppercase tracking-widest">Tidak ada aktivitas tersemat</p>
+                </div>
+              )}
+            </div>
 
             {dayReflection && (
               <div className="mt-12 relative pt-8 border-t border-dashed">
