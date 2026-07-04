@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, BookOpen, Calendar, Trophy, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react';
 
 const navItems = [
-  { href: '/', label: 'Daily', icon: LayoutDashboard },
+  { href: '/', label: 'Home', icon: LayoutDashboard },
   { href: '/activities', label: 'Kurikulum', icon: BookOpen },
   { href: '/schedule', label: 'Jadwal', icon: Clock },
   { href: '/calendar', label: 'Riwayat', icon: Calendar },
@@ -16,6 +17,13 @@ const navItems = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
 
   return (
     <nav className="md:hidden fixed bottom-0 z-50 w-full bg-background/95 backdrop-blur-lg border-t border-muted flex items-center justify-around px-2 py-3 shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
