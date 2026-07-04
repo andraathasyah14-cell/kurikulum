@@ -41,7 +41,7 @@ import {
   useFirestore 
 } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp, doc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, addMinutes, parse, addDays, getDay, getDate } from 'date-fns';
@@ -144,6 +144,9 @@ export default function SchedulePage() {
     updateDocumentNonBlocking(doc(db, 'users', user.uid, 'schedules', item.id), {
       status: newStatus
     });
+    if (newStatus === 'completed') {
+      toast({ title: "Checklist Selesai!", description: `Sesi "${item.title}" ditandai selesai.` });
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -180,41 +183,38 @@ export default function SchedulePage() {
               <span className="text-[10px] font-black text-muted-foreground opacity-50">{hour}</span>
             </div>
             
-            {activity ? {
-              const isCompleted = activity.status === 'completed';
-              return (
-                <Card 
-                  className={cn(
-                    "flex-1 border-none shadow-sm rounded-2xl overflow-hidden transition-all cursor-pointer",
-                    isCompleted ? "bg-green-600 text-white opacity-60" : "bg-indigo-600 text-white"
-                  )}
-                  onClick={() => handleToggleStatus(activity)}
-                >
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={cn("p-2 rounded-xl", isCompleted ? "bg-white/40" : "bg-white/20")}>
-                        {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
-                      </div>
-                      <div>
-                        <p className={cn("font-black text-sm leading-tight", isCompleted && "line-through")}>{activity.title}</p>
-                        <p className="text-[9px] font-bold opacity-60 uppercase tracking-widest">{activity.startTime} - {activity.endTime}</p>
-                      </div>
+            {activity ? (
+              <Card 
+                className={cn(
+                  "flex-1 border-none shadow-sm rounded-2xl overflow-hidden transition-all cursor-pointer",
+                  activity.status === 'completed' ? "bg-green-600 text-white opacity-60" : "bg-indigo-600 text-white"
+                )}
+                onClick={() => handleToggleStatus(activity)}
+              >
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className={cn("p-2 rounded-xl", activity.status === 'completed' ? "bg-white/40" : "bg-white/20")}>
+                      {activity.status === 'completed' ? <CheckCircle2 className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="text-white/40 hover:text-white hover:bg-white/10" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(activity.id);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            } : (
+                    <div>
+                      <p className={cn("font-black text-sm leading-tight", activity.status === 'completed' && "line-through")}>{activity.title}</p>
+                      <p className="text-[9px] font-bold opacity-60 uppercase tracking-widest">{activity.startTime} - {activity.endTime}</p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-white/40 hover:text-white hover:bg-white/10" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(activity.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
               <div 
                 className="flex-1 py-4 px-6 border-2 border-dashed rounded-2xl flex items-center justify-between opacity-30 hover:opacity-100 hover:bg-primary/5 hover:border-primary/20 transition-all cursor-pointer"
                 onClick={() => {
