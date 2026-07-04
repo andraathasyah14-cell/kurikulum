@@ -57,7 +57,6 @@ export default function DailyDashboardPage() {
   const auth = useAuth();
   const { toast } = useToast();
   
-  // State for the selected day in the daily view
   const [selectedDate, setSelectedDate] = useState(new Date());
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
 
@@ -66,12 +65,10 @@ export default function DailyDashboardPage() {
   const [worldActivities, setWorldActivities] = useState<any[]>([]);
   const [questionsSolved, setQuestionsSolved] = useState(0);
 
-  // Generate date range for the horizontal scroller (last 7 days + next 7 days)
   const dateRange = useMemo(() => {
     return Array.from({ length: 15 }, (_, i) => addDays(new Date(), i - 7));
   }, []);
 
-  // Sync World Activity
   useEffect(() => {
     const generateActivity = () => {
       const region = GLOBAL_PEERS[Math.floor(Math.random() * GLOBAL_PEERS.length)];
@@ -88,7 +85,6 @@ export default function DailyDashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Firebase Queries
   const activitiesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(collection(db, 'users', user.uid, 'activities'), orderBy('createdAt', 'desc'));
@@ -114,7 +110,6 @@ export default function DailyDashboardPage() {
   const { data: schedules } = useCollection(scheduleQuery);
   const { data: dailyStats } = useCollection(dailyStatsQuery);
 
-  // Filter Data for Selected Day
   const dayLogs = useMemo(() => logs?.filter(l => l.date === selectedDateStr) || [], [logs, selectedDateStr]);
   const dayStat = useMemo(() => dailyStats?.find(s => s.date === selectedDateStr), [dailyStats, selectedDateStr]);
   
@@ -137,7 +132,6 @@ export default function DailyDashboardPage() {
     setQuestionsSolved(dayStat?.questionsSolved || 0);
   }, [dayStat]);
 
-  // Actions
   const handleUpdateQuestions = (delta: number) => {
     if (!user || !db) return;
     const newVal = Math.max(0, questionsSolved + delta);
@@ -165,6 +159,17 @@ export default function DailyDashboardPage() {
         timestamp: serverTimestamp(),
       });
       toast({ title: "Materi Selesai!", description: `"${activity.title}" berhasil dicentang.` });
+    }
+  };
+
+  const handleToggleScheduleStatus = (item: any) => {
+    if (!user || !db) return;
+    const newStatus = item.status === 'completed' ? 'pending' : 'completed';
+    updateDocumentNonBlocking(doc(db, 'users', user.uid, 'schedules', item.id), {
+      status: newStatus
+    });
+    if (newStatus === 'completed') {
+      toast({ title: "Checklist Selesai!", description: `Sesi "${item.title}" ditandai selesai.` });
     }
   };
 
@@ -203,7 +208,6 @@ export default function DailyDashboardPage() {
 
   return (
     <div className="container px-4 py-6 md:px-6 max-w-5xl pb-32">
-      {/* 1. HORIZONTAL DATE SCROLLER */}
       <div className="mb-8 sticky top-16 z-40 bg-background/80 backdrop-blur-md py-2 -mx-4 px-4 border-b">
         <ScrollArea className="w-full">
           <div className="flex gap-3 pb-2">
@@ -234,7 +238,6 @@ export default function DailyDashboardPage() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12">
-        {/* LEFT COLUMN: DAILY FLOW & SCHEDULE */}
         <div className="lg:col-span-7 space-y-8">
           <section>
             <div className="flex items-center justify-between mb-6">
@@ -247,22 +250,39 @@ export default function DailyDashboardPage() {
             </div>
 
             <div className="space-y-4 relative pl-8 border-l-2 border-dashed border-muted ml-4">
-              {daySchedule.length > 0 ? daySchedule.map((item) => (
-                <div key={item.id} className="relative">
-                  <div className="absolute -left-11 top-4 h-6 w-6 rounded-full bg-background border-2 border-primary flex items-center justify-center">
-                    <div className="h-2 w-2 rounded-full bg-primary" />
+              {daySchedule.length > 0 ? daySchedule.map((item) => {
+                const isCompleted = item.status === 'completed';
+                return (
+                  <div key={item.id} className="relative">
+                    <div 
+                      className={cn(
+                        "absolute -left-11 top-4 h-6 w-6 rounded-full bg-background border-2 flex items-center justify-center transition-all",
+                        isCompleted ? "border-green-600 bg-green-50" : "border-primary bg-background"
+                      )}
+                      onClick={() => handleToggleScheduleStatus(item)}
+                    >
+                      {isCompleted ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <div className="h-2 w-2 rounded-full bg-primary" />}
+                    </div>
+                    <Card 
+                      className={cn(
+                        "border-none shadow-sm rounded-2xl bg-card hover:shadow-md transition-all cursor-pointer",
+                        isCompleted && "bg-muted/30 opacity-60"
+                      )}
+                      onClick={() => handleToggleScheduleStatus(item)}
+                    >
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                          <p className={cn("text-[10px] font-black uppercase mb-0.5", isCompleted ? "text-muted-foreground" : "text-primary")}>
+                            {item.startTime} - {item.endTime}
+                          </p>
+                          <p className={cn("font-bold text-sm", isCompleted && "line-through")}>{item.title}</p>
+                        </div>
+                        <Zap className={cn("h-4 w-4", isCompleted ? "text-green-600 opacity-40" : "text-primary/20")} />
+                      </CardContent>
+                    </Card>
                   </div>
-                  <Card className="border-none shadow-sm rounded-2xl bg-card hover:shadow-md transition-all">
-                    <CardContent className="p-4 flex items-center justify-between">
-                      <div>
-                        <p className="text-[10px] font-black text-primary uppercase mb-0.5">{item.startTime} - {item.endTime}</p>
-                        <p className="font-bold text-sm">{item.title}</p>
-                      </div>
-                      <Zap className="h-4 w-4 text-primary/20" />
-                    </CardContent>
-                  </Card>
-                </div>
-              )) : (
+                );
+              }) : (
                 <div className="py-12 text-center opacity-30 italic text-sm">Belum ada agenda jam belajar.</div>
               )}
             </div>
@@ -313,7 +333,6 @@ export default function DailyDashboardPage() {
           </section>
         </div>
 
-        {/* RIGHT COLUMN: STATS & WORLD FEED */}
         <div className="lg:col-span-5 space-y-8">
           <Card className="border-none shadow-xl bg-gradient-to-br from-indigo-600 to-blue-500 text-white rounded-[32px] p-8">
             <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-2">Pencapaian Hari Ini</p>

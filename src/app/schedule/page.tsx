@@ -11,7 +11,9 @@ import {
   ChevronRight,
   Coffee,
   Zap,
-  PlusCircle
+  PlusCircle,
+  CheckCircle2,
+  Circle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,8 +40,8 @@ import {
   useMemoFirebase, 
   useFirestore 
 } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, query, orderBy, serverTimestamp, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, addMinutes, parse, addDays, getDay, getDate } from 'date-fns';
@@ -84,7 +86,6 @@ export default function SchedulePage() {
     }).sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [schedules, selectedDate]);
 
-  // Generate 24 hour grid data
   const gridData = useMemo(() => {
     const grid = HOURS.map(hour => ({
       hour,
@@ -107,7 +108,6 @@ export default function SchedulePage() {
       finalEndTime = format(end, 'HH:mm');
     }
 
-    // Overlap Check
     const hasConflict = dailySchedule.some(s => {
       return (newItem.startTime < s.endTime && finalEndTime > s.startTime);
     });
@@ -136,6 +136,14 @@ export default function SchedulePage() {
     addDocumentNonBlocking(collection(db, 'users', user.uid, 'schedules'), payload);
     setIsOpen(false);
     toast({ title: "Berhasil", description: `"${newItem.title}" ditambahkan ke jadwal.` });
+  };
+
+  const handleToggleStatus = (item: any) => {
+    if (!user || !db) return;
+    const newStatus = item.status === 'completed' ? 'pending' : 'completed';
+    updateDocumentNonBlocking(doc(db, 'users', user.uid, 'schedules', item.id), {
+      status: newStatus
+    });
   };
 
   const handleDelete = (id: string) => {
@@ -172,24 +180,41 @@ export default function SchedulePage() {
               <span className="text-[10px] font-black text-muted-foreground opacity-50">{hour}</span>
             </div>
             
-            {activity ? (
-              <Card className="flex-1 border-none shadow-sm rounded-2xl bg-indigo-600 text-white overflow-hidden">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="bg-white/20 p-2 rounded-xl">
-                      <Zap className="h-4 w-4" />
+            {activity ? {
+              const isCompleted = activity.status === 'completed';
+              return (
+                <Card 
+                  className={cn(
+                    "flex-1 border-none shadow-sm rounded-2xl overflow-hidden transition-all cursor-pointer",
+                    isCompleted ? "bg-green-600 text-white opacity-60" : "bg-indigo-600 text-white"
+                  )}
+                  onClick={() => handleToggleStatus(activity)}
+                >
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={cn("p-2 rounded-xl", isCompleted ? "bg-white/40" : "bg-white/20")}>
+                        {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
+                      </div>
+                      <div>
+                        <p className={cn("font-black text-sm leading-tight", isCompleted && "line-through")}>{activity.title}</p>
+                        <p className="text-[9px] font-bold opacity-60 uppercase tracking-widest">{activity.startTime} - {activity.endTime}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-black text-sm leading-tight">{activity.title}</p>
-                      <p className="text-[9px] font-bold opacity-60 uppercase tracking-widest">{activity.startTime} - {activity.endTime}</p>
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="icon" className="text-white/40 hover:text-white hover:bg-white/10" onClick={() => handleDelete(activity.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-white/40 hover:text-white hover:bg-white/10" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(activity.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            } : (
               <div 
                 className="flex-1 py-4 px-6 border-2 border-dashed rounded-2xl flex items-center justify-between opacity-30 hover:opacity-100 hover:bg-primary/5 hover:border-primary/20 transition-all cursor-pointer"
                 onClick={() => {
