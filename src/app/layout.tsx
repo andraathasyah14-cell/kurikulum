@@ -1,5 +1,5 @@
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/layout/header';
@@ -12,6 +12,13 @@ export const metadata: Metadata = {
   title: 'StudyPro - Master Your Materials',
   description:
     'Alat pelacak progres belajar berbasis kategori untuk membantu Anda menguasai materi secara mendalam.',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5, // Mengizinkan zoom hingga 5x
+  userScalable: true,
 };
 
 export default function RootLayout({
@@ -33,7 +40,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased bg-background">
+      <body className="font-body antialiased bg-background overflow-x-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

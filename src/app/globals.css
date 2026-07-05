@@ -55,6 +55,9 @@
     @apply border-border;
     -webkit-tap-highlight-color: transparent;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
   body {
     @apply bg-background text-foreground font-body;
   }
@@ -75,4 +78,10 @@
 /* Android Ripple-like effect on buttons */
 .btn-android {
   @apply relative overflow-hidden active:scale-95 transition-transform;
+}
+
+/* Ensure images don't overflow */
+img {
+  max-width: 100%;
+  height: auto;
 }

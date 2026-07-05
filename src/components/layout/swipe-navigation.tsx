@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 const ROUTES = [
@@ -24,11 +24,18 @@ export function SwipeNavigation({ children }: { children: React.ReactNode }) {
   const minSwipeDistance = 70;
 
   const onTouchStart = (e: React.TouchEvent) => {
+    // Jika lebih dari satu jari (zoom), abaikan swipe navigation
+    if (e.targetTouches.length > 1) {
+      setTouchStart(null);
+      return;
+    }
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
+    // Jika lebih dari satu jari, abaikan
+    if (e.targetTouches.length > 1) return;
     setTouchEnd(e.targetTouches[0].clientX);
   };
 
@@ -51,6 +58,9 @@ export function SwipeNavigation({ children }: { children: React.ReactNode }) {
         router.push(ROUTES[currentIndex - 1]);
       }
     }
+    
+    setTouchStart(null);
+    setTouchEnd(null);
   };
 
   return (
@@ -58,7 +68,7 @@ export function SwipeNavigation({ children }: { children: React.ReactNode }) {
       onTouchStart={onTouchStart} 
       onTouchMove={onTouchMove} 
       onTouchEnd={onTouchEnd}
-      className="min-h-screen"
+      className="min-h-screen touch-pan-y" // Hint browser untuk prioritas scroll vertikal
     >
       {children}
     </div>
