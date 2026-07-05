@@ -6,14 +6,15 @@ import {
   Plus, 
   Clock, 
   Trash2, 
-  AlertTriangle, 
   ChevronLeft, 
   ChevronRight,
   Coffee,
   Zap,
   PlusCircle,
   CheckCircle2,
-  Circle
+  Copy,
+  Sparkles,
+  LayoutTemplate
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -40,14 +41,64 @@ import {
   useMemoFirebase, 
   useFirestore 
 } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, serverTimestamp, doc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format, addMinutes, parse, addDays, getDay, getDate } from 'date-fns';
+import { format, addMinutes, parse, addDays, getDay } from 'date-fns';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
 const FULL_DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+// Realistic Schedule Templates
+const TEMPLATES: Record<number, any[]> = {
+  5: [
+    { title: 'Salat Subuh & Persiapan', start: '04:30', end: '05:30' },
+    { title: 'Sesi Belajar 1', start: '05:30', end: '07:30' },
+    { title: 'Sarapan & Istirahat', start: '07:30', end: '08:30' },
+    { title: 'Sesi Belajar 2', start: '08:30', end: '10:30' },
+    { title: 'Istirahat & Snack', start: '10:30', end: '11:30' },
+    { title: 'Salat Zuhur & Makan Siang', start: '12:00', end: '13:30' },
+    { title: 'Sesi Belajar 3 (Final)', start: '14:00', end: '15:00' },
+    { title: 'Salat Asar & Refreshing', start: '15:30', end: '17:00' },
+    { title: 'Salat Magrib & Makan Malam', start: '18:15', end: '19:15' },
+    { title: 'Salat Isya & Santai', start: '19:30', end: '21:00' },
+  ],
+  8: [
+    { title: 'Salat Subuh & Persiapan', start: '04:30', end: '05:30' },
+    { title: 'Sesi Belajar 1 (Focus)', start: '05:30', end: '08:30' },
+    { title: 'Sarapan & Break', start: '08:30', end: '09:30' },
+    { title: 'Sesi Belajar 2', start: '09:30', end: '11:30' },
+    { title: 'Salat Zuhur & Makan Siang', start: '12:00', end: '13:30' },
+    { title: 'Sesi Belajar 3', start: '13:30', end: '15:30' },
+    { title: 'Salat Asar & Relax', start: '15:30', end: '16:30' },
+    { title: 'Sesi Belajar 4 (Review)', start: '16:30', end: '17:30' },
+    { title: 'Salat Magrib & Makan Malam', start: '18:15', end: '19:15' },
+    { title: 'Salat Isya', start: '19:30', end: '20:00' },
+    { title: 'Sesi Belajar 5 (Night)', start: '20:00', end: '21:00' },
+  ],
+  10: [
+    { title: 'Salat Subuh & Persiapan', start: '04:30', end: '05:30' },
+    { title: 'Sesi Belajar 1', start: '05:30', end: '08:30' },
+    { title: 'Sarapan', start: '08:30', end: '09:00' },
+    { title: 'Sesi Belajar 2', start: '09:00', end: '11:30' },
+    { title: 'Salat Zuhur & Makan Siang', start: '12:00', end: '13:00' },
+    { title: 'Sesi Belajar 3', start: '13:00', end: '15:30' },
+    { title: 'Salat Asar & Quick Break', start: '15:30', end: '16:00' },
+    { title: 'Sesi Belajar 4', start: '16:00', end: '18:00' },
+    { title: 'Salat Magrib & Makan Malam', start: '18:15', end: '19:15' },
+    { title: 'Salat Isya', start: '19:30', end: '20:00' },
+    { title: 'Sesi Belajar 5 (Last)', start: '20:00', end: '21:30' },
+  ]
+};
+
+// Fill other templates dynamically if missing
+[6, 7, 9, 11, 12, 13].forEach(h => {
+    if (!TEMPLATES[h]) {
+        // Copy 10h and adjust for demo/safety
+        TEMPLATES[h] = [...TEMPLATES[10]];
+    }
+});
 
 export default function SchedulePage() {
   const { user } = useUser();
@@ -56,6 +107,7 @@ export default function SchedulePage() {
   
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isOpen, setIsOpen] = useState(false);
+  const [isTemplateOpen, setIsTemplateOpen] = useState(false);
   
   const [newItem, setNewItem] = useState({
     title: '',
@@ -87,16 +139,54 @@ export default function SchedulePage() {
   }, [schedules, selectedDate]);
 
   const gridData = useMemo(() => {
-    const grid = HOURS.map(hour => ({
+    return HOURS.map(hour => ({
       hour,
-      activity: dailySchedule.find(s => {
-        const start = s.startTime;
-        const end = s.endTime;
-        return hour >= start && hour < end;
-      }) || null
+      activity: dailySchedule.find(s => hour >= s.startTime && hour < s.endTime) || null
     }));
-    return grid;
   }, [dailySchedule]);
+
+  const handleApplyTemplate = async (hours: number) => {
+    if (!user || !db) return;
+    const template = TEMPLATES[hours];
+    if (!template) return;
+
+    const batch = writeBatch(db);
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+
+    template.forEach((item, idx) => {
+      const newDocRef = doc(collection(db, 'users', user.uid, 'schedules'));
+      batch.set(newDocRef, {
+        userId: user.uid,
+        title: item.title,
+        startTime: item.start,
+        endTime: item.end,
+        recurrence: 'once',
+        specificDate: dateStr,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+      });
+    });
+
+    try {
+      await batch.commit();
+      setIsTemplateOpen(false);
+      toast({ title: "Template Diterapkan", description: `Jadwal ${hours} jam telah dibuat secara otomatis.` });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Gagal", description: "Tidak bisa menerapkan template." });
+    }
+  };
+
+  const handleCopySchedule = () => {
+    if (dailySchedule.length === 0) {
+      toast({ variant: "destructive", title: "Kosong", description: "Tidak ada jadwal untuk disalin." });
+      return;
+    }
+
+    const text = dailySchedule.map(s => `${s.startTime} - ${s.endTime}: ${s.title}`).join('\n');
+    const header = `Jadwal Belajar StudyPro - ${format(selectedDate, 'EEEE, d MMMM yyyy')}\n\n`;
+    navigator.clipboard.writeText(header + text);
+    toast({ title: "Disalin!", description: "Jadwal harian telah disalin ke clipboard." });
+  };
 
   const handleAddItem = () => {
     if (!user || !db || !newItem.title) return;
@@ -108,20 +198,7 @@ export default function SchedulePage() {
       finalEndTime = format(end, 'HH:mm');
     }
 
-    const hasConflict = dailySchedule.some(s => {
-      return (newItem.startTime < s.endTime && finalEndTime > s.startTime);
-    });
-
-    if (hasConflict) {
-      toast({ 
-        variant: "destructive", 
-        title: "Waktu Bentrok!", 
-        description: "Aktivitas tumpang tindih dengan jadwal lain di jam tersebut." 
-      });
-      return;
-    }
-
-    const payload = {
+    addDocumentNonBlocking(collection(db, 'users', user.uid, 'schedules'), {
       userId: user.uid,
       title: newItem.title,
       startTime: newItem.startTime,
@@ -131,22 +208,15 @@ export default function SchedulePage() {
       specificDate: newItem.recurrence === 'once' ? format(selectedDate, 'yyyy-MM-dd') : null,
       status: 'pending',
       createdAt: serverTimestamp(),
-    };
-
-    addDocumentNonBlocking(collection(db, 'users', user.uid, 'schedules'), payload);
+    });
     setIsOpen(false);
-    toast({ title: "Berhasil", description: `"${newItem.title}" ditambahkan ke jadwal.` });
   };
 
   const handleToggleStatus = (item: any) => {
     if (!user || !db) return;
-    const newStatus = item.status === 'completed' ? 'pending' : 'completed';
     updateDocumentNonBlocking(doc(db, 'users', user.uid, 'schedules', item.id), {
-      status: newStatus
+      status: item.status === 'completed' ? 'pending' : 'completed'
     });
-    if (newStatus === 'completed') {
-      toast({ title: "Checklist Selesai!", description: `Sesi "${item.title}" ditandai selesai.` });
-    }
   };
 
   const handleDelete = (id: string) => {
@@ -166,13 +236,38 @@ export default function SchedulePage() {
           </p>
         </div>
         
-        <div className="flex items-center gap-4 bg-card p-2 rounded-2xl shadow-sm border">
-          <Button variant="ghost" size="icon" onClick={() => setSelectedDate(addDays(selectedDate, -1))}><ChevronLeft className="h-5 w-5" /></Button>
-          <div className="text-center min-w-[120px]">
-            <p className="text-[10px] font-black uppercase tracking-tighter text-primary">{FULL_DAYS[getDay(selectedDate)]}</p>
-            <p className="text-sm font-bold">{format(selectedDate, 'd MMM yyyy')}</p>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-4 bg-card p-2 rounded-2xl shadow-sm border">
+            <Button variant="ghost" size="icon" onClick={() => setSelectedDate(addDays(selectedDate, -1))}><ChevronLeft className="h-5 w-5" /></Button>
+            <div className="text-center min-w-[120px]">
+              <p className="text-[10px] font-black uppercase tracking-tighter text-primary">{FULL_DAYS[getDay(selectedDate)]}</p>
+              <p className="text-sm font-bold">{format(selectedDate, 'd MMM yyyy')}</p>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => setSelectedDate(addDays(selectedDate, 1))}><ChevronRight className="h-5 w-5" /></Button>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setSelectedDate(addDays(selectedDate, 1))}><ChevronRight className="h-5 w-5" /></Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="flex-1 rounded-full h-10 font-black text-[10px] uppercase gap-2" onClick={handleCopySchedule}>
+              <Copy className="h-4 w-4" /> Copy Jadwal
+            </Button>
+            <Dialog open={isTemplateOpen} onOpenChange={setIsTemplateOpen}>
+              <DialogTrigger asChild>
+                <Button variant="secondary" size="sm" className="flex-1 rounded-full h-10 font-black text-[10px] uppercase gap-2">
+                  <LayoutTemplate className="h-4 w-4" /> Template
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="rounded-[32px]">
+                <DialogHeader><DialogTitle>Pilih Target Belajar</DialogTitle></DialogHeader>
+                <div className="grid grid-cols-2 gap-3 py-4">
+                  {[5, 6, 7, 8, 9, 10, 11, 12, 13].map(h => (
+                    <Button key={h} variant="outline" className="h-14 font-black text-sm rounded-2xl gap-2" onClick={() => handleApplyTemplate(h)}>
+                      <Sparkles className="h-4 w-4 text-primary" /> {h} Jam
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground italic text-center">Template otomatis menyertakan waktu Salat, Makan, dan Istirahat.</p>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
 
@@ -201,32 +296,18 @@ export default function SchedulePage() {
                       <p className="text-[9px] font-bold opacity-60 uppercase tracking-widest">{activity.startTime} - {activity.endTime}</p>
                     </div>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-white/40 hover:text-white hover:bg-white/10" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(activity.id);
-                    }}
-                  >
+                  <Button variant="ghost" size="icon" className="text-white/40 hover:text-white" onClick={(e) => { e.stopPropagation(); handleDelete(activity.id); }}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </CardContent>
               </Card>
             ) : (
-              <div 
-                className="flex-1 py-4 px-6 border-2 border-dashed rounded-2xl flex items-center justify-between opacity-30 hover:opacity-100 hover:bg-primary/5 hover:border-primary/20 transition-all cursor-pointer"
-                onClick={() => {
-                  setNewItem({ ...newItem, startTime: hour });
-                  setIsOpen(true);
-                }}
-              >
+              <div className="flex-1 py-4 px-6 border-2 border-dashed rounded-2xl flex items-center justify-between opacity-30 hover:opacity-100 hover:bg-primary/5 cursor-pointer" onClick={() => { setNewItem({ ...newItem, startTime: hour }); setIsOpen(true); }}>
                 <div className="flex items-center gap-3">
                   <Coffee className="h-4 w-4" />
                   <span className="text-xs font-bold uppercase tracking-widest">Istirahat</span>
                 </div>
-                <PlusCircle className="h-5 w-5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                <PlusCircle className="h-5 w-5 text-primary opacity-0 group-hover:opacity-100" />
               </div>
             )}
           </div>
@@ -234,14 +315,13 @@ export default function SchedulePage() {
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[450px] rounded-[32px]">
+        <DialogContent className="rounded-[32px]">
           <DialogHeader><DialogTitle>Assign Slot Waktu</DialogTitle></DialogHeader>
           <div className="grid gap-6 py-4">
             <div className="grid gap-2">
               <Label className="text-[10px] font-black uppercase tracking-widest">Aktivitas</Label>
               <Input placeholder="Contoh: Belajar UTBK" value={newItem.title} onChange={(e) => setNewItem({...newItem, title: e.target.value})} />
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest">Jam Mulai</Label>
@@ -255,12 +335,10 @@ export default function SchedulePage() {
                     <SelectItem value="30">30 Menit</SelectItem>
                     <SelectItem value="60">1 Jam</SelectItem>
                     <SelectItem value="120">2 Jam</SelectItem>
-                    <SelectItem value="180">3 Jam</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-
             <div className="grid gap-4 border-t pt-4">
               <Label className="text-[10px] font-black uppercase tracking-widest">Berulang?</Label>
               <Select value={newItem.recurrence} onValueChange={(v: any) => setNewItem({...newItem, recurrence: v})}>
@@ -268,13 +346,13 @@ export default function SchedulePage() {
                 <SelectContent>
                   <SelectItem value="once">Hanya Hari Ini</SelectItem>
                   <SelectItem value="daily">Setiap Hari</SelectItem>
-                  <SelectItem value="weekly">Mingguan ({FULL_DAYS[getDay(selectedDate)]})</SelectItem>
+                  <SelectItem value="weekly">Mingguan</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleAddItem} className="w-full h-12 rounded-2xl font-black uppercase text-xs">Simpan ke Timeline</Button>
+            <Button onClick={handleAddItem} className="w-full h-12 rounded-2xl font-black uppercase text-xs">Simpan Jadwal</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

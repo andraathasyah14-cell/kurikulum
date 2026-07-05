@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/header';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { FirebaseClientProvider } from '@/firebase';
 import { ThemeProvider } from '@/components/theme-provider';
+import { SwipeNavigation } from '@/components/layout/swipe-navigation';
 
 export const metadata: Metadata = {
   title: 'StudyPro - Master Your Materials',
@@ -40,14 +41,16 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
-            <div className="relative flex min-h-screen w-full flex-col">
-              <Header />
-              <main className="flex-grow pb-24 md:pb-8">
-                {children}
-              </main>
-              <BottomNav />
-              <Toaster />
-            </div>
+            <SwipeNavigation>
+              <div className="relative flex min-h-screen w-full flex-col">
+                <Header />
+                <main className="flex-grow pb-24 md:pb-8">
+                  {children}
+                </main>
+                <BottomNav />
+                <Toaster />
+              </div>
+            </SwipeNavigation>
           </FirebaseClientProvider>
         </ThemeProvider>
       </body>
