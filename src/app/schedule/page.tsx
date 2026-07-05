@@ -204,7 +204,8 @@ export default function SchedulePage() {
       return;
     }
 
-    const text = dailySchedule.map(s => `${s.startTime} - ${s.endTime}: ${s.title} (${s.status === 'completed' ? 'Selesai' : 'Belum Selesai'})`).join('\n');
+    // Map only the actual activities without the grid hour labels
+    const text = dailySchedule.map(s => `[${s.startTime} - ${s.endTime}] ${s.title} (${s.status === 'completed' ? 'Selesai' : 'Belum Selesai'})`).join('\n');
     const header = `Jadwal Belajar StudyPro - ${format(selectedDate, 'EEEE, d MMMM yyyy')}\n\n`;
     navigator.clipboard.writeText(header + text);
     toast({ title: "Disalin!", description: "Jadwal harian telah disalin ke clipboard." });
@@ -334,7 +335,9 @@ export default function SchedulePage() {
                           </div>
                           <div>
                             <p className={cn("font-black text-sm leading-tight", isCompleted && "line-through")}>{activity.title}</p>
-                            <p className="text-[9px] font-bold opacity-70 uppercase tracking-widest">{activity.startTime} - {activity.endTime}</p>
+                            <p className="text-[9px] font-bold opacity-70 uppercase tracking-widest">
+                              {activity.startTime} - {activity.endTime}
+                            </p>
                           </div>
                         </div>
                         <Button variant="ghost" size="icon" className="text-white/40 hover:text-white" onClick={(e) => { e.stopPropagation(); handleDelete(activity.id); }}>
