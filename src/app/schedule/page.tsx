@@ -54,14 +54,18 @@ import { format, addMinutes, parse, addDays, getDay, startOfDay } from 'date-fns
 const HOURS = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
 const FULL_DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
+// Templates reorganized to follow strict 45-minute sessions for study blocks
 const PREDEFINED_TEMPLATES: Record<number, any[]> = {
   5: [
-    { title: 'Salat Subuh & Persiapan', start: '04:30', end: '05:15' }, // 45m
-    { title: 'Sesi Belajar 1', start: '05:30', end: '07:15' }, // 1h 45m
-    { title: 'Sarapan & Istirahat', start: '07:15', end: '07:50' }, // 35m
-    { title: 'Sesi Belajar 2', start: '08:30', end: '10:15' },
+    { title: 'Salat Subuh & Persiapan', start: '04:30', end: '05:15' },
+    { title: 'Sesi Belajar 1A', start: '05:30', end: '06:15' },
+    { title: 'Jeda / Transisi', start: '06:15', end: '06:30' },
+    { title: 'Sesi Belajar 1B', start: '06:30', end: '07:15' },
+    { title: 'Sarapan & Istirahat', start: '07:15', end: '08:00' },
+    { title: 'Sesi Belajar 2A', start: '08:30', end: '09:15' },
+    { title: 'Sesi Belajar 2B', start: '09:30', end: '10:15' },
     { title: 'Salat Zuhur & Makan Siang', start: '12:00', end: '13:00' },
-    { title: 'Sesi Belajar 3 (Final)', start: '14:00', end: '15:15' },
+    { title: 'Sesi Belajar 3 (Final)', start: '14:00', end: '14:45' },
     { title: 'Salat Asar', start: '15:30', end: '16:00' },
     { title: 'Salat Magrib', start: '18:15', end: '18:50' },
     { title: 'Makan Malam', start: '19:00', end: '19:35' },
@@ -69,42 +73,63 @@ const PREDEFINED_TEMPLATES: Record<number, any[]> = {
   ],
   8: [
     { title: 'Salat Subuh & Persiapan', start: '04:30', end: '05:15' },
-    { title: 'Sesi Belajar 1', start: '05:30', end: '08:15' },
-    { title: 'Sarapan & Break', start: '08:15', end: '08:50' },
-    { title: 'Sesi Belajar 2', start: '09:00', end: '11:45' },
+    { title: 'Sesi Belajar 1A', start: '05:30', end: '06:15' },
+    { title: 'Sesi Belajar 1B', start: '06:30', end: '07:15' },
+    { title: 'Sesi Belajar 1C', start: '07:30', end: '08:15' },
+    { title: 'Sarapan & Break', start: '08:15', end: '09:00' },
+    { title: 'Sesi Belajar 2A', start: '09:00', end: '09:45' },
+    { title: 'Sesi Belajar 2B', start: '10:00', end: '10:45' },
+    { title: 'Sesi Belajar 2C', start: '11:00', end: '11:45' },
     { title: 'Salat Zuhur & Makan Siang', start: '12:00', end: '13:00' },
-    { title: 'Sesi Belajar 3', start: '13:30', end: '15:30' },
-    { title: 'Salat Asar', start: '15:30', end: '16:05' },
-    { title: 'Sesi Belajar 4 (Review)', start: '16:30', end: '17:45' },
+    { title: 'Sesi Belajar 3A', start: '13:30', end: '14:15' },
+    { title: 'Sesi Belajar 3B', start: '14:30', end: '15:15' },
+    { title: 'Salat Asar', start: '15:30', end: '16:00' },
+    { title: 'Sesi Belajar 4 (Review)', start: '16:30', end: '17:15' },
     { title: 'Salat Magrib & Makan Malam', start: '18:15', end: '19:15' },
-    { title: 'Salat Isya', start: '19:30', end: '20:05' },
-    { title: 'Sesi Belajar 5 (Night)', start: '20:15', end: '21:30' },
+    { title: 'Salat Isya', start: '19:30', end: '20:00' },
+    { title: 'Sesi Belajar 5 (Night)', start: '20:15', end: '21:00' },
   ],
   10: [
     { title: 'Salat Subuh & Persiapan', start: '04:30', end: '05:15' },
-    { title: 'Sesi Belajar 1', start: '05:30', end: '08:15' },
+    { title: 'Sesi Belajar 1A', start: '05:30', end: '06:15' },
+    { title: 'Sesi Belajar 1B', start: '06:30', end: '07:15' },
+    { title: 'Sesi Belajar 1C', start: '07:30', end: '08:15' },
     { title: 'Sarapan', start: '08:15', end: '08:50' },
-    { title: 'Sesi Belajar 2', start: '09:00', end: '11:30' },
+    { title: 'Sesi Belajar 2A', start: '09:00', end: '09:45' },
+    { title: 'Sesi Belajar 2B', start: '10:00', end: '10:45' },
+    { title: 'Sesi Belajar 2C', start: '11:00', end: '11:45' },
     { title: 'Salat Zuhur & Makan Siang', start: '12:00', end: '13:00' },
-    { title: 'Sesi Belajar 3', start: '13:00', end: '15:30' },
-    { title: 'Salat Asar', start: '15:30', end: '16:05' },
-    { title: 'Sesi Belajar 4', start: '16:15', end: '18:00' },
+    { title: 'Sesi Belajar 3A', start: '13:00', end: '13:45' },
+    { title: 'Sesi Belajar 3B', start: '14:00', end: '14:45' },
+    { title: 'Sesi Belajar 3C', start: '15:00', end: '15:30' },
+    { title: 'Salat Asar', start: '15:30', end: '16:00' },
+    { title: 'Sesi Belajar 4A', start: '16:15', end: '17:00' },
+    { title: 'Sesi Belajar 4B', start: '17:15', end: '18:00' },
     { title: 'Salat Magrib & Makan Malam', start: '18:15', end: '19:15' },
-    { title: 'Salat Isya', start: '19:30', end: '20:05' },
-    { title: 'Sesi Belajar 5 (Final)', start: '20:15', end: '22:15' },
+    { title: 'Salat Isya', start: '19:30', end: '20:00' },
+    { title: 'Sesi Belajar 5 (Final)', start: '20:15', end: '21:00' },
+    { title: 'Review Akhir', start: '21:15', end: '22:00' },
   ],
   12: [
     { title: 'Salat Subuh & Persiapan', start: '04:30', end: '05:15' },
-    { title: 'Sesi Belajar 1', start: '05:30', end: '09:15' },
+    { title: 'Sesi Belajar 1A', start: '05:30', end: '06:15' },
+    { title: 'Sesi Belajar 1B', start: '06:30', end: '07:15' },
+    { title: 'Sesi Belajar 1C', start: '07:30', end: '08:15' },
+    { title: 'Sesi Belajar 1D', start: '08:30', end: '09:15' },
     { title: 'Sarapan', start: '09:15', end: '09:50' },
-    { title: 'Sesi Belajar 2', start: '10:00', end: '12:00' },
+    { title: 'Sesi Belajar 2A', start: '10:00', end: '10:45' },
+    { title: 'Sesi Belajar 2B', start: '11:00', end: '11:45' },
     { title: 'Salat Zuhur & Makan Siang', start: '12:00', end: '13:00' },
-    { title: 'Sesi Belajar 3', start: '13:00', end: '16:00' },
+    { title: 'Sesi Belajar 3A', start: '13:00', end: '13:45' },
+    { title: 'Sesi Belajar 3B', start: '14:00', end: '14:45' },
+    { title: 'Sesi Belajar 3C', start: '15:00', end: '15:45' },
     { title: 'Salat Asar', start: '16:00', end: '16:35' },
-    { title: 'Sesi Belajar 4', start: '16:45', end: '18:15' },
+    { title: 'Sesi Belajar 4A', start: '16:45', end: '17:30' },
+    { title: 'Sesi Belajar 4B', start: '17:30', end: '18:15' },
     { title: 'Salat Magrib & Makan Malam', start: '18:30', end: '19:30' },
-    { title: 'Salat Isya', start: '19:30', end: '20:05' },
-    { title: 'Sesi Belajar 5', start: '20:15', end: '22:15' },
+    { title: 'Salat Isya', start: '19:30', end: '20:00' },
+    { title: 'Sesi Belajar 5A', start: '20:15', end: '21:00' },
+    { title: 'Sesi Belajar 5B', start: '21:15', end: '22:00' },
     { title: 'Review Akhir', start: '22:15', end: '23:00' },
   ]
 };
@@ -133,7 +158,7 @@ export default function SchedulePage() {
     startTime: '08:00',
     endTime: '09:00',
     type: 'duration' as 'manual' | 'duration',
-    duration: '60',
+    duration: '45',
     recurrence: 'once' as 'once' | 'daily' | 'weekly',
   });
 
@@ -341,7 +366,7 @@ export default function SchedulePage() {
                 <div className="space-y-6 py-4">
                   {/* Predefined */}
                   <div>
-                    <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-3 tracking-widest">Target Jam Belajar</h4>
+                    <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-3 tracking-widest">Target Jam Belajar (Sesi 45m)</h4>
                     <div className="grid grid-cols-3 gap-3">
                       {[5, 6, 7, 8, 9, 10, 11, 12, 13].map(h => (
                         <Button key={h} variant="outline" className="h-14 font-black text-sm rounded-2xl gap-2" onClick={() => handleApplyTemplate(PREDEFINED_TEMPLATES[h], `${h} Jam`)}>
@@ -500,4 +525,3 @@ export default function SchedulePage() {
     </div>
   );
 }
-
