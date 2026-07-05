@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   Plus, 
   Clock, 
@@ -14,7 +14,10 @@ import {
   CheckCircle2,
   Copy,
   Sparkles,
-  LayoutTemplate
+  LayoutTemplate,
+  X,
+  Edit2,
+  Save
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -45,33 +48,32 @@ import { collection, query, orderBy, serverTimestamp, doc, deleteDoc, writeBatch
 import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format, addMinutes, parse, addDays, getDay } from 'date-fns';
+import { format, addMinutes, parse, addDays, getDay, startOfDay } from 'date-fns';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
 const FULL_DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
-// Realistic Schedule Templates
 const TEMPLATES: Record<number, any[]> = {
   5: [
     { title: 'Salat Subuh & Persiapan', start: '04:30', end: '05:30' },
     { title: 'Sesi Belajar 1', start: '05:30', end: '07:30' },
     { title: 'Sarapan & Istirahat', start: '07:30', end: '08:30' },
     { title: 'Sesi Belajar 2', start: '08:30', end: '10:30' },
-    { title: 'Istirahat & Snack', start: '10:30', end: '11:30' },
     { title: 'Salat Zuhur & Makan Siang', start: '12:00', end: '13:30' },
     { title: 'Sesi Belajar 3 (Final)', start: '14:00', end: '15:00' },
-    { title: 'Salat Asar & Refreshing', start: '15:30', end: '17:00' },
-    { title: 'Salat Magrib & Makan Malam', start: '18:15', end: '19:15' },
-    { title: 'Salat Isya & Santai', start: '19:30', end: '21:00' },
+    { title: 'Salat Asar', start: '15:30', end: '16:00' },
+    { title: 'Salat Magrib', start: '18:15', end: '18:45' },
+    { title: 'Makan Malam', start: '19:00', end: '19:30' },
+    { title: 'Salat Isya', start: '19:30', end: '20:00' },
   ],
   8: [
     { title: 'Salat Subuh & Persiapan', start: '04:30', end: '05:30' },
-    { title: 'Sesi Belajar 1 (Focus)', start: '05:30', end: '08:30' },
+    { title: 'Sesi Belajar 1', start: '05:30', end: '08:30' },
     { title: 'Sarapan & Break', start: '08:30', end: '09:30' },
     { title: 'Sesi Belajar 2', start: '09:30', end: '11:30' },
     { title: 'Salat Zuhur & Makan Siang', start: '12:00', end: '13:30' },
     { title: 'Sesi Belajar 3', start: '13:30', end: '15:30' },
-    { title: 'Salat Asar & Relax', start: '15:30', end: '16:30' },
+    { title: 'Salat Asar', start: '15:30', end: '16:00' },
     { title: 'Sesi Belajar 4 (Review)', start: '16:30', end: '17:30' },
     { title: 'Salat Magrib & Makan Malam', start: '18:15', end: '19:15' },
     { title: 'Salat Isya', start: '19:30', end: '20:00' },
@@ -84,20 +86,19 @@ const TEMPLATES: Record<number, any[]> = {
     { title: 'Sesi Belajar 2', start: '09:00', end: '11:30' },
     { title: 'Salat Zuhur & Makan Siang', start: '12:00', end: '13:00' },
     { title: 'Sesi Belajar 3', start: '13:00', end: '15:30' },
-    { title: 'Salat Asar & Quick Break', start: '15:30', end: '16:00' },
+    { title: 'Salat Asar', start: '15:30', end: '16:00' },
     { title: 'Sesi Belajar 4', start: '16:00', end: '18:00' },
     { title: 'Salat Magrib & Makan Malam', start: '18:15', end: '19:15' },
     { title: 'Salat Isya', start: '19:30', end: '20:00' },
-    { title: 'Sesi Belajar 5 (Last)', start: '20:00', end: '21:30' },
+    { title: 'Sesi Belajar 5 (Final)', start: '20:00', end: '22:00' },
   ]
 };
 
-// Fill other templates dynamically if missing
+// Fill other templates
 [6, 7, 9, 11, 12, 13].forEach(h => {
-    if (!TEMPLATES[h]) {
-        // Copy 10h and adjust for demo/safety
-        TEMPLATES[h] = [...TEMPLATES[10]];
-    }
+  if (!TEMPLATES[h]) {
+    TEMPLATES[h] = [...TEMPLATES[10]];
+  }
 });
 
 export default function SchedulePage() {
@@ -108,6 +109,7 @@ export default function SchedulePage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isOpen, setIsOpen] = useState(false);
   const [isTemplateOpen, setIsTemplateOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
   const [newItem, setNewItem] = useState({
     title: '',
@@ -118,6 +120,10 @@ export default function SchedulePage() {
     recurrence: 'once' as 'once' | 'daily' | 'weekly',
   });
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const scheduleQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(collection(db, 'users', user.uid, 'schedules'), orderBy('startTime', 'asc'));
@@ -126,7 +132,7 @@ export default function SchedulePage() {
   const { data: schedules, isLoading } = useCollection(scheduleQuery);
 
   const dailySchedule = useMemo(() => {
-    if (!schedules) return [];
+    if (!schedules || !mounted) return [];
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
     const dayIdx = getDay(selectedDate);
 
@@ -136,13 +142,20 @@ export default function SchedulePage() {
       if (item.recurrence === 'weekly') return item.daysOfWeek?.includes(dayIdx);
       return false;
     }).sort((a, b) => a.startTime.localeCompare(b.startTime));
-  }, [schedules, selectedDate]);
+  }, [schedules, selectedDate, mounted]);
 
   const gridData = useMemo(() => {
-    return HOURS.map(hour => ({
-      hour,
-      activity: dailySchedule.find(s => hour >= s.startTime && hour < s.endTime) || null
-    }));
+    return HOURS.map(hour => {
+      const nextHour = format(addMinutes(parse(hour, 'HH:mm', new Date()), 60), 'HH:mm');
+      // Logic: An activity overlaps this hour if it starts before next hour AND ends after this hour
+      const overlappingActivities = dailySchedule.filter(s => {
+        return s.startTime < nextHour && s.endTime > hour;
+      });
+      return {
+        hour,
+        activities: overlappingActivities
+      };
+    });
   }, [dailySchedule]);
 
   const handleApplyTemplate = async (hours: number) => {
@@ -153,7 +166,16 @@ export default function SchedulePage() {
     const batch = writeBatch(db);
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
-    template.forEach((item, idx) => {
+    // Remove existing "once" schedules for this date to avoid mass duplication
+    const existingIds = dailySchedule
+      .filter(s => s.recurrence === 'once')
+      .map(s => s.id);
+    
+    existingIds.forEach(id => {
+      batch.delete(doc(db, 'users', user.uid, 'schedules', id));
+    });
+
+    template.forEach((item) => {
       const newDocRef = doc(collection(db, 'users', user.uid, 'schedules'));
       batch.set(newDocRef, {
         userId: user.uid,
@@ -182,7 +204,7 @@ export default function SchedulePage() {
       return;
     }
 
-    const text = dailySchedule.map(s => `${s.startTime} - ${s.endTime}: ${s.title}`).join('\n');
+    const text = dailySchedule.map(s => `${s.startTime} - ${s.endTime}: ${s.title} (${s.status === 'completed' ? 'Selesai' : 'Belum Selesai'})`).join('\n');
     const header = `Jadwal Belajar StudyPro - ${format(selectedDate, 'EEEE, d MMMM yyyy')}\n\n`;
     navigator.clipboard.writeText(header + text);
     toast({ title: "Disalin!", description: "Jadwal harian telah disalin ke clipboard." });
@@ -196,6 +218,20 @@ export default function SchedulePage() {
       const start = parse(newItem.startTime, 'HH:mm', new Date());
       const end = addMinutes(start, parseInt(newItem.duration));
       finalEndTime = format(end, 'HH:mm');
+    }
+
+    // Check for conflicts
+    const hasConflict = dailySchedule.some(s => {
+      return (newItem.startTime < s.endTime && finalEndTime > s.startTime);
+    });
+
+    if (hasConflict) {
+      toast({ 
+        variant: "destructive", 
+        title: "Waktu Bentrok!", 
+        description: "Ada jadwal lain di jam yang sama. Silakan sesuaikan." 
+      });
+      return;
     }
 
     addDocumentNonBlocking(collection(db, 'users', user.uid, 'schedules'), {
@@ -224,7 +260,7 @@ export default function SchedulePage() {
     deleteDoc(doc(db, 'users', user.uid, 'schedules', id));
   };
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
+  if (!mounted || isLoading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
 
   return (
     <div className="container px-4 py-8 md:px-6 max-w-3xl pb-32">
@@ -257,10 +293,10 @@ export default function SchedulePage() {
               </DialogTrigger>
               <DialogContent className="rounded-[32px]">
                 <DialogHeader><DialogTitle>Pilih Target Belajar</DialogTitle></DialogHeader>
-                <div className="grid grid-cols-2 gap-3 py-4">
+                <div className="grid grid-cols-3 gap-3 py-4">
                   {[5, 6, 7, 8, 9, 10, 11, 12, 13].map(h => (
                     <Button key={h} variant="outline" className="h-14 font-black text-sm rounded-2xl gap-2" onClick={() => handleApplyTemplate(h)}>
-                      <Sparkles className="h-4 w-4 text-primary" /> {h} Jam
+                      <Sparkles className="h-4 w-4 text-primary" /> {h}h
                     </Button>
                   ))}
                 </div>
@@ -272,44 +308,52 @@ export default function SchedulePage() {
       </div>
 
       <div className="bg-muted/10 rounded-[40px] border p-4 space-y-2">
-        {gridData.map(({ hour, activity }) => (
-          <div key={hour} className="flex gap-4 group">
+        {gridData.map(({ hour, activities }) => (
+          <div key={hour} className="flex gap-4 group min-h-[60px]">
             <div className="w-12 pt-2 text-right">
               <span className="text-[10px] font-black text-muted-foreground opacity-50">{hour}</span>
             </div>
             
-            {activity ? (
-              <Card 
-                className={cn(
-                  "flex-1 border-none shadow-sm rounded-2xl overflow-hidden transition-all cursor-pointer",
-                  activity.status === 'completed' ? "bg-green-600 text-white opacity-60" : "bg-indigo-600 text-white"
-                )}
-                onClick={() => handleToggleStatus(activity)}
-              >
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={cn("p-2 rounded-xl", activity.status === 'completed' ? "bg-white/40" : "bg-white/20")}>
-                      {activity.status === 'completed' ? <CheckCircle2 className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
-                    </div>
-                    <div>
-                      <p className={cn("font-black text-sm leading-tight", activity.status === 'completed' && "line-through")}>{activity.title}</p>
-                      <p className="text-[9px] font-bold opacity-60 uppercase tracking-widest">{activity.startTime} - {activity.endTime}</p>
-                    </div>
+            <div className="flex-1 flex flex-col gap-2">
+              {activities.length > 0 ? (
+                activities.map(activity => {
+                  const isCompleted = activity.status === 'completed';
+                  return (
+                    <Card 
+                      key={activity.id}
+                      className={cn(
+                        "border-none shadow-sm rounded-2xl overflow-hidden transition-all cursor-pointer",
+                        isCompleted ? "bg-green-600 text-white opacity-60" : "bg-indigo-600 text-white"
+                      )}
+                      onClick={() => handleToggleStatus(activity)}
+                    >
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={cn("p-2 rounded-xl", isCompleted ? "bg-white/40" : "bg-white/20")}>
+                            {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
+                          </div>
+                          <div>
+                            <p className={cn("font-black text-sm leading-tight", isCompleted && "line-through")}>{activity.title}</p>
+                            <p className="text-[9px] font-bold opacity-70 uppercase tracking-widest">{activity.startTime} - {activity.endTime}</p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="icon" className="text-white/40 hover:text-white" onClick={(e) => { e.stopPropagation(); handleDelete(activity.id); }}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              ) : (
+                <div className="flex-1 py-4 px-6 border-2 border-dashed rounded-2xl flex items-center justify-between opacity-30 hover:opacity-100 hover:bg-primary/5 cursor-pointer" onClick={() => { setNewItem({ ...newItem, startTime: hour }); setIsOpen(true); }}>
+                  <div className="flex items-center gap-3">
+                    <Coffee className="h-4 w-4" />
+                    <span className="text-xs font-bold uppercase tracking-widest">Istirahat / Kosong</span>
                   </div>
-                  <Button variant="ghost" size="icon" className="text-white/40 hover:text-white" onClick={(e) => { e.stopPropagation(); handleDelete(activity.id); }}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="flex-1 py-4 px-6 border-2 border-dashed rounded-2xl flex items-center justify-between opacity-30 hover:opacity-100 hover:bg-primary/5 cursor-pointer" onClick={() => { setNewItem({ ...newItem, startTime: hour }); setIsOpen(true); }}>
-                <div className="flex items-center gap-3">
-                  <Coffee className="h-4 w-4" />
-                  <span className="text-xs font-bold uppercase tracking-widest">Istirahat</span>
+                  <PlusCircle className="h-5 w-5 text-primary opacity-0 group-hover:opacity-100" />
                 </div>
-                <PlusCircle className="h-5 w-5 text-primary opacity-0 group-hover:opacity-100" />
-              </div>
-            )}
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -332,7 +376,9 @@ export default function SchedulePage() {
                 <Select value={newItem.duration} onValueChange={(v) => setNewItem({...newItem, duration: v})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="15">15 Menit</SelectItem>
                     <SelectItem value="30">30 Menit</SelectItem>
+                    <SelectItem value="45">45 Menit</SelectItem>
                     <SelectItem value="60">1 Jam</SelectItem>
                     <SelectItem value="120">2 Jam</SelectItem>
                   </SelectContent>
